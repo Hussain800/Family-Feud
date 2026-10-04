@@ -267,7 +267,10 @@ function FaceOff({ g }: { g: HostGame }) {
       <p className="step__label">Face-off</p>
       {waiting && (
         <>
-          <p className="step__text">{tries.length === 2 ? "Both missed. Bring up the next two players. " : ""}Who buzzed first? Tap the team the hosts name.</p>
+          <p className="step__text">
+            {tries.length === 2 ? "Both missed. Bring up the next two players. " : ""}
+            {g.buzzerMode === "phone" ? "Open the phone buzzers. The first press counts; or tap the team the hosts name." : "Who buzzed first? Tap the team the hosts name."}
+          </p>
           {g.buzzerMode === "phone" && <PhoneFaceOff g={g} />}
           <div className="row">
             {TEAMS.map((t) => (
@@ -279,6 +282,7 @@ function FaceOff({ g }: { g: HostGame }) {
       {turn && (
         <>
           <p className="step__text"><b>{name(s, turn)}</b> {second ? "answers next" : "buzzed first and answers"}. Reveal their answer below, or press Wrong answer.</p>
+          {!second && tries.length === 0 && g.buzzerMode === "phone" && <PhoneFaceOff g={g} />}
           {!second && tries.length === 0 && (
             <button type="button" className="link-btn" onClick={() => g.act({ type: "BUZZ", team: otherTeam(turn) })}>Wrong team? It was {name(s, otherTeam(turn))}</button>
           )}

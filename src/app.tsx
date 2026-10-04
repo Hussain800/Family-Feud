@@ -22,10 +22,10 @@ function Home() {
     <div className="boot" data-theme="ice">
       <p className="bi-label">GDG ON CAMPUS · UOBD</p>
       <h1 className="phone__title">hello, world! &lt;FAMILY FEUD&gt;</h1>
-      <p className="phone__lead">Organiser: open the moderator console. Everyone else: join with the code on the big screen.</p>
+      <p className="phone__lead">Organiser: open the moderator console. Players need nothing; with phone buzzers on, one player per team pairs a phone.</p>
       <div className="row">
         <Link className="bi-button" to="/host">Moderator console</Link>
-        <Link className="bi-button bi-button--outline" to="/join">Join with a code</Link>
+        <Link className="bi-button bi-button--outline" to="/join">Pair a buzzer phone</Link>
       </div>
     </div>
   );

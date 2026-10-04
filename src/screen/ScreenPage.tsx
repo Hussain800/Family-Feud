@@ -101,6 +101,7 @@ export function ScreenPage() {
       // The third X, then the steal.
       timers.current.push(window.setTimeout(() => {
         sfx.play("steal");
+        setPlayed((p) => ({ n: p.n + 1, last: "steal" }));
         const steal = flashFor("steal", snap);
         if (steal) show(steal, BANNER_MS);
       }, X_MS));

@@ -67,7 +67,7 @@ export function projectPublic(i: ProjectInput): PublicSnapshot {
     note: game.note,
     settlement: r?.settlement ? { winner: r.settlement.winner, amount: r.settlement.amount, kind: r.settlement.kind } : null,
     faceOff: !preview && r?.faceOff ? publicFaceOff(r) : null,
-    buzzers: i.buzzers ? { ...i.buzzers, paired: { ...i.buzzers.paired } } : null,
+    buzzers: i.buzzers ? { open: i.buzzers.open, armId: i.buzzers.armId, paired: { ...i.buzzers.paired }, gen: { ...i.buzzers.gen }, online: { ...i.buzzers.online }, first: i.buzzers.first, second: i.buzzers.second } : null,
     undone: i.undone ?? false,
   };
 }

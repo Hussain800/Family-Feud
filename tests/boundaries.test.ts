@@ -40,8 +40,8 @@ describe("public surfaces", () => {
 });
 
 describe("rules code", () => {
-  it("engine and content have no React or browser dependencies", () => {
-    for (const dir of ["engine", "content"]) {
+  it("engine, buzzers and content have no React or browser dependencies", () => {
+    for (const dir of ["engine", "buzzers", "content"]) {
       for (const f of files(join(SRC, dir))) {
         expect(importsOf(read(f)), f).not.toContain("react");
         expect(read(f), f).not.toMatch(/\bwindow\.|\bdocument\.|localStorage/);

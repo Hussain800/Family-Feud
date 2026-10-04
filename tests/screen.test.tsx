@@ -75,7 +75,7 @@ describe("plain-text rendering", () => {
   });
 
   it("phone buzzers: the pairing code shows only while a team still needs its phone, and never for a localhost link", () => {
-    const buzzers = { open: false, armId: null, paired: { A: true, B: false }, first: null, second: null };
+    const buzzers = { open: false, armId: null, paired: { A: true, B: false }, gen: { A: 1, B: 1 }, online: { A: true, B: false }, first: null, second: null };
     const lobby = (b: PublicSnapshot["buzzers"], joinUrl = base.room.joinUrl) => renderToString(<ScreenView snapshot={{ ...EMPTY_SNAPSHOT, room: { ...base.room, joinUrl }, buzzers: b }} />);
     expect(lobby(buzzers)).toContain("BUZZER PHONES");
     expect(lobby({ ...buzzers, paired: { A: true, B: true } })).not.toContain("BUZZER PHONES");
@@ -176,7 +176,7 @@ describe("face-off on the projector", () => {
   });
 
   it("phone mode labels the arrival time honestly", () => {
-    const html = view({ ...fo, buzzed: "A" }).concat(renderToString(<ScreenView snapshot={{ ...base, phase: "face_off", faceOff: { ...fo, buzzed: "A" }, buzzers: { open: false, armId: "x", paired: { A: true, B: true }, first: { team: "A", ms: 843 }, second: { team: "B", ms: 1020 } } }} />).replace(/<!-- -->/g, ""));
+    const html = view({ ...fo, buzzed: "A" }).concat(renderToString(<ScreenView snapshot={{ ...base, phase: "face_off", faceOff: { ...fo, buzzed: "A" }, buzzers: { open: false, armId: "x", paired: { A: true, B: true }, gen: { A: 1, B: 1 }, online: { A: true, B: true }, first: { team: "A", ms: 843 }, second: { team: "B", ms: 1020 } } }} />).replace(/<!-- -->/g, ""));
     expect(html).toContain("RECEIVED 0.84 S AFTER THE BUZZERS OPENED");
     expect(html).toContain("TEAM B 0.18 S LATER");
     expect(html).not.toMatch(/PROOF|REACTION/);

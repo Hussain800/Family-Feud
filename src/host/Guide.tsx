@@ -62,13 +62,19 @@ export function Guide({ phoneMode, onClose }: { phoneMode: boolean; onClose: (ho
     setPos({ top, left });
   }, [rect, i]);
 
+  // Whatever had focus before the guide opened gets it back afterwards. Read once, before focus moves into the popover.
+  const [before] = useState(() => document.activeElement as HTMLElement | null);
   useEffect(() => next.current?.focus(), [i]);
 
-  const close = useCallback((how: "done" | "skipped") => onClose(how), [onClose]);
+  // The console re-renders every heartbeat; the latest onClose is read through a ref so the key handler is bound once.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+  const close = useCallback((how: "done" | "skipped") => onCloseRef.current(how), []);
 
   // Keys stop here: Escape exits, Tab stays inside the popover, and the console shortcuts never see a key.
   useEffect(() => {
-    const before = document.activeElement as HTMLElement | null;
     const onKey = (e: KeyboardEvent) => {
       e.stopPropagation();
       if (e.key === "Escape") {
@@ -87,13 +93,13 @@ export function Guide({ phoneMode, onClose }: { phoneMode: boolean; onClose: (ho
       const back = before && document.contains(before) ? before : document.querySelector<HTMLElement>('[data-tour="guide"]');
       back?.focus();
     };
-  }, [close]);
+  }, [close, before]);
 
   return (
     <div className="guide" role="presentation">
       <div className={`guide__shade ${rect ? "" : "guide__shade--dim"}`} onClick={(e) => e.stopPropagation()} />
       {rect && <div className="guide__spot" style={{ top: rect.top - 6, left: rect.left - 6, width: rect.width + 12, height: rect.height + 12 }} />}
-      <div ref={pop} className="guide__pop" role="dialog" aria-modal="true" aria-labelledby="guide-h" style={pos ?? { visibility: "hidden" }}>
+      <div ref={pop} className="guide__pop" role="dialog" aria-modal="true" aria-labelledby="guide-h" style={pos ?? { opacity: 0 }}>
         <p className="guide__count">Step {i + 1} of {steps.length}</p>
         <h2 className="guide__h" id="guide-h">{step.title}</h2>
         <div className="guide__body">{step.body}</div>

@@ -1,4 +1,5 @@
 // Moderator-local saving. Everything here lives in this browser only; it is not a cloud backup.
+import type { Buzzers, Pairing } from "../buzzers/buzzers";
 import { validatePack } from "../content/schema";
 import type { Pack } from "../content/types";
 import { initialSession } from "../engine/reducer";
@@ -10,6 +11,7 @@ export const KEYS = {
   session: "ff.session.v1",
   probe: "ff.probe.v1",
   buzzers: "ff.buzzers.v2",
+  pairs: "ff.pairs.v1",
   guide: "ff.guide.v1",
 } as const;
 
@@ -17,6 +19,15 @@ export const KEYS = {
 export type BuzzerMode = "physical" | "phone";
 export const loadBuzzerMode = (): BuzzerMode => (readJson(KEYS.buzzers) === "phone" ? "phone" : "physical");
 export const saveBuzzerMode = (m: BuzzerMode): WriteResult => writeJson(KEYS.buzzers, m);
+
+/** Phone pairings survive a console refresh so paired phones keep working; an open press window never does. */
+export function loadPairs(): Buzzers | null {
+  const raw = readJson(KEYS.pairs);
+  if (!isObj(raw) || !isObj(raw.pairs) || typeof raw.wrongCodes !== "number") return null;
+  const ok = (p: unknown): p is Pairing => isObj(p) && typeof p.code === "string" && typeof p.gen === "number" && (p.token === null || typeof p.token === "string") && (p.actorId === null || typeof p.actorId === "string");
+  return ok(raw.pairs.A) && ok(raw.pairs.B) ? { pairs: { A: raw.pairs.A, B: raw.pairs.B }, wrongCodes: raw.wrongCodes, arm: null } : null;
+}
+export const savePairs = (b: Buzzers): WriteResult => writeJson(KEYS.pairs, { pairs: b.pairs, wrongCodes: b.wrongCodes });
 
 /** The quick guide was finished or skipped on this laptop. */
 export const guideSeen = (): boolean => readJson(KEYS.guide) !== null;

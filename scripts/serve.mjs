@@ -17,6 +17,9 @@ if (!process.env.AIR_JAM_AUTH_MODE) {
   process.env.AIR_JAM_AUTH_MODE = "disabled";
   console.warn("AIR_JAM_AUTH_MODE not set: running the relay with app authentication disabled.");
 }
+// The relay holds a dropped phone's seat for 30 s before telling the console it left. A buzzer phone that drops
+// should show as disconnected within seconds, so the hosts know to judge that face-off themselves.
+process.env.AIR_JAM_CONTROLLER_RESUME_LEASE_MS ??= "8000";
 
 const TYPES = {
   ".html": "text/html; charset=utf-8",

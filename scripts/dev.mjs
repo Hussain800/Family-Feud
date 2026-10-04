@@ -75,7 +75,8 @@ if (mode === "build") {
     console.error("No production build found. Run: pnpm run build:lan");
     process.exit(1);
   }
-  run("relay", relayBin, [], { PORT: String(relayPort) });
+  // A dropped buzzer phone shows as disconnected after 8 s instead of the relay's 30 s default (see serve.mjs).
+  run("relay", relayBin, [], { PORT: String(relayPort), AIR_JAM_CONTROLLER_RESUME_LEASE_MS: process.env.AIR_JAM_CONTROLLER_RESUME_LEASE_MS ?? "8000" });
   run("web", viteBin, mode === "preview" ? ["preview", "--host", "--port", String(webPort), "--strictPort"] : ["--host", "--port", String(webPort), "--strictPort"]);
   console.log("");
   console.log(`  Moderator console   http://localhost:${webPort}/host`);

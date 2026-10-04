@@ -5,12 +5,17 @@ import { validatePack } from "../content/schema";
 import type { Pack, Question } from "../content/types";
 import { apply, initialSession } from "../engine/reducer";
 import type { Action, Session, TeamId } from "../engine/types";
-import { publishSnapshot, useFeudStore } from "../game/store";
+import { clearArm, closeBuzzers, initialBuzzers, openBuzzers, pair, press, publicBuzzers, resetPairing, type Buzzers } from "../buzzers/buzzers";
+import { buzzerHandlers, publishSnapshot, useFeudStore } from "../game/store";
 import { HEARTBEAT_MS, STALE_AFTER_MS, openChannel, type ScreenSound } from "../public/channel";
 import { projectPublic } from "../public/project";
 import type { PublicSnapshot, RelayStatus } from "../public/types";
 import { newId } from "../util/id";
-import { KEYS, freshSession, hasProgress, loadBackupPack, loadBuzzerMode, loadPack, loadSession, saveBuzzerMode, saveSession, savePack, writeJson, type BuzzerMode, type SavedSession, type WriteResult } from "./persist";
+import { KEYS, freshSession, hasProgress, loadBackupPack, loadBuzzerMode, loadPack, loadPairs, loadSession, saveBuzzerMode, savePairs, saveSession, savePack, writeJson, type BuzzerMode, type SavedSession, type WriteResult } from "./persist";
+
+// crypto.getRandomValues works on a plain-http LAN address too, unlike randomUUID.
+const rand = () => crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32;
+const newToken = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, "0")).join("");
 
 type UndoAction = { id: string; type: "UNDO" };
 type HostAction = Action | UndoAction | { id: string; type: "LOAD"; session: Session };
@@ -54,19 +59,33 @@ export function useHostGame() {
     () => ({ code: phoneMode && relay === "ready" ? host.roomId : null, joinUrl: phoneMode && relay === "ready" ? host.joinUrl || null : null, status: relay, connected: host.players.length, capacity: 16 }),
     [phoneMode, relay, host.roomId, host.joinUrl, host.players.length],
   );
+
+  // -- phone buzzers: pairings are saved, an open press window is not -------
+  const [buzzers, setBuzzers] = useState<Buzzers>(() => loadPairs() ?? initialBuzzers(rand));
+  const buzzersRef = useRef(buzzers);
+  const commitBuzzers = useCallback((next: Buzzers) => {
+    if (next === buzzersRef.current) return;
+    buzzersRef.current = next;
+    setBuzzers(next);
+    savePairs(next);
+  }, []);
   const setBuzzerMode = (m: BuzzerMode) => {
     saveBuzzerMode(m);
     setBuzzerModeState(m);
+    commitBuzzers(clearArm(buzzersRef.current)); // presses meant for the old mode can never land
   };
 
   // -- saving: after every meaningful host action, never from an effect --------
   const commit = useCallback((next: Session) => {
+    const prev = sessionRef.current.state;
     // Any change to the round (a buzz, a reveal, a strike, an undo) ends a running countdown: it belonged to the last moment.
-    if (next.state.round !== sessionRef.current.state.round || next.state.phase !== sessionRef.current.state.phase) setTimer(null);
+    if (next.state.round !== prev.round || next.state.phase !== prev.phase) setTimer(null);
+    // A new phase or a new round voids any open phone-buzzer window. A buzz within the face-off keeps it, for its timing.
+    if (next.state.phase !== prev.phase || next.state.round?.roundId !== prev.round?.roundId) commitBuzzers(clearArm(buzzersRef.current));
     sessionRef.current = next;
     setSession(next);
     if (!holdSave.current) setSaveStatus(saveSession(packRef.current.packId, next));
-  }, []);
+  }, [commitBuzzers]);
   const updatePack = useCallback((next: Pack) => {
     setSaveStatus(savePack(next, packRef.current)); // the pack being replaced is kept as a recoverable copy
     packRef.current = next;
@@ -98,6 +117,28 @@ export function useHostGame() {
     commit(reduce(sessionRef.current, { id: newId(), ...intent } as HostAction));
   }, [commit]);
 
+  // Phone presses arrive here. The first valid one becomes the same BUZZ a tap would make: one authority, one rule set.
+  useEffect(() => {
+    if (!phoneMode) return;
+    buzzerHandlers.pair = (actorId, payload) => {
+      const r = pair(buzzersRef.current, actorId, payload, newToken);
+      commitBuzzers(r.buzzers);
+      return r.result;
+    };
+    buzzerHandlers.press = (actorId, payload) => {
+      const r = press(buzzersRef.current, actorId, payload, Date.now());
+      commitBuzzers(r.buzzers);
+      if (r.result.ok && r.result.status === "first") act({ type: "BUZZ", team: r.result.team });
+      return r.result;
+    };
+    return () => {
+      buzzerHandlers.pair = null;
+      buzzerHandlers.press = null;
+    };
+  }, [phoneMode, commitBuzzers, act]);
+  const online = useCallback((actorId: string) => host.players.some((p) => p.id === actorId), [host.players]);
+  const publicPhones = useMemo(() => (phoneMode ? publicBuzzers(buzzers, online) : null), [phoneMode, buzzers, online]);
+
   const startRound = (q: Question, team: TeamId) => {
     setPreviewId(null);
     act({ type: "START_ROUND", team, question: { id: q.id, category: q.category, prompt: q.prompt, demo: pack.purpose === "demo", answers: q.answers } });
@@ -124,13 +165,14 @@ export function useHostGame() {
       room,
       timer,
       undone,
+      buzzers: publicPhones,
       preview: preview && session.state.phase === "lobby" ? { category: preview.category, prompt: preview.prompt } : null,
     });
     latest.current = snap;
     chan.current?.post({ kind: "snapshot", snapshot: snap });
     publishSnapshot(snap);
     setSnapshot(snap);
-  }, [session.state, demo, room, timer, undone, preview]);
+  }, [session.state, demo, room, timer, undone, publicPhones, preview]);
 
   useEffect(() => {
     const c = openChannel((m) => {
@@ -176,7 +218,16 @@ export function useHostGame() {
     canUndo: session.history.length > 0,
     act,
     startRound,
-    nextTeams: () => act({ type: "NEW_MATCH", nextTeams: true }),
+    // The next pair of teams never inherits the last pair's buzzer phones: new codes, old tokens dead.
+    nextTeams: () => {
+      act({ type: "NEW_MATCH", nextTeams: true });
+      commitBuzzers(resetPairing(buzzersRef.current, rand));
+    },
+    buzzers,
+    phones: publicPhones,
+    openBuzzers: () => commitBuzzers(openBuzzers(buzzersRef.current, newId(), Date.now())),
+    closeBuzzers: () => commitBuzzers(closeBuzzers(buzzersRef.current)),
+    newCodes: (team?: TeamId) => commitBuzzers(resetPairing(buzzersRef.current, rand, team ? [team] : undefined)),
     resumeOffer,
     resume,
     startFresh,

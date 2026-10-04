@@ -51,6 +51,10 @@ export interface PublicBuzzers {
   /** Changes every time the buzzers open, so a press meant for an earlier opening is refused. */
   armId: string | null;
   paired: Record<TeamId, boolean>;
+  /** Pairing generation per team. A phone whose pairing generation no longer matches has been unpaired. */
+  gen: Record<TeamId, number>;
+  /** The paired phone is connected to the relay right now. */
+  online: Record<TeamId, boolean>;
   first: { team: TeamId; ms: number } | null;
   second: { team: TeamId; ms: number } | null;
 }
