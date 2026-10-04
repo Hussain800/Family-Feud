@@ -1,0 +1,20 @@
+# Render Blueprint: one web service that serves the game and the Air Jam relay on one address.
+# Dashboard: New + > Blueprint > pick this repo > Apply. Not deployed yet; see "Deploying" in the README.
+services:
+  - type: web
+    name: gdg-family-feud
+    runtime: node
+    region: frankfurt # closest Render region to the UAE
+    plan: free # the free plan sleeps when idle and loses rooms on restart; see the README before event day
+    # NODE_ENV=development only for the install, so the build tools (vite, typescript) are installed. pnpm is fetched with npx.
+    buildCommand: NODE_ENV=development npx --yes pnpm@12.6.0 install --frozen-lockfile && npx --yes pnpm@12.6.0 run build
+    startCommand: node scripts/serve.mjs
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NODE_ENV
+        value: production
+      # Own relay, no Air Jam accounts. The relay only ever carries the public board state, never the answers.
+      - key: AIR_JAM_AUTH_MODE
+        value: disabled

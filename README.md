@@ -28,6 +28,7 @@ Open the console on the laptop, click **Open projector**, and drag that window t
 | `pnpm run build` | Typecheck and production build to `dist/` |
 | `pnpm run build:lan` | Production build with the laptop's LAN address baked in |
 | `pnpm start` | Relay + the production build (run `build:lan` first) |
+| `pnpm run serve` | The Render server: relay and built game on one port (`PORT`, default 4000); run `pnpm run build` first |
 | `pnpm test` | Unit tests (106) |
 | `pnpm run typecheck` / `pnpm run lint` | Types and lint |
 | `pnpm run e2e` | Full match across moderator, projector and two isolated phones (needs `pnpm run dev` and Chrome) |
@@ -139,18 +140,38 @@ Findings from checking the real relay (`pnpm run probe`):
 - **A `ctx.role === "host"` check is not a security boundary.** A phone can emit `controller:host_action_rpc` and the relay then stamps the call as the host. So the only network-reachable actions are the two vote actions, which distrust the caller. The host publishes through `_publish`, whose underscore prefix makes the relay refuse it on both channels. There is no reveal, score, award or reset action on the network.
 - Room codes are 4 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`.
 - Phones cannot send host events (`host:state_sync`, `removeController`, `resetRoom`), and a second host cannot take over a room with an active host.
-- **Known gap:** with local auth disabled, a client that knows the room code can adopt a room in the window after the real host drops. It can change what phones see, not scores or the projector. Production use should set `AIR_JAM_AUTH_MODE=required`.
+- **Known gap:** with local auth disabled, a client that knows the room code can adopt a room in the window after the real host drops. It can change what phones see, not scores or the projector. A public product should set `AIR_JAM_AUTH_MODE=required` with a registered app id; the club deployment deliberately runs with it disabled (see *Deploying*).
 - Relay limits by default: 120 controller joins per minute per IP and 30 host registrations per minute, comfortable for 16 phones behind one campus address.
 - Local dev runs with auth disabled and CORS `*`. That is for a laptop on a trusted LAN only.
 
-## Deployment status
+## Deploying (a public link for friends and the tech lead)
 
-**Nothing is deployed or published, and no account, spend or credential has been used.** The verified path is local: the organiser's laptop runs the relay and the web app, phones join over the same Wi-Fi.
+**Status: nothing is deployed, and no account, spend or credential has been used.** The config is ready (`render.yaml`, `scripts/serve.mjs`) and the same server was run locally in production mode; it has not been run on Render itself.
 
-- `pnpm run dev` and `pnpm start` (after `pnpm run build:lan`) were both run, and the full match passes against each. Fonts, logos and scripts are served locally, so the board and the same-laptop projector work offline. Phone networking still needs the relay and a reachable network.
+How it fits together: `scripts/serve.mjs` runs the Air Jam relay and serves the built game from one port, so one Render web service gives one link, the same shape as the other club games on Render. Phones, the console and the projector all use that address; phones no longer need to be on the laptop's Wi-Fi.
+
+To put it on Render (about 10 minutes, free plan):
+
+1. On render.com, **New + > Blueprint**, connect the GitHub repo `Hussain800/Family-Feud`, and **Apply**. Render reads `render.yaml`. (Manual alternative: New + > Web Service, same repo, build command and start command copied from `render.yaml`, plus the three env vars in it.)
+2. Wait for the build (a few minutes). The address looks like `https://gdg-family-feud.onrender.com` (Render may add letters if the name is taken). Every push to `main` redeploys it by itself.
+3. Open `<address>/host` on the laptop, **Open projector** on the same browser, and phones scan the QR on the projector. Share `<address>/host` only with whoever runs the game; friends testing phone voting use the QR or `<address>/join`.
+
+Things to know:
+
+- **Free plan sleeps.** After about 15 minutes with no traffic the service stops, and the next visit takes 30 to 60 seconds to wake; all rooms are lost whenever it restarts. For the event, open it 10 minutes early, and consider a paid instance for the day (a spending decision for the club; not made here).
+- **Results stay in the moderator's browser, per address.** Browser storage belongs to one address, so results pasted at `localhost:5173` are not there at the Render address. Load the real results at the address you will use on the day, and keep **Session > Export private backup** (Restore works on any address).
+- **The relay runs with Air Jam app authentication disabled** (`AIR_JAM_AUTH_MODE=disabled`), because the framework otherwise insists on an account-backed app id. Consequences: anyone who can reach the address can open `/host` (they get their own empty console; the real answers live only in your browser) and create rooms; and, as noted under *Known gap* above, someone who knows a room code can adopt a room after its real host drops, which can change what phones see but not scores or the projector. Acceptable for a club evening; not for a public product.
+- The laptop needs internet to load the page and keep phones connected. Keep the local route (`pnpm run dev`) as the backup if the venue connection is poor. The board and scoring keep working in an open console even if the connection drops.
+- To test the same thing locally in production mode: `pnpm run build`, then `NODE_ENV=production PORT=8080 pnpm run serve`, and open it by your LAN address (not `localhost`, which phones cannot reach, so the projector would not show a QR).
+
+## Local network status
+
+`pnpm run dev` and `pnpm start` (after `pnpm run build:lan`) were both run, and the full match passes against each. Fonts, logos and scripts are served locally, so the board and the same-laptop projector work offline. Phone networking still needs the relay and a reachable network.
+
 - In dev, phones reach the relay through the web port (`:5173`). In production preview they connect to `:4000` directly (baked in at build time), so allow both ports through the laptop firewall.
-- A public host would need the relay (`@air-jam/server`, a Node/Express/Socket.IO service) and the static frontend, with `AIR_JAM_AUTH_MODE=required`, `AIR_JAM_ALLOWED_ORIGINS`, `VITE_AIR_JAM_APP_ID` and a host-grant secret kept out of the frontend. None of this was configured. **Ask before publishing, deploying, spending or changing accounts.**
-- `vercel.json` came with the starter and is unused.
+- `pnpm run serve` (the Render server) was also run in production mode, on one port, through the full match with two phones, the failure scenarios, the 16-phone limit, the face-off, spreadsheet paste and the tie-break and timer scripts, all against the laptop's LAN address.
+- A fully self-run public host needs the relay (`@air-jam/server`) and the static frontend: `scripts/serve.mjs` does both. Air Jam's own app-id authentication (`AIR_JAM_AUTH_MODE=required` with a database or master key) was not set up. **Ask before publishing, deploying, spending or changing accounts.**
+- `vercel.json` came with the starter and is unused (Vercel cannot host the relay).
 
 ## Verification
 

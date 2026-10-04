@@ -9,6 +9,7 @@
     "build": "tsc && vite build",
     "build:lan": "node scripts/dev.mjs build",
     "start": "node scripts/dev.mjs preview",
+    "serve": "node scripts/serve.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "probe": "node scripts/probe-airjam.mjs",
