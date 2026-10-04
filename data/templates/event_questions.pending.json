@@ -1,0 +1,248 @@
+{
+  "schemaVersion": 1,
+  "packId": "hello-world-2026-event",
+  "title": "hello, world! Family Feud",
+  "purpose": "event",
+  "questions": [
+    {
+      "id": "q01",
+      "category": "Student Life",
+      "prompt": "Name something students do instead of studying.",
+      "status": "awaiting_survey",
+      "survey": {
+        "source": "events_team_pending",
+        "respondents": null,
+        "responseMode": "unconfirmed",
+        "collectedAt": null,
+        "note": "The events team has not supplied results in the provided materials."
+      },
+      "answers": [],
+      "approval": null
+    },
+    {
+      "id": "q02",
+      "category": "Student Life",
+      "prompt": "Name something you’d find in almost every student’s bag.",
+      "status": "awaiting_survey",
+      "survey": {
+        "source": "events_team_pending",
+        "respondents": null,
+        "responseMode": "unconfirmed",
+        "collectedAt": null,
+        "note": "The events team has not supplied results in the provided materials."
+      },
+      "answers": [],
+      "approval": null
+    },
+    {
+      "id": "q03",
+      "category": "Student Life",
+      "prompt": "Name a reason someone might be late to class.",
+      "status": "awaiting_survey",
+      "survey": {
+        "source": "events_team_pending",
+        "respondents": null,
+        "responseMode": "unconfirmed",
+        "collectedAt": null,
+        "note": "The events team has not supplied results in the provided materials."
+      },
+      "answers": [],
+      "approval": null
+    },
+    {
+      "id": "q04",
+      "category": "Student Life",
+      "prompt": "Name something students commonly eat between classes.",
+      "status": "awaiting_survey",
+      "survey": {
+        "source": "events_team_pending",
+        "respondents": null,
+        "responseMode": "unconfirmed",
+        "collectedAt": null,
+        "note": "The events team has not supplied results in the provided materials."
+      },
+      "answers": [],
+      "approval": null
+    },
+    {
+      "id": "q05",
+      "category": "Student Life",
+      "prompt": "Name something students do the night before an exam.",
+      "status": "awaiting_survey",
+      "survey": {
+        "source": "events_team_pending",
+        "respondents": null,
+        "responseMode": "unconfirmed",
+        "collectedAt": null,
+        "note": "The events team has not supplied results in the provided materials."
+      },
+      "answers": [],
+      "approval": null
+    },
+    {
+      "id": "q06",
+      "category": "Campus",
+      "prompt": "Name something people queue for on campus.",
+      "status": "awaiting_survey",
+      "survey": {
+        "source": "events_team_pending",
+        "respondents": null,
+        "responseMode": "unconfirmed",
+        "collectedAt": null,
+        "note": "The events team has not supplied results in the provided materials."
+      },
+      "answers": [],
+      "approval": null
+    },
+    {
+      "id": "q07",
+      "category": "Campus",
+      "prompt": "Name something you’d expect to find at a university event.",
+      "status": "awaiting_survey",
+      "survey": {
+        "source": "events_team_pending",
+        "respondents": null,
+        "responseMode": "unconfirmed",
+        "collectedAt": null,
+        "note": "The events team has not supplied results in the provided materials."
+      },
+      "answers": [],
+      "approval": null
+    },
+    {
+      "id": "q08",
+      "category": "Dubai",
+      "prompt": "Name something people complain about during a Dubai summer.",
+      "status": "awaiting_survey",
+      "survey": {
+        "source": "events_team_pending",
+        "respondents": null,
+        "responseMode": "unconfirmed",
+        "collectedAt": null,
+        "note": "The events team has not supplied results in the provided materials."
+      },
+      "answers": [],
+      "approval": null
+    },
+    {
+      "id": "q09",
+      "category": "Dubai",
+      "prompt": "Name a place you’d take a friend who is visiting Dubai.",
+      "status": "awaiting_survey",
+      "survey": {
+        "source": "events_team_pending",
+        "respondents": null,
+        "responseMode": "unconfirmed",
+        "collectedAt": null,
+        "note": "The events team has not supplied results in the provided materials."
+      },
+      "answers": [],
+      "approval": null
+    },
+    {
+      "id": "q10",
+      "category": "Food",
+      "prompt": "Name something you would order at 2 a.m.",
+      "status": "awaiting_survey",
+      "survey": {
+        "source": "events_team_pending",
+        "respondents": null,
+        "responseMode": "unconfirmed",
+        "collectedAt": null,
+        "note": "The events team has not supplied results in the provided materials."
+      },
+      "answers": [],
+      "approval": null
+    },
+    {
+      "id": "q11",
+      "category": "Food",
+      "prompt": "Name something people buy when they’re hungry at a supermarket.",
+      "status": "awaiting_survey",
+      "survey": {
+        "source": "events_team_pending",
+        "respondents": null,
+        "responseMode": "unconfirmed",
+        "collectedAt": null,
+        "note": "The events team has not supplied results in the provided materials."
+      },
+      "answers": [],
+      "approval": null
+    },
+    {
+      "id": "q12",
+      "category": "Phones & Tech",
+      "prompt": "Name an app that almost every student has on their phone.",
+      "status": "awaiting_survey",
+      "survey": {
+        "source": "events_team_pending",
+        "respondents": null,
+        "responseMode": "unconfirmed",
+        "collectedAt": null,
+        "note": "The events team has not supplied results in the provided materials."
+      },
+      "answers": [],
+      "approval": null
+    },
+    {
+      "id": "q13",
+      "category": "Everyday Life",
+      "prompt": "Name something people do when they’re bored.",
+      "status": "awaiting_survey",
+      "survey": {
+        "source": "events_team_pending",
+        "respondents": null,
+        "responseMode": "unconfirmed",
+        "collectedAt": null,
+        "note": "The events team has not supplied results in the provided materials."
+      },
+      "answers": [],
+      "approval": null
+    },
+    {
+      "id": "q14",
+      "category": "Everyday Life",
+      "prompt": "Name something people often forget when leaving the house.",
+      "status": "awaiting_survey",
+      "survey": {
+        "source": "events_team_pending",
+        "respondents": null,
+        "responseMode": "unconfirmed",
+        "collectedAt": null,
+        "note": "The events team has not supplied results in the provided materials."
+      },
+      "answers": [],
+      "approval": null
+    },
+    {
+      "id": "q15",
+      "category": "Everyday Life",
+      "prompt": "Name something people do as soon as they get home.",
+      "status": "awaiting_survey",
+      "survey": {
+        "source": "events_team_pending",
+        "respondents": null,
+        "responseMode": "unconfirmed",
+        "collectedAt": null,
+        "note": "The events team has not supplied results in the provided materials."
+      },
+      "answers": [],
+      "approval": null
+    },
+    {
+      "id": "q16",
+      "category": "Everyday Life",
+      "prompt": "Name something people take photos of.",
+      "status": "awaiting_survey",
+      "survey": {
+        "source": "events_team_pending",
+        "respondents": null,
+        "responseMode": "unconfirmed",
+        "collectedAt": null,
+        "note": "The events team has not supplied results in the provided materials."
+      },
+      "answers": [],
+      "approval": null
+    }
+  ]
+}

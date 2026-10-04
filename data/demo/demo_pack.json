@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "packId": "synthetic-demo-only",
+  "title": "DEMO: invented practice results",
+  "purpose": "demo",
+  "questions": [
+    {
+      "id": "q01",
+      "category": "Student Life",
+      "prompt": "Name something students do instead of studying.",
+      "status": "ready",
+      "survey": {
+        "source": "synthetic_demo",
+        "respondents": 80,
+        "responseMode": "single",
+        "collectedAt": null,
+        "note": "Invented by the planning assistant for UI and scoring tests. No students were surveyed. Counts are not real survey results."
+      },
+      "answers": [
+        {
+          "id": "demo-q01-a01",
+          "rank": 1,
+          "text": "Scrolling social media",
+          "count": 23,
+          "aliases": []
+        },
+        {
+          "id": "demo-q01-a02",
+          "rank": 2,
+          "text": "Sleeping",
+          "count": 16,
+          "aliases": []
+        },
+        {
+          "id": "demo-q01-a03",
+          "rank": 3,
+          "text": "Watching videos",
+          "count": 11,
+          "aliases": []
+        },
+        {
+          "id": "demo-q01-a04",
+          "rank": 4,
+          "text": "Gaming",
+          "count": 7,
+          "aliases": []
+        },
+        {
+          "id": "demo-q01-a05",
+          "rank": 5,
+          "text": "Talking to friends",
+          "count": 4,
+          "aliases": []
+        },
+        {
+          "id": "demo-q01-a06",
+          "rank": 6,
+          "text": "Eating",
+          "count": 2,
+          "aliases": []
+        }
+      ],
+      "approval": null
+    },
+    {
+      "id": "q03",
+      "category": "Student Life",
+      "prompt": "Name a reason someone might be late to class.",
+      "status": "ready",
+      "survey": {
+        "source": "synthetic_demo",
+        "respondents": 80,
+        "responseMode": "single",
+        "collectedAt": null,
+        "note": "Invented by the planning assistant for UI and scoring tests. No students were surveyed. Counts are not real survey results."
+      },
+      "answers": [
+        {
+          "id": "demo-q03-a01",
+          "rank": 1,
+          "text": "Traffic",
+          "count": 26,
+          "aliases": []
+        },
+        {
+          "id": "demo-q03-a02",
+          "rank": 2,
+          "text": "Oversleeping",
+          "count": 17,
+          "aliases": []
+        },
+        {
+          "id": "demo-q03-a03",
+          "rank": 3,
+          "text": "Missing the bus",
+          "count": 9,
+          "aliases": []
+        },
+        {
+          "id": "demo-q03-a04",
+          "rank": 4,
+          "text": "Looking for parking",
+          "count": 7,
+          "aliases": []
+        },
+        {
+          "id": "demo-q03-a05",
+          "rank": 5,
+          "text": "Getting coffee",
+          "count": 4,
+          "aliases": []
+        },
+        {
+          "id": "demo-q03-a06",
+          "rank": 6,
+          "text": "Going to the wrong room",
+          "count": 2,
+          "aliases": []
+        }
+      ],
+      "approval": null
+    },
+    {
+      "id": "q10",
+      "category": "Food",
+      "prompt": "Name something you would order at 2 a.m.",
+      "status": "ready",
+      "survey": {
+        "source": "synthetic_demo",
+        "respondents": 100,
+        "responseMode": "single",
+        "collectedAt": null,
+        "note": "Invented by the planning assistant for UI and scoring tests. No students were surveyed. Counts are not real survey results."
+      },
+      "answers": [
+        {
+          "id": "demo-q10-a01",
+          "rank": 1,
+          "text": "Pizza",
+          "count": 28,
+          "aliases": []
+        },
+        {
+          "id": "demo-q10-a02",
+          "rank": 2,
+          "text": "Shawarma",
+          "count": 19,
+          "aliases": []
+        },
+        {
+          "id": "demo-q10-a03",
+          "rank": 3,
+          "text": "Burgers",
+          "count": 14,
+          "aliases": []
+        },
+        {
+          "id": "demo-q10-a04",
+          "rank": 4,
+          "text": "Noodles",
+          "count": 8,
+          "aliases": []
+        },
+        {
+          "id": "demo-q10-a05",
+          "rank": 5,
+          "text": "Dessert",
+          "count": 5,
+          "aliases": []
+        }
+      ],
+      "approval": null
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+/* Blue Ice, the look of hello, world! Generated from the brand sheet's tokens.json; edit there, not here. */
+
+/* Archivo (SIL OFL, ../kit/fonts/OFL.txt) and DM Mono (SIL OFL, fonts/DMMono-OFL.txt) */
+@font-face { font-family: "Archivo"; font-style: normal; font-weight: 100 900; font-stretch: 62% 125%; src: url("/fonts/archivo-latin-wdth-normal.woff2") format("woff2-variations"); font-display: swap; }
+@font-face { font-family: "DM Mono"; font-style: normal; font-weight: 400; src: url("/fonts/DMMono-Regular.ttf") format("truetype"); font-display: swap; }
+
+/* Ice is the default; put data-theme="frost" on reading sections. */
+:root, [data-theme="ice"] {
+  --cobalt: #1E3FD9;
+  --cobalt-deep: #0A1B66;
+  --cobalt-edge: #142FB0;
+  --frost: #F3F8FF;
+  --glacier: #CFE0FF;
+  --rime: #B8CEFF;
+  --bloom: #7FB2FF;
+  --ground: var(--cobalt);
+  --ground-raised: var(--cobalt-edge);
+  --shard: #244AE0;
+  --text: var(--frost);
+  --text-soft: var(--glacier);
+  --label: var(--rime);
+  --line: #DCE8FF8C;
+  --rule: var(--frost);
+  --crack: #EAF2FF;
+  --accent: var(--frost);
+  --on-accent: var(--cobalt);
+  --focus: var(--frost);
+  --alert: #FFC2B8;
+  --frost-glow: 0 0 44px 0 rgba(191, 214, 255, 0.45);
+}
+[data-theme="frost"] {
+  --cobalt: #1E3FD9;
+  --cobalt-deep: #0A1B66;
+  --cobalt-edge: #142FB0;
+  --frost: #F3F8FF;
+  --glacier: #CFE0FF;
+  --rime: #B8CEFF;
+  --bloom: #7FB2FF;
+  --ground: var(--frost);
+  --ground-raised: #E2EBFF;
+  --shard: #E9F0FF;
+  --text: var(--cobalt-deep);
+  --text-soft: #2B3E99;
+  --label: #3D52B0;
+  --line: #1E3FD966;
+  --rule: var(--cobalt);
+  --crack: var(--cobalt);
+  --accent: var(--cobalt);
+  --on-accent: var(--frost);
+  --focus: var(--cobalt);
+  --alert: #B3261E;
+  --frost-glow: 0 0 32px 0 rgba(30, 63, 217, 0.18);
+}
+:root {
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 32px;
+  --space-6: 48px;
+  --sheet-margin: 64px;
+  --radius-none: 0;
+  --radius-hair: 2px;
+  --radius-round: 50%;
+  --stroke-hair: 1px;
+  --stroke-rule: 2px;
+  --stroke-crack: 1.6px;
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "DM Mono", "SF Mono", Menlo, monospace;
+}
+[data-theme] { background: var(--ground); color: var(--text); }
+
+/* Blue Ice components. Every colour comes from tokens.css. */
+.bi-sheet { background: var(--ground); color: var(--text); font-family: var(--font-display); }
+
+.bi-wordmark { display: block; max-width: 100%; height: auto; overflow: visible; }
+
+.bi-label {
+  font-family: var(--font-mono); font-size: 13px; line-height: 1.4; font-weight: 400;
+  letter-spacing: 0.2em; text-transform: uppercase; color: var(--label); margin: 0;
+}
+
+.bi-button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 56px; padding: 0 28px; border: 2px solid var(--accent); border-radius: 0;
+  background: var(--accent); color: var(--on-accent);
+  font-family: var(--font-display); font-weight: 800; font-size: 20px; letter-spacing: 0.02em;
+  font-variation-settings: "wdth" 112; text-transform: uppercase; text-decoration: none; cursor: pointer;
+  transition: box-shadow 160ms ease-out, transform 160ms ease-out;
+}
+.bi-button:hover { box-shadow: var(--frost-glow); }
+.bi-button:active { transform: translateY(1px); }
+.bi-button:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+.bi-button--outline { background: transparent; color: var(--text); border-color: var(--rule); }
+.bi-button[disabled] { opacity: 1; background: transparent; color: var(--label); border-color: var(--line); cursor: not-allowed; box-shadow: none; }
+
+.bi-tag {
+  display: inline-flex; align-items: center; height: 56px; padding: 0 20px;
+  border: 2px solid var(--rule); border-radius: 0; color: var(--text);
+  font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: 0.02em;
+  text-transform: uppercase; white-space: nowrap;
+}
+.bi-tags { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.bi-ruler { display: block; width: 100%; height: 14px; overflow: visible; }
+
+/* columns sized to their facts (3 : 4 : 5) so the place stays on one line; the type shrinks with the grid */
+.bi-facts { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 4fr) minmax(0, 5fr); column-gap: 24px; row-gap: 8px; margin: 0; container-type: inline-size; }
+.bi-facts > .bi-ruler { grid-column: 1 / -1; margin-bottom: 24px; }
+.bi-facts__cell { display: grid; gap: 10px; align-content: start; min-width: 0; }
+.bi-facts__main {
+  margin: 0; font-family: var(--font-display); font-weight: 800; font-size: min(36px, calc((100cqi - 48px) * 0.0355)); line-height: 1.1; white-space: nowrap;
+  letter-spacing: -0.01em; color: var(--text); font-variant-numeric: tabular-nums; text-transform: uppercase;
+}
+.bi-facts__note { margin: -4px 0 0; font-family: var(--font-display); font-weight: 500; font-size: clamp(15px, calc((100cqi - 48px) * 0.0215), 22px); color: var(--text-soft); text-transform: uppercase; }
+@media (max-width: 640px) {
+  .bi-facts { grid-template-columns: 1fr; row-gap: 24px; }
+  .bi-facts__main { font-size: min(30px, 8.6cqi); }
+  .bi-facts__note { font-size: min(20px, 5.6cqi); }
+}
+
+.bi-annot { position: relative; margin: 0; padding-left: 0; display: inline-grid; grid-template-columns: auto; justify-items: start; }
+.bi-annot__ring { width: 34px; height: 34px; border: 1.2px solid var(--rule); border-radius: 50%; order: 3; }
+.bi-annot__leader { width: 1.2px; height: 48px; background: var(--rule); margin-left: 16.4px; order: 2; position: relative; }
+.bi-annot__leader::before { content: ""; position: absolute; top: -2.5px; left: -1.9px; width: 5px; height: 5px; border-radius: 50%; background: var(--rule); }
+.bi-annot > .bi-label { order: 1; margin-bottom: 6px; color: var(--text); }
+
+@media (prefers-reduced-motion: reduce) {
+  .bi-button { transition: none; }
+}
