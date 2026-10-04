@@ -3,6 +3,7 @@ import {
   MAX_STRIKES,
   SEEN_LIMIT,
   type Action,
+  type FaceOff,
   type GameState,
   type RoundState,
   type Session,
@@ -38,6 +39,40 @@ const settle = (r: RoundState): Settlement => {
   if (r.stealResult === "fail") return { winner: r.controllingTeam, amount: r.pot, kind: "steal_fail" };
   return { winner: r.controllingTeam, amount: r.pot, kind: r.cleared ? "clear" : "ended_early" };
 };
+
+const topCount = (r: RoundState) => Math.max(...r.answers.map((x) => x.count));
+
+/** Who gives the next face-off answer: the first buzzer, then the other team, then nobody. */
+export const answering = (fo: FaceOff | null | undefined): TeamId | null => {
+  if (!fo?.buzzed || fo.winner) return null;
+  if (!fo.tries[fo.buzzed]) return fo.buzzed;
+  const other = otherTeam(fo.buzzed);
+  return fo.tries[other] ? null : other;
+};
+
+/**
+ * Record one face-off answer (a hit with its survey count, or a miss) and name the winner as soon as the rules allow:
+ * the top answer wins on the spot; otherwise the second player gets a go and the higher count wins, a tie going to
+ * the first buzzer; if both miss nobody wins and the host re-opens the buzzers for the next players.
+ */
+function faceOffTry(s: GameState, r: RoundState, hitCount: number | null): GameState {
+  const fo = r.faceOff!;
+  const first = fo.buzzed!;
+  const tries = { ...fo.tries, [answering(fo)!]: { hit: hitCount !== null, count: hitCount ?? 0 } };
+  const a = tries[first];
+  const b = tries[otherTeam(first)];
+  let winner: TeamId | null = null;
+  if (a && !b) {
+    if (a.hit && a.count >= topCount(r)) winner = first;
+  } else if (a && b) {
+    if (b.hit && (!a.hit || b.count > a.count)) winner = otherTeam(first);
+    else if (a.hit) winner = first;
+  }
+  const faceOff = { ...fo, tries, winner };
+  if (!winner) return { ...s, round: { ...r, faceOff }, note: a && b ? "BOTH MISSED. NEXT PLAYERS." : null };
+  const cleared = r.revealed.length >= r.answers.length; // a one-answer board can end at the face-off
+  return { ...s, phase: cleared ? "round_over" : "play_or_pass", round: { ...r, faceOff, controllingTeam: winner, cleared } };
+}
 
 /** Pure rule step. Same state and action in, next state out. No timers, no I/O. */
 export function step(prev: GameState, a: Action): GameState {
@@ -83,19 +118,51 @@ export function step(prev: GameState, a: Action): GameState {
           stealResult: null,
           cleared: false,
           settlement: null,
+          faceOff: null,
         },
       };
     }
 
     case "SET_CONTROL":
-      if (!r || (s.phase !== "intro" && s.phase !== "board_ready")) return refuse(s, "Starting team is fixed once play begins.");
+      if (!r || !(["intro", "board_ready", "face_off", "play_or_pass"] as string[]).includes(s.phase)) return refuse(s, "Starting team is fixed once play begins.");
       return withRound(s, { controllingTeam: a.team });
 
     case "SHOW_BOARD":
       return s.phase === "intro" ? { ...s, phase: "board_ready" } : s;
 
+    // The host's own call: skip the face-off, or override it, and start the turn with whoever is in control.
     case "BEGIN_PLAY":
-      return s.phase === "board_ready" ? { ...s, phase: "team_turn" } : s;
+      return s.phase === "board_ready" || s.phase === "face_off" || s.phase === "play_or_pass" ? { ...s, phase: "team_turn" } : s;
+
+    case "FACEOFF_START":
+      if (s.phase !== "board_ready" || !r) return s;
+      return { ...s, phase: "face_off", round: { ...r, faceOff: { armed: false, buzzed: null, tries: {}, winner: null, choice: null } } };
+
+    case "FACEOFF_ARM": {
+      const fo = r?.faceOff;
+      if (s.phase !== "face_off" || !r || !fo || fo.winner) return s;
+      // Re-opening is safe before anyone has answered (accidental buzz) or after both missed; not half way through.
+      if (fo.buzzed && Object.keys(fo.tries).length === 1) return refuse(s, "Finish this face-off first.");
+      return withRound(s, { faceOff: { armed: true, buzzed: null, tries: {}, winner: null, choice: null } });
+    }
+
+    case "BUZZ": {
+      const fo = r?.faceOff;
+      if (s.phase !== "face_off" || !r || !fo?.armed || fo.buzzed) return prev; // too early, or the other buzzer was first
+      return withRound(s, { faceOff: { ...fo, armed: false, buzzed: a.team } });
+    }
+
+    case "FACEOFF_MISS":
+      if (s.phase !== "face_off" || !r?.faceOff || !answering(r.faceOff)) return refuse(s, "Wait for a buzz first.");
+      return faceOffTry(s, r, null);
+
+    case "PLAY_OR_PASS": {
+      const fo = r?.faceOff;
+      if (s.phase !== "play_or_pass" || !r || !fo?.winner) return s;
+      const controllingTeam = a.choice === "play" ? fo.winner : otherTeam(fo.winner);
+      const note = `${s.teams[fo.winner].name.toUpperCase()} ${a.choice === "play" ? "PLAYS" : "PASSES"}`;
+      return { ...s, phase: "team_turn", note, round: { ...r, controllingTeam, faceOff: { ...fo, choice: a.choice } } };
+    }
 
     case "REVEAL": {
       if (!r) return s;
@@ -103,6 +170,10 @@ export function step(prev: GameState, a: Action): GameState {
       if (!ans) return s;
       if (r.revealed.includes(ans.id)) return refuse(s, "ALREADY ON THE BOARD");
       const revealed = [...r.revealed, ans.id];
+      if (s.phase === "face_off") {
+        if (!answering(r.faceOff)) return refuse(s, "Wait for a buzz first.");
+        return faceOffTry(s, { ...r, revealed, pot: r.pot + ans.count }, ans.count);
+      }
       if (s.phase === "team_turn") {
         // A cleared board ends the round; the pot waits for one explicit award.
         const cleared = revealed.length >= r.answers.length;

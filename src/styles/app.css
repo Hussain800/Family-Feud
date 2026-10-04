@@ -60,6 +60,11 @@ a { color: inherit; }
 /* board */
 .board { flex: 1; display: flex; flex-direction: column; min-height: 0; padding-top: 14px; }
 .board__q { font-size: 50px; line-height: 1.08; font-weight: 800; letter-spacing: -0.01em; margin: 6px 0 16px; max-height: 108px; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; text-wrap: balance; }
+.fo { flex: none; display: flex; align-items: center; gap: 28px; border: 2px solid var(--frost); padding: 0 28px; height: 84px; margin-bottom: 16px; animation: fade 0.25s ease-out; }
+.fo__label { font-family: var(--font-mono); font-size: 22px; letter-spacing: 0.22em; color: var(--glacier); }
+.fo__text { font-size: 38px; font-weight: 900; font-variation-settings: "wdth" 100; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fo--live, .fo--won { background: var(--frost); color: var(--cobalt-deep); }
+.fo--live .fo__label, .fo--won .fo__label { color: var(--cobalt-deep); }
 .board__slots { flex: 1; min-height: 0; display: grid; gap: 28px; }
 .board__slots.cols-1 { grid-template-columns: minmax(0, 1120px); justify-content: center; }
 .board__slots.cols-2 { grid-template-columns: 1fr 1fr; }
@@ -210,6 +215,14 @@ a { color: inherit; }
 .answer__text { font-weight: 700; overflow-wrap: anywhere; }
 .answer__count { font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
 .answer__alias { font-size: 13px; color: var(--text-soft); }
+.buzz-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.buzz { border: 2px solid var(--rule); padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.buzz__name { font-size: 20px; font-weight: 800; }
+.buzz__key { font-family: var(--font-mono); letter-spacing: 0.1em; }
+.buzz kbd { font-family: var(--font-mono); border: 1px solid var(--rule); padding: 2px 8px; font-size: 18px; }
+.buzz__lamp { font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.14em; color: var(--text-soft); }
+.buzz--lit { background: var(--cobalt); color: var(--frost); }
+.buzz--lit .buzz__lamp, .buzz--lit .buzz__key { color: var(--frost); }
 .poll-host { border-top: 2px solid var(--rule); padding-top: 12px; display: flex; flex-direction: column; gap: 10px; }
 .cands { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .poll-res { list-style: none; padding: 0; display: grid; gap: 6px; }

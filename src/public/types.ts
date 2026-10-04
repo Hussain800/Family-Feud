@@ -48,6 +48,16 @@ export interface PublicSnapshot {
   note: string | null;
   settlement: { winner: TeamId; amount: number; kind: string } | null;
   poll: PublicPoll | null;
+  /** The buzzer duel. Only who buzzed and whether each answer hit; the hit itself is already a revealed slot. */
+  faceOff: PublicFaceOff | null;
+}
+
+export interface PublicFaceOff {
+  armed: boolean;
+  buzzed: TeamId | null;
+  tries: Record<TeamId, "hit" | "miss" | null>;
+  winner: TeamId | null;
+  choice: "play" | "pass" | null;
 }
 
 export const EMPTY_SNAPSHOT: PublicSnapshot = {
@@ -67,4 +77,5 @@ export const EMPTY_SNAPSHOT: PublicSnapshot = {
   note: null,
   settlement: null,
   poll: null,
+  faceOff: null,
 };

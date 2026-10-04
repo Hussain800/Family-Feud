@@ -1,6 +1,7 @@
 import { RoomQrCode } from "@air-jam/sdk/ui";
 import type { TeamId } from "../engine/types";
-import type { PublicPoll, PublicSlot, PublicSnapshot } from "../public/types";
+import type { PublicFaceOff, PublicPoll, PublicSlot, PublicSnapshot } from "../public/types";
+import { faceOffTurn } from "../public/faceoff";
 import { hostOf, isLocalOnly } from "../public/url";
 import { tally, useRemaining } from "./poll-bits";
 import { Stage } from "./Stage";
@@ -123,14 +124,34 @@ function Tile({ slot }: { slot: PublicSlot }) {
   );
 }
 
+const teamName = (s: PublicSnapshot, id: TeamId) => s.teams.find((t) => t.id === id)!.name.toUpperCase();
+
+function FaceOffBar({ s, f }: { s: PublicSnapshot; f: PublicFaceOff }) {
+  const turn = faceOffTurn(f);
+  const bothMissed = !f.winner && f.tries.A === "miss" && f.tries.B === "miss";
+  let text = "ONE PLAYER FROM EACH TEAM TO THE BUZZERS";
+  if (f.winner) text = f.choice ? `${teamName(s, f.winner)} ${f.choice === "play" ? "PLAYS" : "PASSES"}` : `${teamName(s, f.winner)} WINS THE FACE-OFF: PLAY OR PASS?`;
+  else if (turn) text = f.buzzed === turn ? `${teamName(s, turn)} BUZZED FIRST: ANSWER NOW` : `${teamName(s, turn)}: YOUR ANSWER`;
+  else if (bothMissed) text = "BOTH MISSED: NEXT TWO PLAYERS";
+  else if (f.armed) text = "BUZZERS LIVE";
+  return (
+    <div className={`fo ${f.armed ? "fo--live" : ""} ${f.winner ? "fo--won" : ""}`} role="status" aria-live="polite">
+      <span className="fo__label">FACE-OFF</span>
+      <span className="fo__text">{text}</span>
+    </div>
+  );
+}
+
 function Board({ s }: { s: PublicSnapshot }) {
   const q = s.round!;
   const half = Math.ceil(q.slots.length / 2);
   const cols: PublicSlot[][] = q.columns === 2 ? [q.slots.slice(0, half), q.slots.slice(half)] : [q.slots];
+  const inFaceOff = (s.phase === "face_off" || s.phase === "play_or_pass") && s.faceOff;
   return (
     <div className="board">
       <p className="bi-label">{s.phase === "preview" ? `TEMPLATE PREVIEW · ${q.category.toUpperCase()} · NO RESULTS LOADED` : "SURVEY SAYS"}</p>
       <h1 className="board__q">{q.prompt}</h1>
+      {inFaceOff && <FaceOffBar s={s} f={s.faceOff!} />}
       <div className={`board__slots cols-${q.columns}`}>
         {cols.map((c, i) => (
           <ol key={i} className="slots" style={{ gridTemplateRows: `repeat(${q.columns === 2 ? half : q.slots.length}, 1fr)` }}>
@@ -148,9 +169,13 @@ function TeamCard({ s, id }: { s: PublicSnapshot; id: TeamId }) {
   const onBoard = live && s.control === id && s.phase === "team_turn";
   const stealing = s.phase === "steal" && s.control !== id;
   const won = s.settlement?.winner === id ? s.settlement : null;
-  const tag = onBoard ? "ON THE BOARD" : stealing ? "STEALING" : won ? `ROUND +${won.amount}` : "";
+  const f = s.phase === "face_off" || s.phase === "play_or_pass" ? s.faceOff : null;
+  const mine = f?.tries[id];
+  const faceTag = !f ? "" : f.winner === id ? "WINS THE FACE-OFF" : mine ? (mine === "hit" ? "ON THE BOARD" : "MISSED") : f.buzzed === id ? "BUZZED FIRST" : f.armed ? "BUZZER LIVE" : "";
+  const faceActive = !!f && (f.winner === id || faceOffTurn(f) === id);
+  const tag = faceTag || (onBoard ? "ON THE BOARD" : stealing ? "STEALING" : won ? `ROUND +${won.amount}` : "");
   return (
-    <div className={`team ${onBoard || stealing ? "team--active" : ""}`}>
+    <div className={`team ${onBoard || stealing || faceActive ? "team--active" : ""}`}>
       <p className="team__tag">{tag || " "}</p>
       <p className="team__name">{t.name}</p>
       <p className="team__score">{t.score}</p>
@@ -236,7 +261,7 @@ function Final({ s }: { s: PublicSnapshot }) {
 /** Pure renderer of the public snapshot. Used by the projector and by the moderator's preview. */
 export function ScreenView({ snapshot: s }: { snapshot: PublicSnapshot }) {
   const phase = s.phase;
-  const showBoard = s.round && (phase === "preview" || phase === "board_ready" || phase === "team_turn" || phase === "steal" || phase === "round_over");
+  const showBoard = s.round && (phase === "preview" || phase === "board_ready" || phase === "face_off" || phase === "play_or_pass" || phase === "team_turn" || phase === "steal" || phase === "round_over");
   return (
     <Stage>
       <div className="screen" data-theme="ice" data-phase={phase}>

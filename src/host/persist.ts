@@ -9,6 +9,7 @@ export const KEYS = {
   packBackup: "ff.pack.backup.v1",
   session: "ff.session.v1",
   probe: "ff.probe.v1",
+  buzzers: "ff.buzzers.v1",
 } as const;
 
 export type WriteResult = { ok: true; at: number } | { ok: false; error: string };
@@ -50,7 +51,7 @@ export function loadBackupPack(): Pack | null {
   return r?.ok ? r.pack : null;
 }
 
-const PHASES: Phase[] = ["lobby", "intro", "board_ready", "team_turn", "steal", "round_over", "match_over"];
+const PHASES: Phase[] = ["lobby", "intro", "board_ready", "face_off", "play_or_pass", "team_turn", "steal", "round_over", "match_over"];
 const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const isObj = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 

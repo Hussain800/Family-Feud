@@ -1,7 +1,7 @@
 import { DEMO_LABEL } from "../content/types";
-import type { GameState } from "../engine/types";
+import type { FaceOff, GameState } from "../engine/types";
 import { publicPoll, type PollState } from "../poll/poll";
-import type { PublicSlot, PublicSnapshot, RelayStatus } from "./types";
+import type { PublicFaceOff, PublicSlot, PublicSnapshot, RelayStatus } from "./types";
 
 export interface ProjectInput {
   rev: number;
@@ -65,5 +65,12 @@ export function projectPublic(i: ProjectInput): PublicSnapshot {
     note: game.note,
     settlement: r?.settlement ? { winner: r.settlement.winner, amount: r.settlement.amount, kind: r.settlement.kind } : null,
     poll: i.poll && i.poll.status !== "cancelled" ? publicPoll(i.poll, i.now) : null,
+    faceOff: !preview && r?.faceOff ? publicFaceOff(r.faceOff) : null,
   };
+}
+
+const outcome = (t: { hit: boolean } | undefined) => (t ? (t.hit ? ("hit" as const) : ("miss" as const)) : null);
+
+function publicFaceOff(f: FaceOff): PublicFaceOff {
+  return { armed: f.armed, buzzed: f.buzzed, tries: { A: outcome(f.tries.A), B: outcome(f.tries.B) }, winner: f.winner, choice: f.choice };
 }

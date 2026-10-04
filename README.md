@@ -28,11 +28,12 @@ Open the console on the laptop, click **Open projector**, and drag that window t
 | `pnpm run build` | Typecheck and production build to `dist/` |
 | `pnpm run build:lan` | Production build with the laptop's LAN address baked in |
 | `pnpm start` | Relay + the production build (run `build:lan` first) |
-| `pnpm test` | Unit tests (70) |
+| `pnpm test` | Unit tests (88) |
 | `pnpm run typecheck` / `pnpm run lint` | Types and lint |
 | `pnpm run e2e` | Full match across moderator, projector and two isolated phones (needs `pnpm run dev` and Chrome) |
 | `pnpm run e2e:failures` | Relay down, storage failing, rejected import, answer editor, template preview, sound unlock, direct navigation |
 | `pnpm run e2e:drop` | A phone drops mid-poll, and the 17th phone meets a full room |
+| `pnpm run e2e:faceoff` | Face-off with real key presses: buzz order, play or pass, learning a buzzer, a Space-bar buzzer, manual fallback |
 | `pnpm run probe` | Raw-socket checks of the relay: room limit, role spoofing, host takeover |
 
 Windows notes: pnpm 12 blocks esbuild's install script unless allowed, which `pnpm-workspace.yaml` does (`allowBuilds`). The stock `air-jam-server dev` wrapper fails on Windows (`spawn pnpm ENOENT`), so `scripts/dev.mjs` replaces it. The upstream command is kept as `pnpm run dev:sdk`.
@@ -54,14 +55,35 @@ The projector is not a second network host. It never reads the answer pack or th
 ## Running a match
 
 1. **Load results** (below). With nothing loaded, questions preview with six empty lines and cannot start a scored round.
-2. **Play** tab: pick a question and the starting team, **Start round**. The projector shows the question introduction.
-3. **Show the board** (concealed lines), then **Begin guessing**.
-4. Judge guesses aloud. **Reveal** a matching answer, or **Add strike (X)**. Keys: `1`–`9`, `0` reveal slots 1–10, `X` strike, `U` undo. Held keys and text fields are ignored.
+2. **Play** tab: pick a question, **Start round**. The projector shows the question introduction.
+3. **Show the board** (concealed lines), then **Start face-off (buzzers)** (below). **Skip face-off, begin guessing** is the old flow: the starting team picked in the question list (or **Switch start to**) plays.
+4. After the face-off the winner chooses; then judge guesses aloud. **Reveal** a matching answer, or **Add strike (X)**. Keys: `1`–`9`, `0` reveal slots 1–10, `X` strike (a miss, during the face-off), `B` open buzzers, `U` undo. Held keys and text fields are ignored.
 5. Three strikes give the other team one steal guess: **Steal hit** on the answer, or **Steal missed (X)**.
 6. **Award N to Team X** once. **Next round**, or **Finish match**. Between rounds the projector shows the scoreboard ("After round 1 of 3 … Team B leads … round 2 is next"), not the join page.
 7. **Crowd assist** (optional, during a team turn): type 2–6 guesses the room is shouting, choose seconds, **Open poll**. Phones vote once each. **Close poll now** or wait for the deadline; totals show on the projector and phones, and the team decides. Votes never reveal an answer or score points.
 
-House rules (proposed, not attributed to the organisers): two teams, three rounds by default, human judging, three strikes and one steal, pot to the controlling team unless a steal succeeds. A repeated guess shows ALREADY ON THE BOARD and adds neither points nor a strike. Reveals after the award are for discussion and never change a score. Undo restores the previous state exactly; an answer already shown cannot become unknown to the audience.
+### Face-off and buzzers
+
+The tech lead confirmed a buzzer face-off between one player from each team, the winner choosing play or pass, on physical buzzers the club already owns. Every round opens with it unless you skip it.
+
+1. **Start face-off (buzzers)**. The projector says to bring one player per team to the buzzers. Read the question, then **Open buzzers** (`B`). The projector shows BUZZERS LIVE. A buzz before this is ignored, so there are no false starts.
+2. The first buzz wins; the second is ignored. The projector shows which team buzzed (sound plus a lit team card). The player answers aloud.
+3. Judge it: **Reveal** the matching answer (click or press its number), or **Miss** (`X`). A miss is not a strike.
+4. If the first buzzer's answer is the top answer, that team wins the face-off immediately. Otherwise the other team's player answers: the higher survey count wins, a tie goes to the first buzzer, and if one misses the other's hit wins. If both miss, **Open buzzers** again for the next two players.
+5. The winner is asked **play or pass**; click **Team X PLAYS** or **Team X PASSES to Team Y**. The face-off answers already revealed stay on the board and in the pot, which goes to whichever team ends up in control (Wikipedia describes the TV show the same way: the winning family scores every revealed answer, including the face-off ones).
+6. Strikes, steal and award continue exactly as before.
+
+If something goes wrong: **Skip face-off** (confirm) goes straight to guessing with the starting team; **Undo** (`U`) steps back through a buzz or a result; **Team X buzzed first** records a winner by hand when a buzzer will not connect (for example a wireless set with its own receiver and lights); **Open buzzers** after an accidental buzz clears it.
+
+**Connecting the buzzers.** The game reads buzzers that act like a keyboard key (the common USB kind): one key per team. Plug them in, open the **Session** tab, click **Learn** beside a team, press that team's buzzer, and repeat for the other team. Pressing a learned buzzer lights its lamp on that tab, so you can test before the event. The keys are saved in this browser. Until you learn them, `Q` (first team) and `P` (second team) work as test buzzers, so two people can try a face-off on one keyboard. Constraints:
+
+- The moderator window must be focused. Browsers deliver key presses only to the focused window; the console warns while buzzers are open and the window is not focused. If you click the projector window (to go fullscreen), click the console again.
+- Buzzer keys take priority over Play-tab shortcuts, so a stray buzzer press can never reveal an answer. If a buzzer sends a digit, `X` or `U`, that shortcut stops working; use the buttons.
+- Two buzzers that send the same key cannot be told apart; the app refuses to give two teams one key.
+- Ties closer than a few milliseconds cannot be separated in a browser; the first key event to reach the page wins.
+- **Not tested with the real buzzers**: their model is unknown. Keyboard behaviour was tested with real key presses in Chrome only. Wireless sets that do not connect to the laptop need the manual buttons.
+
+House rules (proposed, not attributed to the organisers): two teams, three rounds by default, human judging, three strikes and one steal, a buzzer face-off then play or pass, pot to the controlling team unless a steal succeeds. A repeated guess shows ALREADY ON THE BOARD and adds neither points nor a strike. Reveals after the award are for discussion and never change a score. Undo restores the previous state exactly; an answer already shown cannot become unknown to the audience.
 
 Any change to the round while a poll is open (a reveal, strike, undo, score correction) cancels the poll, and the host is told.
 
@@ -125,7 +147,7 @@ Findings from checking the real relay (`pnpm run probe`):
 
 Ran on 4 Oct 2026, Windows 11, Chrome (headless via `playwright-core`, no browser download).
 
-**Run and passing:** `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (70 tests: rules, validation, polls, projection and privacy sentinel, store role gating, module boundaries, text escaping, sound cue mapping, storage failure), `pnpm run build`, `pnpm run build:lan`, and the three e2e scripts: 57 checks for a full match, 30 for failures, 12 for phone connection (a drop and the full room). Highlights: a repeated reveal adds nothing; a double click is one strike and a held key is ignored; clear board, successful steal, failed steal and repeated award give the exact totals; undo reverses exactly the recorded award; a planted sentinel answer, alias, count and survey note never appears in the projector, a phone's page, its websocket frames, a raw controller's traffic, phone storage or any script served to a phone until revealed (and an alias never appears).
+**Run and passing:** `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (88 tests: rules including the face-off, validation, polls, projection and privacy sentinel, store role gating, module boundaries, text escaping, sound cue mapping, storage failure), `pnpm run build`, `pnpm run build:lan`, and the four e2e scripts: 57 checks for a full match, 30 for failures, 12 for phone connection (a drop and the full room), 27 for the face-off with real key presses. Highlights: a repeated reveal adds nothing; a double click is one strike and a held key is ignored; clear board, successful steal, failed steal and repeated award give the exact totals; undo reverses exactly the recorded award; a planted sentinel answer, alias, count and survey note never appears in the projector, a phone's page, its websocket frames, a raw controller's traffic, phone storage or any script served to a phone until revealed (and an alias never appears).
 
 **Simulated, not physical:**
 - "Phones" are two isolated Chrome contexts emulating 390×844 touch devices on this laptop, plus raw socket clients. Not iOS Safari, not Android, not a real touchscreen.
@@ -134,13 +156,16 @@ Ran on 4 Oct 2026, Windows 11, Chrome (headless via `playwright-core`, no browse
 - 16 raw sockets filled a room to the cap; that is a limit check, not a load test.
 - The audio context unlocks from the button and the cue mapping is unit-tested. The sound effects and the theme loop are original and synthesised in the browser (no samples, nothing copied from any show), but nobody has judged how they sound yet; that needs a person with speakers. The theme plays on the lobby, the question intro, between rounds and at the end, and is silent during live play so the host can talk. Switch it off with **MUSIC OFF** on the projector's control bar.
 
-**Not run:** any physical phone; venue Wi-Fi, including client isolation; the real projector, fullscreen on it and its legibility from the back; Safari, Firefox; a screen-reader pass; more than one operator rehearsal; a Windows Firewall prompt on a fresh laptop.
+**Done by a person, on 4 Oct 2026:** one physical phone (Samsung S25 FE, Samsung Internet) on the home Wi-Fi joined from the QR code, voted, and saw the results; the join was almost instant.
+
+**Not run:** the physical buzzers (model unknown); more than one physical phone; venue Wi-Fi, including client isolation; the real projector, fullscreen on it and its legibility from the back; Safari, Firefox; a screen-reader pass; more than one operator rehearsal; a Windows Firewall prompt on a fresh laptop.
 
 ## Remaining checks
 
 Work through [`docs/OPERATOR_CHECKLIST.md`](docs/OPERATOR_CHECKLIST.md). Short version:
 
 - [ ] Real survey results loaded, counts and spelling checked, DEMO label gone.
+- [ ] The real buzzers: Session tab, Learn each one, press to test; run one face-off with the console window focused. If a buzzer will not register, use the manual buttons.
 - [ ] At least two physical phones join over the venue Wi-Fi; one vote each, a refresh, a screen lock.
 - [ ] The join URL on the screen opens from a phone that is not on the laptop's account.
 - [ ] Expected attendance known; decide whether the 16-phone cap is acceptable.

@@ -2,7 +2,7 @@
 // Only the projector window plays it. Cues react to public snapshots and never feed back into scoring.
 import type { PublicSnapshot } from "../public/types";
 
-export type Cue = "reveal" | "strike" | "steal" | "award" | "roundStart" | "final" | "pollOpen" | "pollClose" | "tick";
+export type Cue = "reveal" | "strike" | "steal" | "award" | "roundStart" | "final" | "pollOpen" | "pollClose" | "tick" | "buzzersLive" | "buzz" | "faceoffWin";
 
 const hz = (midi: number) => 440 * 2 ** ((midi - 69) / 12);
 
@@ -194,6 +194,21 @@ export class Sfx {
       case "tick":
         this.tone(1400, t, 0.06, "square", 0.12, bus, { cutoff: 3500 });
         break;
+      case "buzzersLive": // two quick rising pings: "hands on buzzers"
+        [84, 91].forEach((m, i) => this.tone(hz(m), t + i * 0.11, 0.18, "triangle", 0.3, bus));
+        break;
+      case "buzz": // loud game-show buzz-in: harsh honk plus a bell on top
+        this.tone(196, t, 0.45, "sawtooth", 0.8, bus, { cutoff: 1500 });
+        this.tone(294, t, 0.45, "square", 0.45, bus, { cutoff: 1500 });
+        this.hiss(t, 0.12, "bandpass", 1200, 0.35, bus, 3000);
+        this.bell(hz(96), t + 0.04, 0.35, bus);
+        break;
+      case "faceoffWin": // short brass sting
+        this.brass([67, 71, 74], t, 0.16, 0.14, bus);
+        this.brass([72, 76, 79], t + 0.16, 0.16, 0.14, bus);
+        this.brass([79, 83, 86], t + 0.32, 0.6, 0.16, bus);
+        this.bell(hz(91), t + 0.34, 0.3, bus);
+        break;
     }
   }
 
@@ -257,6 +272,9 @@ export function cueFor(prev: PublicSnapshot | null, next: PublicSnapshot): Cue |
   if (!prev) return null;
   if (!prev.poll && next.poll?.status === "open") return "pollOpen";
   if (prev.poll?.status === "open" && next.poll?.status === "closed") return "pollClose";
+  if (!prev.faceOff?.buzzed && next.faceOff?.buzzed) return "buzz";
+  if (!prev.faceOff?.winner && next.faceOff?.winner && !next.settlement) return "faceoffWin";
+  if (!prev.faceOff?.armed && next.faceOff?.armed) return "buzzersLive";
   if (prev.phase !== "match_over" && next.phase === "match_over") return "final";
   if (!prev.settlement && next.settlement) return "award";
   if (prev.phase !== "steal" && next.phase === "steal") return "steal";

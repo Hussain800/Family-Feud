@@ -87,4 +87,30 @@ describe("public snapshot privacy", () => {
     const snap = projectPublic({ rev: 1, game: initialSession().state, demo: true, room, poll: null, now: 0, preview: null });
     expect(snap.demoLabel).toBe("DEMO: INVENTED RESULTS");
   });
+
+  it("the face-off publishes only who buzzed and hit/miss, never counts or hidden answers", () => {
+    let st = playingSession();
+    // rewind to a face-off on the same private pack
+    const v = validatePack(priv);
+    if (!v.ok) throw new Error("pack");
+    const q = v.pack.questions.find((x) => x.id === "q02")!;
+    st = [
+      act("START_ROUND", { team: "A", question: { id: q.id, category: q.category, prompt: q.prompt, demo: false, answers: q.answers } }),
+      act("SHOW_BOARD"),
+      act("FACEOFF_START"),
+      act("FACEOFF_ARM"),
+      act("BUZZ", { team: "B" }),
+      act("REVEAL", { answerId: "p-hidden" }),
+    ].reduce(apply, initialSession());
+    const snap = projectPublic({ rev: 1, game: st.state, demo: false, room, poll: null, now: 0, preview: null });
+    expect(snap.phase).toBe("face_off");
+    expect(snap.faceOff).toEqual({ armed: false, buzzed: "B", tries: { A: null, B: "hit" }, winner: null, choice: null });
+    expect(JSON.stringify(snap.faceOff)).not.toMatch(/count|ZZSENTINEL|7771913/);
+    // the answer that was revealed is public as a slot; the aliases and the other answers still are not
+    const json = JSON.stringify(snap);
+    expect(json).toContain(S.text);
+    expect(json).not.toContain(S.alias);
+    expect(json).not.toContain("Water bottle");
+  });
 });
+

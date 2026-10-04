@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { isLocalOnly } from "../public/url";
 import { ScreenView } from "../ui/ScreenView";
+import { useBuzzers } from "./buzzers";
 import { DataTab } from "./DataTab";
 import { PlayTab } from "./PlayTab";
 import { SessionTab } from "./SessionTab";
@@ -8,7 +9,7 @@ import { useHostGame, type HostGame } from "./useHostGame";
 
 type Tab = "play" | "data" | "session";
 
-/** Optional shortcuts: 1-9 and 0 reveal slots 1-10, X strike, U undo. Held keys and text fields are ignored. */
+/** Optional shortcuts: 1-9 and 0 reveal slots 1-10, X strike (miss in a face-off), B open buzzers, U undo. Held keys and text fields are ignored. */
 function useShortcuts(g: HostGame, enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
@@ -20,8 +21,12 @@ function useShortcuts(g: HostGame, enabled: boolean) {
       const k = e.key.toLowerCase();
       if (k === "u") return void (g.canUndo && g.act({ type: "UNDO" }));
       if (!round) return;
+      if (phase === "face_off") {
+        if (k === "b") return void g.act({ type: "FACEOFF_ARM" });
+        if (k === "x") return void g.act({ type: "FACEOFF_MISS" });
+      }
       if (k === "x" && (phase === "team_turn" || phase === "steal")) return void g.act({ type: "STRIKE" });
-      if (/^[0-9]$/.test(k) && (phase === "team_turn" || phase === "steal" || phase === "round_over")) {
+      if (/^[0-9]$/.test(k) && (phase === "face_off" || phase === "team_turn" || phase === "steal" || phase === "round_over")) {
         const slot = k === "0" ? 10 : Number(k);
         const a = round.answers[slot - 1];
         if (a) g.act({ type: "REVEAL", answerId: a.id });
@@ -34,6 +39,7 @@ function useShortcuts(g: HostGame, enabled: boolean) {
 
 export function HostConsole() {
   const g = useHostGame();
+  const b = useBuzzers(g);
   const [tab, setTab] = useState<Tab>("play");
   useShortcuts(g, tab === "play" && !g.resumeOffer);
   const { room } = g;
@@ -108,9 +114,9 @@ export function HostConsole() {
           <div className="preview">{g.snapshot ? <ScreenView snapshot={g.snapshot} /> : null}</div>
         </aside>
         <section className="host__main">
-          {tab === "play" && <PlayTab g={g} />}
+          {tab === "play" && <PlayTab g={g} b={b} />}
           {tab === "data" && <DataTab g={g} />}
-          {tab === "session" && <SessionTab g={g} />}
+          {tab === "session" && <SessionTab g={g} b={b} />}
         </section>
       </div>
     </div>
