@@ -43,6 +43,8 @@ export interface PublicSnapshot {
     columns: 1 | 2;
     slots: PublicSlot[];
   } | null;
+  /** Rounds completed so far and the planned total. Drives the between-rounds scoreboard. */
+  progress: { played: number; total: number };
   note: string | null;
   settlement: { winner: TeamId; amount: number; kind: string } | null;
   poll: PublicPoll | null;
@@ -61,6 +63,7 @@ export const EMPTY_SNAPSHOT: PublicSnapshot = {
   pot: 0,
   strikes: 0,
   round: null,
+  progress: { played: 0, total: 3 },
   note: null,
   settlement: null,
   poll: null,

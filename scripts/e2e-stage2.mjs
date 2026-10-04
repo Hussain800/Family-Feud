@@ -4,7 +4,9 @@ export async function stage2(c) {
 
   // ---------- round 2: q01 with crowd assist, plus role attacks over raw sockets ----------
   await host.click("button:has-text('Next round')");
-  await screen.waitForSelector(".lobby");
+  await screen.waitForSelector(".final");
+  check("BETWEEN ROUNDS: the projector shows a scoreboard (AFTER ROUND 1 OF 3, Team B leads), not the join page", /AFTER ROUND 1 OF 3/.test(await text(screen, ".final")) && /Team B leads/.test(await text(screen, ".final")) && (await screen.locator(".lobby").count()) === 0);
+  await snap(screen, "20-between-rounds-1920x1080");
   await snap(host, "17-host-question-picker-1920x1080");
   await host.locator(".seg__opt", { hasText: "Team B" }).click();
   await startRound("q01");

@@ -19,7 +19,13 @@ export function PollControls({ g }: { g: HostGame }) {
   return (
     <div className="poll-host">
       <h3 className="panel__h">Crowd assist (optional)</h3>
-      <p className="hint">Type two to six guesses the room is shouting. Phones recommend one; the team decides. Votes never reveal an answer or score points.</p>
+      <p className="hint"><b>This is not the answer list above.</b> The rows above are the hidden survey answers, which only you can see, so phones must never show them. Here you type what the <i>room</i> is calling out (any two to six guesses, right or wrong). Phones vote for the guess they like best, and the team may use it or ignore it. A vote never reveals an answer or scores points.</p>
+      <ol className="hint plain">
+        <li>Ask the room: "What should the team say?" Type the loudest two to six guesses below.</li>
+        <li><b>Open poll.</b> Phones show those guesses; each person votes once.</li>
+        <li><b>Close poll now</b> (or wait for the timer). The most popular guess appears on the big screen.</li>
+        <li>Tell the team the result. Then judge their real guess as normal: <b>Reveal</b> if it matches a hidden answer, or <b>Add strike</b>.</li>
+      </ol>
 
       {!view && (
         <>

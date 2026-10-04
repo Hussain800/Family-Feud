@@ -28,7 +28,7 @@ Open the console on the laptop, click **Open projector**, and drag that window t
 | `pnpm run build` | Typecheck and production build to `dist/` |
 | `pnpm run build:lan` | Production build with the laptop's LAN address baked in |
 | `pnpm start` | Relay + the production build (run `build:lan` first) |
-| `pnpm test` | Unit tests (68) |
+| `pnpm test` | Unit tests (70) |
 | `pnpm run typecheck` / `pnpm run lint` | Types and lint |
 | `pnpm run e2e` | Full match across moderator, projector and two isolated phones (needs `pnpm run dev` and Chrome) |
 | `pnpm run e2e:failures` | Relay down, storage failing, rejected import, answer editor, template preview, sound unlock, direct navigation |
@@ -58,7 +58,7 @@ The projector is not a second network host. It never reads the answer pack or th
 3. **Show the board** (concealed lines), then **Begin guessing**.
 4. Judge guesses aloud. **Reveal** a matching answer, or **Add strike (X)**. Keys: `1`–`9`, `0` reveal slots 1–10, `X` strike, `U` undo. Held keys and text fields are ignored.
 5. Three strikes give the other team one steal guess: **Steal hit** on the answer, or **Steal missed (X)**.
-6. **Award N to Team X** once. **Next round**, or **Finish match**.
+6. **Award N to Team X** once. **Next round**, or **Finish match**. Between rounds the projector shows the scoreboard ("After round 1 of 3 … Team B leads … round 2 is next"), not the join page.
 7. **Crowd assist** (optional, during a team turn): type 2–6 guesses the room is shouting, choose seconds, **Open poll**. Phones vote once each. **Close poll now** or wait for the deadline; totals show on the projector and phones, and the team decides. Votes never reveal an answer or score points.
 
 House rules (proposed, not attributed to the organisers): two teams, three rounds by default, human judging, three strikes and one steal, pot to the controlling team unless a steal succeeds. A repeated guess shows ALREADY ON THE BOARD and adds neither points nor a strike. Reveals after the award are for discussion and never change a score. Undo restores the previous state exactly; an answer already shown cannot become unknown to the audience.
@@ -125,14 +125,14 @@ Findings from checking the real relay (`pnpm run probe`):
 
 Ran on 4 Oct 2026, Windows 11, Chrome (headless via `playwright-core`, no browser download).
 
-**Run and passing:** `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (68 tests: rules, validation, polls, projection and privacy sentinel, store role gating, module boundaries, text escaping, sound cue mapping, storage failure), `pnpm run build`, `pnpm run build:lan`, and the three e2e scripts: 56 checks for a full match, 29 for failures, 12 for phone connection (a drop and the full room). Highlights: a repeated reveal adds nothing; a double click is one strike and a held key is ignored; clear board, successful steal, failed steal and repeated award give the exact totals; undo reverses exactly the recorded award; a planted sentinel answer, alias, count and survey note never appears in the projector, a phone's page, its websocket frames, a raw controller's traffic, phone storage or any script served to a phone until revealed (and an alias never appears).
+**Run and passing:** `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (70 tests: rules, validation, polls, projection and privacy sentinel, store role gating, module boundaries, text escaping, sound cue mapping, storage failure), `pnpm run build`, `pnpm run build:lan`, and the three e2e scripts: 57 checks for a full match, 30 for failures, 12 for phone connection (a drop and the full room). Highlights: a repeated reveal adds nothing; a double click is one strike and a held key is ignored; clear board, successful steal, failed steal and repeated award give the exact totals; undo reverses exactly the recorded award; a planted sentinel answer, alias, count and survey note never appears in the projector, a phone's page, its websocket frames, a raw controller's traffic, phone storage or any script served to a phone until revealed (and an alias never appears).
 
 **Simulated, not physical:**
 - "Phones" are two isolated Chrome contexts emulating 390×844 touch devices on this laptop, plus raw socket clients. Not iOS Safari, not Android, not a real touchscreen.
 - Disconnects are simulated by blocking websocket and polling traffic, not by a real Wi-Fi drop.
 - Projector layouts were captured at 1920×1080, 1366×768 and 1280×720 in headless Chrome, not on the venue projector. Screenshots are in `docs/screenshots/` (`13-final` and the host-resume shot use the privacy test pack, so their totals are test numbers).
 - 16 raw sockets filled a room to the cap; that is a limit check, not a load test.
-- The audio context unlocks from the button and the cue mapping is unit-tested, but the tones have not been listened to.
+- The audio context unlocks from the button and the cue mapping is unit-tested. The sound effects and the theme loop are original and synthesised in the browser (no samples, nothing copied from any show), but nobody has judged how they sound yet; that needs a person with speakers. The theme plays on the lobby, the question intro, between rounds and at the end, and is silent during live play so the host can talk. Switch it off with **MUSIC OFF** on the projector's control bar.
 
 **Not run:** any physical phone; venue Wi-Fi, including client isolation; the real projector, fullscreen on it and its legibility from the back; Safari, Firefox; a screen-reader pass; more than one operator rehearsal; a Windows Firewall prompt on a fresh laptop.
 

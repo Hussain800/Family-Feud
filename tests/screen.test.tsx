@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { writeJson } from "../src/host/persist";
 import { EMPTY_SNAPSHOT, type PublicSnapshot } from "../src/public/types";
 import { ScreenView } from "../src/ui/ScreenView";
-import { cueFor } from "../src/ui/sound";
+import { cueFor, musicWanted } from "../src/ui/sound";
 
 // The club wordmark script attaches itself to window; there is no DOM in this test environment.
 vi.mock("../src/styles/blue-ice-club.js", () => ({}));
@@ -55,6 +55,14 @@ describe("plain-text rendering", () => {
     expect(html).toContain('aria-label="2: hidden"');
   });
 
+  it("between rounds the projector shows the scoreboard, not the join page", () => {
+    const html = renderToString(<ScreenView snapshot={{ ...EMPTY_SNAPSHOT, progress: { played: 1, total: 3 }, teams: [{ id: "A", name: "Foxes", score: 48 }, { id: "B", name: "Owls", score: 12 }] }} />).replace(/<!-- -->/g, ""); // drop React's text-node markers
+    expect(html).toContain("AFTER ROUND 1 OF 3");
+    expect(html).toContain("Foxes leads");
+    expect(html).toContain("ROUND 2 IS NEXT");
+    expect(html).not.toContain("ROOM CODE");
+  });
+
   it("a lobby without a usable join address says so instead of drawing a dead QR", () => {
     const html = renderToString(<ScreenView snapshot={{ ...EMPTY_SNAPSHOT, room: { ...base.room, joinUrl: "http://localhost:5173/controller?room=ABCD" } }} />);
     expect(html).toContain("Phones cannot reach this address");
@@ -71,6 +79,13 @@ describe("sound cues are derived from public changes only", () => {
     const poll = { id: "p", status: "open" as const, options: [], durationMs: 1, remainingMs: 1, responses: 0, results: null };
     expect(cueFor(base, { ...base, poll })).toBe("pollOpen");
     expect(cueFor({ ...base, poll }, { ...base, poll: { ...poll, status: "closed" } })).toBe("pollClose");
+    expect(cueFor({ ...base, phase: "lobby" }, { ...base, phase: "intro" })).toBe("roundStart");
+    expect(cueFor(base, { ...base, phase: "match_over" })).toBe("final");
+  });
+
+  it("plays the theme only between rounds, on the intro and at the end; live play is silent", () => {
+    for (const phase of ["lobby", "intro", "match_over"] as const) expect(musicWanted({ ...base, phase })).toBe(true);
+    for (const phase of ["board_ready", "team_turn", "steal", "round_over", "preview"] as const) expect(musicWanted({ ...base, phase })).toBe(false);
   });
   it("is silent for no change, the first snapshot, or a new round", () => {
     expect(cueFor(null, base)).toBeNull();

@@ -52,16 +52,13 @@ function DemoBanner({ label }: { label: string | null }) {
 function Lobby({ s }: { s: PublicSnapshot }) {
   const r = s.room;
   const localOnly = isLocalOnly(r.joinUrl);
-  const scored = s.teams.some((t) => t.score !== 0);
   return (
     <div className="lobby">
       <div className="lobby__left">
         <p className="bi-label">GDG ON CAMPUS · UNIVERSITY OF BIRMINGHAM DUBAI</p>
         <Wordmark width={860} />
         <p className="lobby__display">&lt;FAMILY FEUD&gt;</p>
-        <p className="lobby__teams">
-          {s.teams[0].name}{scored ? ` ${s.teams[0].score}` : ""} <i>{scored ? "–" : "vs"}</i> {s.teams[1].name}{scored ? ` ${s.teams[1].score}` : ""}
-        </p>
+        <p className="lobby__teams">{s.teams[0].name} <i>vs</i> {s.teams[1].name}</p>
       </div>
       <div className="lobby__right">
         {r.status === "ready" && r.joinUrl && !localOnly ? (
@@ -81,6 +78,26 @@ function Lobby({ s }: { s: PublicSnapshot }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function Interlude({ s }: { s: PublicSnapshot }) {
+  const [a, b] = s.teams;
+  const lead = a.score === b.score ? null : a.score > b.score ? a : b;
+  return (
+    <div className="final">
+      <p className="bi-label">AFTER ROUND {s.progress.played} OF {s.progress.total}</p>
+      <h1 className="final__head">{lead ? `${lead.name} leads` : "All square"}</h1>
+      <div className="final__scores">
+        {s.teams.map((t) => (
+          <div key={t.id} className={`team ${lead?.id === t.id ? "team--active" : ""}`}>
+            <p className="team__name">{t.name}</p>
+            <p className="team__score">{t.score}</p>
+          </div>
+        ))}
+      </div>
+      <p className="intro__sub">&lt;ROUND {Math.min(s.progress.played + 1, s.progress.total)} IS NEXT&gt;</p>
     </div>
   );
 }
@@ -224,9 +241,10 @@ export function ScreenView({ snapshot: s }: { snapshot: PublicSnapshot }) {
     <Stage>
       <div className="screen" data-theme="ice" data-phase={phase}>
         <DemoBanner label={s.demoLabel} />
-        {phase !== "lobby" || s.round ? <Header s={s} qr /> : null}
+        {phase !== "lobby" || s.round || s.progress.played > 0 ? <Header s={s} qr /> : null}
         <main className="s-main">
-          {phase === "lobby" && !s.round && <Lobby s={s} />}
+          {phase === "lobby" && !s.round && s.progress.played === 0 && <Lobby s={s} />}
+          {phase === "lobby" && !s.round && s.progress.played > 0 && <Interlude s={s} />}
           {phase === "intro" && s.round && <Intro s={s} />}
           {showBoard && <Board s={s} />}
           {showBoard && s.poll && s.round && <PollPanel poll={s.poll} prompt={s.round.prompt} />}

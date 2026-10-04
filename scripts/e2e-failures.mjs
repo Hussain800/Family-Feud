@@ -111,6 +111,10 @@ await sleep(300);
 check("SOUND: ENABLE SOUND (a user gesture) unlocks the audio context and reports SOUND READY", /SOUND READY/.test(await text(s3, ".screen-bar")), await text(s3, ".screen-bar"));
 await s3.click("button:has-text('MUTE')");
 check("SOUND: mute is available and toggles", /UNMUTE/.test(await text(s3, ".screen-bar")));
+await s3.click("button:has-text('MUTE')"); // unmute again
+await s3.click("button:has-text('MUSIC ON')");
+check("SOUND: the theme music has its own on/off switch", /MUSIC OFF/.test(await text(s3, ".screen-bar")), await text(s3, ".screen-bar"));
+await s3.click("button:has-text('MUSIC OFF')");
 
 // answer editor: enter real-looking results for q05 by hand and confirm them
 await h3.locator("select").first().selectOption("q05");

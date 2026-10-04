@@ -61,6 +61,7 @@ export function projectPublic(i: ProjectInput): PublicSnapshot {
     pot: preview ? 0 : (r?.pot ?? 0),
     strikes: preview ? 0 : (r?.strikes ?? 0),
     round,
+    progress: { played: game.roundsPlayed, total: game.totalRounds },
     note: game.note,
     settlement: r?.settlement ? { winner: r.settlement.winner, amount: r.settlement.amount, kind: r.settlement.kind } : null,
     poll: i.poll && i.poll.status !== "cancelled" ? publicPoll(i.poll, i.now) : null,
