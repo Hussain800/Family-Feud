@@ -189,13 +189,16 @@ function FaceOffPanel({ g, b }: { g: HostGame; b: Buzzers }) {
         <ConfirmButton label="Skip face-off" confirmLabel={`${teamName(s, r.controllingTeam)} starts, no face-off`} onConfirm={() => g.act({ type: "BEGIN_PLAY" })} />
       </div>
       <div className="row">
-        <span className="bi-label">NO BUZZER KEY? TAP WHO WAS FIRST</span>
+        <span className="bi-label">STANDALONE BUZZERS? TAP WHO WAS FIRST</span>
         {(["A", "B"] as TeamId[]).map((t) => (
-          <button key={t} type="button" className="bi-button bi-button--outline host__btn host__btn--sm" disabled={!fo.armed} onClick={() => g.act({ type: "BUZZ", team: t })}>
+          <button key={t} type="button" className="bi-button bi-button--outline host__btn host__btn--sm" disabled={!!fo.winner || Object.keys(fo.tries).length === 1} onClick={() => g.act({ type: "BUZZ", team: t, manual: true })}>
             {teamName(s, t)} buzzed first
           </button>
         ))}
       </div>
+      <p className="hint">
+        Buzzers that are not connected to the laptop (they just light up or make a noise)? Skip Open buzzers: listen, then tap which team was first. Tapping the wrong team? Tap the right one.
+      </p>
       <p className="hint">
         Buzzer keys: {teamName(s, "A")} = <kbd>{b.map.A.label}</kbd>, {teamName(s, "B")} = <kbd>{b.map.B.label}</kbd> (change them in the Session tab). The first press wins; the other is ignored until you open the buzzers again.
         Revealing the player’s answer adds its points to the round pot, which goes to whichever team finally takes control.

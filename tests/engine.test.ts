@@ -220,6 +220,26 @@ describe("face-off", () => {
     expect(s.state.round!.faceOff).toMatchObject({ buzzed: "B", armed: false });
   });
 
+  it("the host's own tap records who was first without opening the buzzers, and can correct a wrong tap", () => {
+    const noArm = () => run(initialSession(), act("START_ROUND", { question: Q, team: "A" }), act("SHOW_BOARD"), act("FACEOFF_START"));
+    let s = run(noArm(), act("BUZZ", { team: "A", manual: true }));
+    expect(s.state.round!.faceOff).toMatchObject({ buzzed: "A", armed: false });
+    s = run(s, act("BUZZ", { team: "B", manual: true })); // wrong tap, corrected before anyone answered
+    expect(s.state.round!.faceOff!.buzzed).toBe("B");
+    s = run(s, reveal("a1"));
+    expect(s.state.round!.faceOff!.winner).toBe("B");
+    // a real buzzer press (not manual) still needs the buzzers open
+    expect(run(noArm(), act("BUZZ", { team: "A" })).state.round!.faceOff!.buzzed).toBeNull();
+  });
+
+  it("a manual tap cannot overwrite an attempt in progress, but starts the next one after both missed", () => {
+    const mid = run(toFace(), act("BUZZ", { team: "A" }), reveal("a2"), act("BUZZ", { team: "B", manual: true }));
+    expect(mid.state.round!.faceOff).toMatchObject({ buzzed: "A" });
+    expect(mid.state.round!.faceOff!.tries.A).toBeDefined();
+    const next = run(toFace(), act("BUZZ", { team: "A" }), act("FACEOFF_MISS"), act("FACEOFF_MISS"), act("BUZZ", { team: "B", manual: true }));
+    expect(next.state.round!.faceOff).toMatchObject({ buzzed: "B", tries: {} });
+  });
+
   it("the same buzz delivered twice is one buzz", () => {
     const buzz = act("BUZZ", { team: "A" });
     const s = run(toFace(), buzz, buzz);

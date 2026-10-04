@@ -28,7 +28,7 @@ Open the console on the laptop, click **Open projector**, and drag that window t
 | `pnpm run build` | Typecheck and production build to `dist/` |
 | `pnpm run build:lan` | Production build with the laptop's LAN address baked in |
 | `pnpm start` | Relay + the production build (run `build:lan` first) |
-| `pnpm test` | Unit tests (88) |
+| `pnpm test` | Unit tests (90) |
 | `pnpm run typecheck` / `pnpm run lint` | Types and lint |
 | `pnpm run e2e` | Full match across moderator, projector and two isolated phones (needs `pnpm run dev` and Chrome) |
 | `pnpm run e2e:failures` | Relay down, storage failing, rejected import, answer editor, template preview, sound unlock, direct navigation |
@@ -73,7 +73,7 @@ The tech lead confirmed a buzzer face-off between one player from each team, the
 5. The winner is asked **play or pass**; click **Team X PLAYS** or **Team X PASSES to Team Y**. The face-off answers already revealed stay on the board and in the pot, which goes to whichever team ends up in control (Wikipedia describes the TV show the same way: the winning family scores every revealed answer, including the face-off ones).
 6. Strikes, steal and award continue exactly as before.
 
-If something goes wrong: **Skip face-off** (confirm) goes straight to guessing with the starting team; **Undo** (`U`) steps back through a buzz or a result; **Team X buzzed first** records a winner by hand when a buzzer will not connect (for example a wireless set with its own receiver and lights); **Open buzzers** after an accidental buzz clears it.
+If something goes wrong: **Skip face-off** (confirm) goes straight to guessing with the starting team; **Undo** (`U`) steps back through a buzz or a result; **Team X buzzed first** records who was first by hand. This is the route for buzzers that are not connected to the laptop (the cheap kind that just light up or make a noise): skip **Open buzzers**, listen, tap the team that was first (tapping the wrong team and then the right one corrects it before anyone answers); **Open buzzers** after an accidental buzz clears it.
 
 **Connecting the buzzers.** The game reads buzzers that act like a keyboard key (the common USB kind): one key per team. Plug them in, open the **Session** tab, click **Learn** beside a team, press that team's buzzer, and repeat for the other team. Pressing a learned buzzer lights its lamp on that tab, so you can test before the event. The keys are saved in this browser. Until you learn them, `Q` (first team) and `P` (second team) work as test buzzers, so two people can try a face-off on one keyboard. Constraints:
 
@@ -81,7 +81,7 @@ If something goes wrong: **Skip face-off** (confirm) goes straight to guessing w
 - Buzzer keys take priority over Play-tab shortcuts, so a stray buzzer press can never reveal an answer. If a buzzer sends a digit, `X` or `U`, that shortcut stops working; use the buttons.
 - Two buzzers that send the same key cannot be told apart; the app refuses to give two teams one key.
 - Ties closer than a few milliseconds cannot be separated in a browser; the first key event to reach the page wins.
-- **Not tested with the real buzzers**: their model is unknown. Keyboard behaviour was tested with real key presses in Chrome only. Wireless sets that do not connect to the laptop need the manual buttons.
+- **Not tested with the real buzzers**: their model is unknown. Keyboard behaviour was tested with real key presses in Chrome only. Buzzers that do not connect to the laptop need the manual buttons, and then the host's ears decide who was first; those cheap sets have no lock-out, so a second person watching helps.
 
 House rules (proposed, not attributed to the organisers): two teams, three rounds by default, human judging, three strikes and one steal, a buzzer face-off then play or pass, pot to the controlling team unless a steal succeeds. A repeated guess shows ALREADY ON THE BOARD and adds neither points nor a strike. Reveals after the award are for discussion and never change a score. Undo restores the previous state exactly; an answer already shown cannot become unknown to the audience.
 
@@ -147,7 +147,7 @@ Findings from checking the real relay (`pnpm run probe`):
 
 Ran on 4 Oct 2026, Windows 11, Chrome (headless via `playwright-core`, no browser download).
 
-**Run and passing:** `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (88 tests: rules including the face-off, validation, polls, projection and privacy sentinel, store role gating, module boundaries, text escaping, sound cue mapping, storage failure), `pnpm run build`, `pnpm run build:lan`, and the four e2e scripts: 57 checks for a full match, 30 for failures, 12 for phone connection (a drop and the full room), 27 for the face-off with real key presses. Highlights: a repeated reveal adds nothing; a double click is one strike and a held key is ignored; clear board, successful steal, failed steal and repeated award give the exact totals; undo reverses exactly the recorded award; a planted sentinel answer, alias, count and survey note never appears in the projector, a phone's page, its websocket frames, a raw controller's traffic, phone storage or any script served to a phone until revealed (and an alias never appears).
+**Run and passing:** `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (90 tests: rules including the face-off, validation, polls, projection and privacy sentinel, store role gating, module boundaries, text escaping, sound cue mapping, storage failure), `pnpm run build`, `pnpm run build:lan`, and the four e2e scripts: 57 checks for a full match, 30 for failures, 12 for phone connection (a drop and the full room), 28 for the face-off with real key presses. Highlights: a repeated reveal adds nothing; a double click is one strike and a held key is ignored; clear board, successful steal, failed steal and repeated award give the exact totals; undo reverses exactly the recorded award; a planted sentinel answer, alias, count and survey note never appears in the projector, a phone's page, its websocket frames, a raw controller's traffic, phone storage or any script served to a phone until revealed (and an alias never appears).
 
 **Simulated, not physical:**
 - "Phones" are two isolated Chrome contexts emulating 390×844 touch devices on this laptop, plus raw socket clients. Not iOS Safari, not Android, not a real touchscreen.

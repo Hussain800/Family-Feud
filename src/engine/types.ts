@@ -79,7 +79,7 @@ export type Action =
   | { id: string; type: "BEGIN_PLAY" }
   | { id: string; type: "FACEOFF_START" }
   | { id: string; type: "FACEOFF_ARM" }
-  | { id: string; type: "BUZZ"; team: TeamId }
+  | { id: string; type: "BUZZ"; team: TeamId; /** The host recording who was first by hand (standalone buzzers): needs no Open buzzers step. */ manual?: boolean }
   | { id: string; type: "FACEOFF_MISS" }
   | { id: string; type: "PLAY_OR_PASS"; choice: "play" | "pass" }
   | { id: string; type: "REVEAL"; answerId: string }

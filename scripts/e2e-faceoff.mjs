@@ -142,7 +142,10 @@ await host.click("role=tab[name='Play']");
 await startRound("q03");
 await host.click("button:has-text('Show the board')");
 await host.click("button:has-text('Start face-off')");
-await host.click("button:has-text('Open buzzers')");
+await host.click("button:has-text('Team A buzzed first')"); // standalone buzzers: no Open buzzers step needed
+await sleep(250);
+check("standalone buzzers: one tap records who was first, without opening the buzzers", /TEAM A BUZZED FIRST/.test(await foText()), await foText());
+await host.click("button:has-text('Open buzzers')"); // clears that tap
 await host.keyboard.press("q"); // Q is no longer a buzzer for anyone
 await sleep(200);
 check("an unmapped key no longer buzzes", /BUZZERS LIVE/.test(await foText()));

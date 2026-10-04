@@ -148,8 +148,13 @@ export function step(prev: GameState, a: Action): GameState {
 
     case "BUZZ": {
       const fo = r?.faceOff;
-      if (s.phase !== "face_off" || !r || !fo?.armed || fo.buzzed) return prev; // too early, or the other buzzer was first
-      return withRound(s, { faceOff: { ...fo, armed: false, buzzed: a.team } });
+      if (s.phase !== "face_off" || !r || !fo || fo.winner) return prev;
+      const tries = Object.keys(fo.tries).length;
+      // A real buzzer needs the buzzers open and counts only the first press. The host's own tap needs neither: it
+      // records who was first (or corrects a wrong tap, or starts the next attempt after both missed), but not mid-attempt.
+      const accepted = a.manual ? tries !== 1 : fo.armed && !fo.buzzed;
+      if (!accepted) return prev; // too early, or the other buzzer was first
+      return withRound(s, { faceOff: { ...fo, armed: false, buzzed: a.team, tries: tries === 2 ? {} : fo.tries } });
     }
 
     case "FACEOFF_MISS":
