@@ -28,11 +28,12 @@ Open the console on the laptop, click **Open projector**, and drag that window t
 | `pnpm run build` | Typecheck and production build to `dist/` |
 | `pnpm run build:lan` | Production build with the laptop's LAN address baked in |
 | `pnpm start` | Relay + the production build (run `build:lan` first) |
-| `pnpm test` | Unit tests (90) |
+| `pnpm test` | Unit tests (98) |
 | `pnpm run typecheck` / `pnpm run lint` | Types and lint |
 | `pnpm run e2e` | Full match across moderator, projector and two isolated phones (needs `pnpm run dev` and Chrome) |
 | `pnpm run e2e:failures` | Relay down, storage failing, rejected import, answer editor, template preview, sound unlock, direct navigation |
 | `pnpm run e2e:drop` | A phone drops mid-poll, and the 17th phone meets a full room |
+| `pnpm run e2e:paste` | Pasting survey rows from a spreadsheet: errors by line, preview, load, adding to a loaded pack, playing a pasted question |
 | `pnpm run e2e:faceoff` | Face-off with real key presses: buzz order, play or pass, learning a buzzer, a Space-bar buzzer, manual fallback |
 | `pnpm run probe` | Raw-socket checks of the relay: room limit, role spoofing, host takeover |
 
@@ -91,7 +92,11 @@ Any change to the round while a poll is open (a reveal, strike, undo, score corr
 
 The 16 supplied questions are fixed. `data/templates/event_questions.pending.json` is the empty template. Real answers are never committed and never bundled; they live in the moderator's browser storage only.
 
-**Load real results** on the *Questions & data* tab either way:
+The events team surveys students on Monday 5 Oct and Rayyan expects the answers at the end of that day, the night before the event. Ask them for a sheet with one row per answer: **question number, answer, number of students who said it** (and optionally a fourth column of other wordings to accept). Then, on the *Questions & data* tab:
+
+- **Paste results from a spreadsheet** (the fast way): copy the rows from Google Sheets or Excel (or paste a CSV, or choose a `.csv` file), **Check these rows** (errors are listed by line, nothing changes), read the preview, **Load these results**. Question numbers are 1 to 16; the question wording always comes from the supplied list. Paste a few questions at a time if you like: questions already loaded stay unless you paste them again, and the previous pack is kept as a recoverable copy. Rows are sorted by count; a duplicate answer, a non-whole count or more than 10 answers per question is refused with a reason. Pasted rows are always an event pack, never the demo pack.
+
+Two other ways:
 
 - **Import JSON**: paste or choose a file in the bundled structure (`schemaVersion`, `packId`, `title`, `purpose`, `questions[]` with `id`, `category`, `prompt`, `status`, `survey`, `answers[]`, `approval`). Answer rows are `id`, `rank`, `text`, `count`, `aliases`. A partial pack is fine: questions you leave out stay `awaiting_survey`.
 - **Answer editor**: pick a question, add rows (up to 10), set where the results came from, **Confirm these as event results**.
@@ -147,7 +152,7 @@ Findings from checking the real relay (`pnpm run probe`):
 
 Ran on 4 Oct 2026, Windows 11, Chrome (headless via `playwright-core`, no browser download).
 
-**Run and passing:** `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (90 tests: rules including the face-off, validation, polls, projection and privacy sentinel, store role gating, module boundaries, text escaping, sound cue mapping, storage failure), `pnpm run build`, `pnpm run build:lan`, and the four e2e scripts: 57 checks for a full match, 30 for failures, 12 for phone connection (a drop and the full room), 28 for the face-off with real key presses. Highlights: a repeated reveal adds nothing; a double click is one strike and a held key is ignored; clear board, successful steal, failed steal and repeated award give the exact totals; undo reverses exactly the recorded award; a planted sentinel answer, alias, count and survey note never appears in the projector, a phone's page, its websocket frames, a raw controller's traffic, phone storage or any script served to a phone until revealed (and an alias never appears).
+**Run and passing:** `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (98 tests: rules including the face-off, validation, spreadsheet paste, polls, projection and privacy sentinel, store role gating, module boundaries, text escaping, sound cue mapping, storage failure), `pnpm run build`, `pnpm run build:lan`, and the five e2e scripts: 57 checks for a full match, 30 for failures, 12 for phone connection (a drop and the full room), 28 for the face-off with real key presses, 8 for pasting survey rows. Highlights: a repeated reveal adds nothing; a double click is one strike and a held key is ignored; clear board, successful steal, failed steal and repeated award give the exact totals; undo reverses exactly the recorded award; a planted sentinel answer, alias, count and survey note never appears in the projector, a phone's page, its websocket frames, a raw controller's traffic, phone storage or any script served to a phone until revealed (and an alias never appears).
 
 **Simulated, not physical:**
 - "Phones" are two isolated Chrome contexts emulating 390×844 touch devices on this laptop, plus raw socket clients. Not iOS Safari, not Android, not a real touchscreen.

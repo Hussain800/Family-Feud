@@ -1,11 +1,79 @@
 import { useState } from "react";
 import { DEMO_PACK_RAW } from "../content/canonical";
+import { validatePack } from "../content/schema";
+import { parseSheet, type SheetResult } from "../content/sheet";
 import type { Answer, Pack, Question, ResponseMode } from "../content/types";
 import { ConfirmButton } from "./PlayTab";
 import { download } from "./persist";
 import type { HostGame } from "./useHostGame";
 
 type Report = { ok: true; warnings: string[]; text: string } | { ok: false; errors: string[] } | null;
+
+/** The fast way to load the events team's results: paste rows copied from a spreadsheet, check them, load them. */
+function SheetPanel({ g }: { g: HostGame }) {
+  const [text, setText] = useState("");
+  const [checked, setChecked] = useState<{ parsed: SheetResult; errors: string[]; warnings: string[] } | null>(null);
+  const [done, setDone] = useState("");
+  const check = () => {
+    setDone("");
+    const parsed = parseSheet(text, g.pack);
+    if (!parsed.ok) return setChecked({ parsed, errors: parsed.errors, warnings: [] });
+    const v = validatePack(parsed.raw);
+    setChecked({ parsed, errors: v.ok ? [] : v.errors, warnings: v.ok ? v.warnings.filter((w) => !/not in this pack/.test(w)) : [] });
+  };
+  const load = () => {
+    if (!checked?.parsed.ok) return;
+    const r = g.replacePack(checked.parsed.raw);
+    if (r.ok) {
+      setDone(`Loaded ${checked.parsed.preview.length} question(s). The previous pack was kept as a recoverable copy. Check the board before the event.`);
+      setChecked(null);
+      setText("");
+    } else setChecked({ ...checked, errors: r.errors });
+  };
+  const ok = checked?.parsed.ok && checked.errors.length === 0;
+  return (
+    <div className="panel">
+      <h2 className="panel__h">Paste results from a spreadsheet</h2>
+      <p className="hint">
+        One row per answer: <b>question number (1 to 16), answer, number of students who said it</b>, and optionally a fourth column of other wordings to accept, separated by ;. Copy the rows straight from Google Sheets or Excel, or paste a CSV. A header row is fine. You can paste a few questions at a time: questions already loaded stay unless you paste them again. Real results stay in this browser.
+      </p>
+      <input
+        type="file"
+        accept=".csv,.tsv,.txt,text/csv,text/plain"
+        aria-label="Choose a CSV or text file"
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          if (f) { setText(await f.text()); setChecked(null); setDone(""); }
+          e.target.value = "";
+        }}
+      />
+      <textarea className="input input--area" rows={7} placeholder={"1 [tab] Scrolling social media [tab] 23\n1 [tab] Sleeping [tab] 16\n2 [tab] Laptop [tab] 30"} value={text} onChange={(e) => { setText(e.target.value); setChecked(null); }} aria-label="Spreadsheet rows" />
+      <div className="row">
+        <button type="button" className="bi-button host__btn" disabled={!text.trim()} onClick={check}>Check these rows</button>
+        <button type="button" className="bi-button host__btn host__btn--award" disabled={!ok} onClick={load}>Load these results</button>
+      </div>
+      {checked && checked.errors.length > 0 && (
+        <div className="alert" role="alert">
+          <b>Fix these first. Nothing was changed.</b>
+          <ul>{checked.errors.slice(0, 12).map((e, i) => <li key={i}>{e}</li>)}</ul>
+          {checked.errors.length > 12 && <p>…and {checked.errors.length - 12} more.</p>}
+        </div>
+      )}
+      {checked?.parsed.ok && (
+        <div className="alert alert--notice" role="status">
+          <b>{checked.parsed.preview.length} question(s) read{ok ? ". Looks good." : "."}</b>
+          <ul>
+            {checked.parsed.preview.map((q) => (
+              <li key={q.id}><b>{q.id}</b> {q.prompt} <br />{q.answers.map((a) => `${a.text} ${a.count}`).join(" · ")}</li>
+            ))}
+          </ul>
+          {checked.warnings.length > 0 && <ul>{checked.warnings.slice(0, 10).map((w, i) => <li key={i}>{w}</li>)}</ul>}
+        </div>
+      )}
+      {done && <div className="alert alert--notice" role="status">{done}</div>}
+    </div>
+  );
+}
 
 function ImportPanel({ g }: { g: HostGame }) {
   const [text, setText] = useState("");
@@ -178,6 +246,7 @@ export function DataTab({ g }: { g: HostGame }) {
   return (
     <div className="stack">
       <PackPanel g={g} />
+      <SheetPanel g={g} />
       <ImportPanel g={g} />
       <Editor g={g} />
     </div>

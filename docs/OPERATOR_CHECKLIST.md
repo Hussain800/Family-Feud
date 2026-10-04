@@ -4,7 +4,7 @@ Complete after the game has been implemented. This is not a record of completed 
 
 ## Before the event
 
-Confirm the game's stage time, operator, actual attendance, survey results, and projector/network setup with the organisers. Load aggregate results, verify counts and spelling, and ensure DEMO: INVENTED RESULTS is not being mistaken for genuine data. Keep a private local backup.
+Confirm the game's stage time, operator, actual attendance, survey results, and projector/network setup with the organisers. Load aggregate results (Questions & data tab, Paste results from a spreadsheet), verify counts and spelling, play through the preview of each board once, and ensure DEMO: INVENTED RESULTS is not being mistaken for genuine data. Keep a private local backup.
 
 Use the laptop's extended display. Project only the public board. Check long answers, QR readability, sound, and fullscreen. Run one complete match with at least two independent phones; exercise a successful steal, failed steal, duplicate tap, correction, vote, disconnect, and host refresh.
 

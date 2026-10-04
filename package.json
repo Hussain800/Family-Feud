@@ -17,7 +17,8 @@
     "status": "pnpm exec air-jam-server status",
     "e2e:failures": "node scripts/e2e-failures.mjs",
     "e2e:drop": "node scripts/e2e-phone-drop.mjs",
-    "e2e:faceoff": "node scripts/e2e-faceoff.mjs"
+    "e2e:faceoff": "node scripts/e2e-faceoff.mjs",
+    "e2e:paste": "node scripts/e2e-paste.mjs"
   },
   "dependencies": {
     "@air-jam/sdk": "^0.9.2",
