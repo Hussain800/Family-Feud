@@ -181,7 +181,7 @@ a { color: inherit; }
 .tab { background: transparent; border: 2px solid var(--rule); border-bottom: 0; margin-right: -2px; padding: 10px 22px; font-family: var(--font-mono); font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; }
 .tab[aria-selected="true"] { background: var(--cobalt); color: var(--frost); }
 .host__body { display: grid; grid-template-columns: minmax(380px, 36%) minmax(0, 1fr); gap: 20px; align-items: start; }
-.host__side { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 10px; }
+.host__side { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
 .preview { aspect-ratio: 16 / 9; width: 100%; border: 2px solid var(--rule); overflow: hidden; position: relative; background: var(--cobalt-deep); }
 .stack { display: flex; flex-direction: column; gap: 16px; }
 .panel { border: 2px solid var(--rule); padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
@@ -192,7 +192,7 @@ details.panel > summary { cursor: pointer; list-style-position: inside; }
 details.panel[open] > summary { margin-bottom: 4px; }
 .panel__h { font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.02em; }
 .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
-.row--tight { gap: 6px; }
+.row--tight { gap: 6px; flex-wrap: wrap; }
 .hint { font-size: 14px; color: var(--text-soft); }
 .warn { font-size: 14px; font-weight: 700; }
 .done { font-weight: 700; }
@@ -219,8 +219,9 @@ details.panel[open] > summary { margin-bottom: 4px; }
 .qrow__q { font-weight: 600; }
 .badge { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.12em; border: 1px solid var(--rule); padding: 4px 8px; white-space: nowrap; }
 .badge--ready { background: var(--cobalt); color: var(--frost); }
-.teams { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-.teams__col { display: flex; flex-direction: column; gap: 8px; }
+.teams { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.teams__col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.teams__col .input { width: 100%; min-width: 0; }
 .teams__name { font-size: 18px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .teams__score { font-size: 40px; font-weight: 900; font-variant-numeric: tabular-nums; line-height: 1; }
 .answers { list-style: none; padding: 0; display: grid; gap: 5px; }
