@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { longLabels } from "../content/schema";
-import type { Question } from "../content/types";
-import { answering, otherTeam } from "../engine/reducer";
-import type { GameState, TeamId } from "../engine/types";
-import { PollControls } from "./PollControls";
+import { questionLabel, type Question } from "../content/types";
+import { answering, faceOffCall, otherTeam } from "../engine/reducer";
+import type { GameState, RoundState, TeamId } from "../engine/types";
+import { ScreenView } from "../ui/ScreenView";
+import { PhoneFaceOff } from "./BuzzerPanel";
 import type { HostGame } from "./useHostGame";
 
 /** Arm on the first click, act on the second. Wording, not colour, marks the dangerous ones. */
@@ -28,130 +29,212 @@ export function ConfirmButton({ label, confirmLabel, onConfirm, className = "bi-
         }
       }}
     >
-      {armed ? `CONFIRM: ${confirmLabel}` : label}
+      {armed ? `Confirm: ${confirmLabel}` : label}
     </button>
   );
 }
 
-const teamName = (s: GameState, t: TeamId) => s.teams[t].name;
+const TEAMS: TeamId[] = ["A", "B"];
+const name = (s: GameState, t: TeamId) => s.teams[t].name;
+const isTieBreak = (s: GameState) => s.tieBreakFrom != null && s.roundsPlayed >= s.tieBreakFrom;
+const roundLabel = (s: GameState) => (isTieBreak(s) ? "Tie-break round" : `Round ${Math.min(s.roundsPlayed + 1, s.totalRounds)} of ${s.totalRounds}`);
 
-function Teams({ g }: { g: HostGame }) {
+/** Which team is answering on the board right now, if any. */
+function playing(s: GameState): { team: TeamId; label: string } | null {
+  const r = s.round;
+  if (!r) return null;
+  if (s.phase === "team_turn") return { team: r.controllingTeam, label: "Playing" };
+  if (s.phase === "steal") return { team: otherTeam(r.controllingTeam), label: "Stealing" };
+  const turn = s.phase === "face_off" ? answering(r) : null;
+  return turn ? { team: turn, label: "Answering" } : null;
+}
+
+// ---------- side column ------------------------------------------------------------------------
+
+/** Scores stay in view while playing. Penalties and corrections live behind Adjust score. */
+export function Scoreboard({ g }: { g: HostGame }) {
+  const s = g.state;
+  const r = s.round;
+  const on = playing(s);
+  const [open, setOpen] = useState(false);
+  const [team, setTeam] = useState<TeamId>("A");
+  return (
+    <section className="card score" aria-label="Scores">
+      <div className="score__teams">
+        {TEAMS.map((t) => (
+          <div key={t} className={`score__team ${on?.team === t ? "is-on" : ""}`}>
+            <span className="score__name">{name(s, t)}</span>
+            <span className="score__num">{s.teams[t].score}</span>
+            <span className="score__tag">{on?.team === t ? on.label : " "}</span>
+          </div>
+        ))}
+      </div>
+      {r && (
+        <div className="score__round">
+          <div>
+            <span className="muted">Round points</span>
+            <b className="score__pot">{r.pot}</b>
+          </div>
+          <div>
+            <span className="muted">Strikes</span>
+            <span className="strikes-mini" aria-label={`${r.strikes} of 3 strikes`}>
+              {[1, 2, 3].map((n) => <i key={n} className={r.strikes >= n ? "is-on" : ""}>X</i>)}
+            </span>
+          </div>
+        </div>
+      )}
+      <div data-tour="adjust">
+        <button type="button" className="bi-button bi-button--outline host__btn host__btn--block" aria-expanded={open} onClick={() => setOpen(!open)}>
+          {open ? "Done adjusting" : "Adjust score"}
+        </button>
+        {open && (
+          <div className="adjust">
+            <div className="adjust__teams" role="group" aria-label="Team to adjust">
+              {TEAMS.map((t) => (
+                <button key={t} type="button" className="adjust__team" aria-pressed={team === t} onClick={() => setTeam(t)}>{name(s, t)}</button>
+              ))}
+            </div>
+            <div className="adjust__amounts" role="group" aria-label={`Change ${name(s, team)} score`}>
+              {[-10, -5, -1, 1, 5, 10].map((d) => (
+                <button key={d} type="button" className="bi-button bi-button--outline host__btn host__btn--sm" onClick={() => g.act({ type: "ADJUST_SCORE", team, delta: d })}>
+                  {d > 0 ? `+${d}` : `−${-d}`}
+                </button>
+              ))}
+            </div>
+            <p className="muted small">For penalties and corrections. Undo reverses an adjustment.</p>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+/** A small copy of the audience screen. It never plays sound. */
+export function AudiencePreview({ g }: { g: HostGame }) {
+  return (
+    <details className="card preview-card" open>
+      <summary>Audience screen</summary>
+      <div className="preview">{g.snapshot ? <ScreenView snapshot={g.snapshot} /> : null}</div>
+    </details>
+  );
+}
+
+// ---------- between rounds ---------------------------------------------------------------------
+
+function TeamNames({ g }: { g: HostGame }) {
   const s = g.state;
   const [names, setNames] = useState({ A: s.teams.A.name, B: s.teams.B.name });
-  const lobby = s.phase === "lobby";
+  const editable = s.roundsPlayed === 0;
   return (
-    <div className="panel panel--tight">
-      <h2 className="panel__h">Teams and scores</h2>
-      <div className="teams">
-        {(["A", "B"] as TeamId[]).map((t) => (
-          <div key={t} className="teams__col">
-            {lobby ? (
+    <section className="card" aria-label="Teams">
+      <h2 className="card__h">Teams</h2>
+      {editable ? (
+        <div className="names">
+          {TEAMS.map((t) => (
+            <label key={t} className="field">
+              <span className="field__label">Team {t}</span>
               <input
-                aria-label={`Team ${t} name`}
                 className="input"
                 value={names[t]}
                 maxLength={24}
                 onChange={(e) => setNames({ ...names, [t]: e.target.value })}
                 onBlur={() => g.act({ type: "SET_TEAM_NAMES", names })}
+                onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
               />
-            ) : (
-              <p className="teams__name">{s.teams[t].name}</p>
-            )}
-            <p className="teams__score">{s.teams[t].score}</p>
-            <div className="row row--tight" role="group" aria-label={`Correct ${s.teams[t].name} score`}>
-              {[-5, -1, 1, 5].map((d) => (
-                <button key={d} type="button" className="bi-button bi-button--outline host__btn host__btn--sm" onClick={() => g.act({ type: "ADJUST_SCORE", team: t, delta: d })}>
-                  {d > 0 ? `+${d}` : d}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-      <p className="hint">Corrections are separate from awards and can be undone.</p>
-    </div>
+            </label>
+          ))}
+        </div>
+      ) : (
+        <p className="names__fixed">{s.teams.A.name} <span className="muted">vs</span> {s.teams.B.name}</p>
+      )}
+    </section>
   );
 }
 
-/** Teams and scores sit beside the projector preview so they stay in view while playing. */
-export function ScorePanel({ g }: { g: HostGame }) {
-  const { A, B } = g.state.teams;
-  return <Teams key={`${A.name}|${B.name}`} g={g} />;
-}
-
-function Picker({ g }: { g: HostGame }) {
+function QuestionRow({ g, q }: { g: HostGame; q: Question }) {
   const s = g.state;
-  const left = s.totalRounds - s.roundsPlayed;
-  const tieBreak = s.tieBreakFrom != null && s.roundsPlayed >= s.tieBreakFrom;
-  return (
-    <div className="panel">
-      <div className="panel__bar">
-        <h2 className="panel__h">Choose a question · {tieBreak ? "TIE-BREAK ROUND" : `round ${Math.min(s.roundsPlayed + 1, s.totalRounds)} of ${s.totalRounds}`}</h2>
-        <label className="field field--inline">
-          <span className="bi-label">ROUNDS IN MATCH</span>
-          <input className="input input--sm" type="number" min={1} max={16} value={s.totalRounds} disabled={s.roundsPlayed > 0} onChange={(e) => g.act({ type: "NEW_MATCH", totalRounds: Math.max(1, Math.min(16, Number(e.target.value) || 3)) })} />
-        </label>
-      </div>
-      {left <= 0 && <p className="hint">All rounds played. Finish the match.</p>}
-      <ul className="qlist">
-        {g.pack.questions.map((q) => (
-          <QuestionRow key={q.id} g={g} q={q} played={s.playedQuestionIds.includes(q.id)} disabled={left <= 0} />
-        ))}
-      </ul>
-      {s.roundsPlayed > 0 && <ConfirmButton label="Finish match now" confirmLabel="end the match" onConfirm={() => g.act({ type: "END_MATCH" })} />}
-    </div>
-  );
-}
-
-function QuestionRow({ g, q, played, disabled }: { g: HostGame; q: Question; played: boolean; disabled: boolean }) {
   const ready = q.status === "ready";
+  const played = s.playedQuestionIds.includes(q.id);
+  const earlier = (s.usedEarlier ?? []).includes(q.id);
+  const full = s.roundsPlayed >= s.totalRounds;
   const long = longLabels(q);
-  const start = () => g.startRound(q, "A"); // who goes first is decided by the face-off
+  const start = () => g.startRound(q, "A"); // who plays first is decided by the face-off
   return (
-    <li className={`qrow ${ready ? "" : "qrow--pending"}`}>
-      <span className="qrow__id">{q.id}</span>
-      <span className="qrow__body">
-        <span className="bi-label">{q.category.toUpperCase()}</span>
-        <span className="qrow__q">{q.prompt}</span>
-        {ready && long.length > 0 && <span className="warn">Long labels may wrap: {long.join(", ")}</span>}
+    <li className={`q ${ready && !played ? "" : "q--off"}`}>
+      <span className="q__num">{questionLabel(q.id)}</span>
+      <span className="q__text">
+        {q.prompt}
+        {ready && long.length > 0 && <span className="q__warn">Long answers may wrap on the board: {long.join(", ")}</span>}
       </span>
-      <span className={`badge ${ready ? "badge--ready" : ""}`}>{played ? "PLAYED" : ready ? `READY · ${q.answers.length}` : "AWAITING SURVEY"}</span>
+      <span className="q__tags">
+        {played ? <span className="tag">Played</span> : earlier ? <span className="tag">Used in an earlier game</span> : !ready ? <span className="tag tag--quiet">No results yet</span> : null}
+      </span>
       {ready ? (
         long.length ? (
-          <ConfirmButton label="Start round" confirmLabel="labels may wrap, start anyway" onConfirm={start} disabled={played || disabled} className="bi-button host__btn" />
+          <ConfirmButton label="Start" confirmLabel="start anyway" onConfirm={start} disabled={played || full} className="bi-button host__btn" />
         ) : (
-          <button type="button" className="bi-button host__btn" disabled={played || disabled} onClick={start}>Start round</button>
+          <button type="button" className="bi-button host__btn" disabled={played || full} onClick={start}>Start</button>
         )
       ) : (
         <button type="button" className="bi-button bi-button--outline host__btn" aria-pressed={g.previewId === q.id} onClick={() => g.setPreviewId(g.previewId === q.id ? null : q.id)}>
-          {g.previewId === q.id ? "Hide preview" : "Preview layout"}
+          {g.previewId === q.id ? "Hide preview" : "Preview"}
         </button>
       )}
     </li>
   );
 }
 
+function Lobby({ g }: { g: HostGame }) {
+  const s = g.state;
+  const { A, B } = s.teams;
+  return (
+    <>
+      <TeamNames key={`${A.name}|${B.name}|${s.roundsPlayed}`} g={g} />
+      <section className="card" data-tour="questions" aria-label="Questions">
+        <div className="card__bar">
+          <h2 className="card__h">{roundLabel(s)}: choose a question</h2>
+          {s.roundsPlayed > 0 && <span className="muted">{A.name} {A.score} · {B.name} {B.score}</span>}
+        </div>
+        <ul className="qlist">
+          {g.pack.questions.map((q) => <QuestionRow key={q.id} g={g} q={q} />)}
+        </ul>
+        {s.roundsPlayed > 0 && (
+          <div className="row">
+            <ConfirmButton label="Finish the game now" confirmLabel="end this game" onConfirm={() => g.act({ type: "END_MATCH" })} className="bi-button host__btn host__btn--quiet" />
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
+
+// ---------- during a round ---------------------------------------------------------------------
+
 function Answers({ g }: { g: HostGame }) {
   const r = g.state.round!;
   const phase = g.state.phase;
   // In the face-off a reveal is the answer of whoever is up, so it needs a buzz first.
-  const canReveal = phase === "face_off" ? answering(r.faceOff) !== null : phase === "team_turn" || phase === "steal" || phase === "round_over";
-  const noPoints = phase === "round_over";
+  const canReveal = phase === "face_off" ? answering(r) !== null : phase === "team_turn" || phase === "steal" || phase === "round_over";
+  const label = phase === "round_over" ? "Show" : "Reveal";
   return (
-    <ol className={`answers ${r.answers.length > 6 ? "answers--two" : ""}`}>
+    <ol className={`answers ${r.answers.length > 6 ? "answers--two" : ""}`} data-tour="answers" aria-label="Answers (private)">
       {r.answers.map((a, i) => {
         const shown = r.revealed.includes(a.id);
         return (
           <li key={a.id} className={`answer ${shown ? "answer--shown" : ""}`}>
-            <kbd className="answer__key">{i === 9 ? 0 : i + 1}</kbd>
+            <kbd className="answer__key" aria-label={`Key ${i === 9 ? 0 : i + 1}`}>{i === 9 ? 0 : i + 1}</kbd>
             <span className="answer__main">
               <span className="answer__text">{a.text}</span>
-              {a.aliases.length > 0 && <span className="answer__alias">also: {a.aliases.join(", ")}</span>}
+              {a.aliases.length > 0 && <span className="answer__alias">Also: {a.aliases.join(", ")}</span>}
             </span>
             <span className="answer__count">{a.count}</span>
-            <button type="button" className="bi-button bi-button--outline host__btn host__btn--sm" disabled={!canReveal || shown} onClick={() => g.act({ type: "REVEAL", answerId: a.id })}>
-              {shown ? "Shown" : phase === "steal" ? "Steal hit" : noPoints ? "Show only" : "Reveal"}
-            </button>
+            {shown ? (
+              <span className="answer__on">On board</span>
+            ) : (
+              <button type="button" className="bi-button host__btn answer__btn" disabled={!canReveal} onClick={() => g.act({ type: "REVEAL", answerId: a.id })}>
+                {label}
+              </button>
+            )}
           </li>
         );
       })}
@@ -159,38 +242,136 @@ function Answers({ g }: { g: HostGame }) {
   );
 }
 
-/** What the host should do next in the face-off, in one sentence. */
-function faceOffHint(s: GameState, r: NonNullable<GameState["round"]>): string {
+function why(s: GameState, r: RoundState, team: TeamId): string {
   const fo = r.faceOff!;
-  if (fo.winner) return `${teamName(s, fo.winner)} won the face-off.`;
-  const turn = answering(fo);
-  if (turn) {
-    const second = fo.buzzed !== turn;
-    return `${teamName(s, turn)} ${second ? "answers next" : "buzzed first"}. Reveal the matching answer (click it or press its number), or Miss (X) if it is not on the board.`;
-  }
-  if (fo.tries.A && fo.tries.B) return "Both missed. For the next two players, tap the team whose buzzer goes first.";
-  return "Read the question aloud. When a buzzer goes off, tap the team that was first.";
+  const a = fo.tries[fo.buzzed!];
+  const b = fo.tries[otherTeam(fo.buzzed!)];
+  if (!b) return `${name(s, team)} found the top answer`;
+  if (!a?.hit || !b.hit) return `${name(s, team)} has the only answer on the board`;
+  if (a.count === b.count) return "same points, so it goes to the first buzzer";
+  return `${name(s, team)}'s answer scores higher`;
 }
 
-function FaceOffPanel({ g }: { g: HostGame }) {
+/** The face-off, step by step: who buzzed, their answer, then the hosts' call. */
+function FaceOff({ g }: { g: HostGame }) {
   const s = g.state;
   const r = s.round!;
   const fo = r.faceOff!;
-  const turn = answering(fo);
+  const turn = answering(r);
+  const call = faceOffCall(r);
+  const tries = Object.values(fo.tries);
+  const waiting = !turn && call === null && !tries.some((t) => t?.hit);
+  const second = turn !== null && fo.buzzed !== turn;
   return (
-    <div className="subpanel">
-      <p className="bi-label">FACE-OFF</p>
-      <p role="status"><b>{faceOffHint(s, r)}</b></p>
-      <div className="row">
-        {(["A", "B"] as TeamId[]).map((t) => (
-          <button key={t} type="button" className="bi-button host__btn host__btn--award" disabled={!!fo.winner || Object.keys(fo.tries).length === 1} onClick={() => g.act({ type: "BUZZ", team: t })}>
-            {teamName(s, t)} buzzed first
-          </button>
-        ))}
-        <button type="button" className="bi-button host__btn host__btn--strike" disabled={!turn} onClick={() => g.act({ type: "FACEOFF_MISS" })}>Miss: not on the board (X)</button>
-        <ConfirmButton label="Skip face-off" confirmLabel={`${teamName(s, r.controllingTeam)} starts, no face-off`} onConfirm={() => g.act({ type: "BEGIN_PLAY" })} />
-      </div>
-      <p className="hint">Tapped the wrong team? Tap the right one before anyone answers.</p>
+    <div className="step" data-tour="faceoff">
+      <p className="step__label">Face-off</p>
+      {waiting && (
+        <>
+          <p className="step__text">{tries.length === 2 ? "Both missed. Bring up the next two players. " : ""}Who buzzed first? Tap the team the hosts name.</p>
+          {g.buzzerMode === "phone" && <PhoneFaceOff g={g} />}
+          <div className="row">
+            {TEAMS.map((t) => (
+              <button key={t} type="button" className="bi-button host__btn host__btn--lg" onClick={() => g.act({ type: "BUZZ", team: t })}>{name(s, t)} buzzed first</button>
+            ))}
+          </div>
+        </>
+      )}
+      {turn && (
+        <>
+          <p className="step__text"><b>{name(s, turn)}</b> {second ? "answers next" : "buzzed first and answers"}. Reveal their answer below, or press Wrong answer.</p>
+          {!second && tries.length === 0 && (
+            <button type="button" className="link-btn" onClick={() => g.act({ type: "BUZZ", team: otherTeam(turn) })}>Wrong team? It was {name(s, otherTeam(turn))}</button>
+          )}
+        </>
+      )}
+      {!waiting && !turn && (
+        <>
+          <p className="step__text">Over to the hosts: who won the face-off?</p>
+          {call && <p className="step__hint">By the survey, {name(s, call)} wins: {why(s, r, call)}.</p>}
+          <div className="row">
+            {TEAMS.map((t) => (
+              <button key={t} type="button" className={`bi-button host__btn host__btn--lg ${call && call !== t ? "bi-button--outline" : ""}`} onClick={() => g.act({ type: "FACEOFF_WIN", team: t })}>{name(s, t)} wins the face-off</button>
+            ))}
+          </div>
+        </>
+      )}
+      {(waiting || turn) && (
+        <p className="step__quiet">
+          Hosts already decided?{" "}
+          {TEAMS.map((t) => (
+            <button key={t} type="button" className="link-btn" onClick={() => g.act({ type: "FACEOFF_WIN", team: t })}>{name(s, t)} won</button>
+          ))}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** One sentence on what happens now, with the buttons for it. */
+function NextStep({ g }: { g: HostGame }) {
+  const s = g.state;
+  const r = s.round!;
+  const ctl = r.controllingTeam;
+  const stealer = otherTeam(ctl);
+  const [skipping, setSkipping] = useState(false);
+  const award = r.stealResult === "success" ? stealer : ctl;
+
+  if (s.phase === "face_off") return <FaceOff g={g} />;
+  let text: ReactNode = null;
+  let actions: ReactNode = null;
+  switch (s.phase) {
+    case "intro":
+      text = "The hosts read the question to the room.";
+      actions = <button type="button" className="bi-button host__btn host__btn--lg" onClick={() => g.act({ type: "SHOW_BOARD" })}>Show the board</button>;
+      break;
+    case "board_ready":
+      text = skipping ? "No face-off. Who plays first?" : "Bring one player from each team to the buzzers, then start the face-off.";
+      actions = skipping ? (
+        <>
+          {TEAMS.map((t) => (
+            <button key={t} type="button" className="bi-button host__btn host__btn--lg" onClick={() => { g.act({ type: "SET_CONTROL", team: t }); g.act({ type: "BEGIN_PLAY" }); }}>{name(s, t)} plays first</button>
+          ))}
+          <button type="button" className="link-btn" onClick={() => setSkipping(false)}>Cancel</button>
+        </>
+      ) : (
+        <>
+          <button type="button" className="bi-button host__btn host__btn--lg" onClick={() => g.act({ type: "FACEOFF_START" })}>Start the face-off</button>
+          <button type="button" className="bi-button bi-button--outline host__btn" onClick={() => setSkipping(true)}>Skip the face-off</button>
+        </>
+      );
+      break;
+    case "play_or_pass": {
+      const w = r.faceOff!.winner!;
+      text = <><b>{name(s, w)}</b> won the face-off. Ask them: play or pass?</>;
+      actions = (
+        <>
+          <button type="button" className="bi-button host__btn host__btn--lg" onClick={() => g.act({ type: "PLAY_OR_PASS", choice: "play" })}>{name(s, w)} plays</button>
+          <button type="button" className="bi-button host__btn host__btn--lg" onClick={() => g.act({ type: "PLAY_OR_PASS", choice: "pass" })}>{name(s, w)} passes</button>
+          <button type="button" className="link-btn" onClick={() => g.act({ type: "FACEOFF_WIN", team: otherTeam(w) })}>Wrong call? {name(s, otherTeam(w))} won</button>
+        </>
+      );
+      break;
+    }
+    case "team_turn":
+      text = <><b>{name(s, ctl)}</b> is playing. Reveal each right answer; press Wrong answer for a miss. Three wrong answers open the steal.</>;
+      break;
+    case "steal":
+      text = <><b>{name(s, stealer)}</b> can steal with one guess. Reveal it if it is on the board, otherwise press Wrong answer.</>;
+      break;
+    case "round_over":
+      if (!r.settlement) {
+        text = r.stealResult === "success" ? <><b>{name(s, stealer)}</b> stole the round.</> : r.stealResult === "fail" ? <>Steal missed. <b>{name(s, ctl)}</b> keeps the points.</> : r.cleared ? "The board is cleared." : "The round has ended.";
+        actions = <button type="button" className="bi-button host__btn host__btn--lg" onClick={() => g.act({ type: "AWARD" })}>Give {r.pot} points to {name(s, award)}</button>;
+      } else {
+        text = <>{r.settlement.amount} points to <b>{name(s, r.settlement.winner)}</b>. Showing the rest of the answers is for fun; it never changes scores.</>;
+        actions = <button type="button" className="bi-button host__btn host__btn--lg" onClick={() => g.act({ type: "NEXT_ROUND" })}>{s.roundsPlayed + 1 >= s.totalRounds ? "Finish the game" : "Next question"}</button>;
+      }
+      break;
+  }
+  return (
+    <div className="step" data-tour="next">
+      <p className="step__text">{text}</p>
+      {actions && <div className="row">{actions}</div>}
     </div>
   );
 }
@@ -198,118 +379,83 @@ function FaceOffPanel({ g }: { g: HostGame }) {
 /** A countdown on the projector. It ends by itself, and ends when anything happens in the round. */
 function TimerGroup({ g }: { g: HostGame }) {
   return (
-    <div className="timer-group" role="group" aria-label="Countdown timer">
-      <span className="bi-label">TIMER</span>
+    <span className="timer" role="group" aria-label="Countdown timer on the projector">
+      <span className="muted">Timer</span>
       {[5, 10, 20, 30].map((n) => (
-        <button key={n} type="button" className="bi-button bi-button--outline host__btn host__btn--sm" onClick={() => g.startTimer(n)}>{n} s</button>
+        <button key={n} type="button" className="link-btn" onClick={() => g.startTimer(n)}>{n}s</button>
       ))}
-      <button type="button" className="bi-button bi-button--outline host__btn host__btn--sm" disabled={!g.timer} onClick={g.stopTimer}>Stop</button>
-    </div>
+      {g.timer && <button type="button" className="link-btn" onClick={g.stopTimer}>Stop</button>}
+    </span>
   );
 }
-
-const PHASE_LABEL: Record<string, string> = {
-  intro: "Question",
-  board_ready: "Board ready",
-  face_off: "Face-off",
-  play_or_pass: "Play or pass",
-  team_turn: "Team turn",
-  steal: "Steal",
-  round_over: "Round over",
-};
 
 function Round({ g }: { g: HostGame }) {
   const s = g.state;
   const r = s.round!;
-  const ctl = r.controllingTeam;
-  const stealer = otherTeam(ctl);
-  const inFaceOff = s.phase === "face_off" || s.phase === "play_or_pass";
-  const undoBtn = (
-    <button type="button" className="bi-button bi-button--outline host__btn" disabled={!g.canUndo} onClick={() => g.act({ type: "UNDO" })}>Undo last (U)</button>
-  );
-  const awardTo = r.stealResult === "success" ? stealer : ctl;
-  const winner = r.faceOff?.winner ?? null;
+  const wrongOk = (s.phase === "face_off" && answering(r) !== null) || s.phase === "team_turn" || s.phase === "steal";
+  const live = s.phase === "face_off" || s.phase === "team_turn" || s.phase === "steal";
   return (
-    <div className="panel">
-      <div className="round__top">
-        <p className="bi-label">{r.category.toUpperCase()} · {(PHASE_LABEL[s.phase] ?? s.phase).toUpperCase()}</p>
-        <p className="round__meta">Pot <b>{r.pot}</b> · {inFaceOff ? "no strikes in the face-off" : <>Strikes <b>{r.strikes}/3</b> · {s.phase === "steal" ? `${teamName(s, stealer)} steals` : `${teamName(s, ctl)} on the board`}</>}</p>
-      </div>
+    <section className="round" aria-label="Current round">
+      <p className="round__meta">{questionLabel(r.questionId)} · {roundLabel(s)}</p>
       <h2 className="round__q">{r.prompt}</h2>
-
-      <div className="row">
-        {s.phase === "intro" && <button type="button" className="bi-button host__btn" onClick={() => g.act({ type: "SHOW_BOARD" })}>Show the board</button>}
-        {s.phase === "board_ready" && <button type="button" className="bi-button host__btn" onClick={() => g.act({ type: "FACEOFF_START" })}>Start face-off (buzzers)</button>}
-        {s.phase === "board_ready" && <button type="button" className="bi-button bi-button--outline host__btn" onClick={() => g.act({ type: "BEGIN_PLAY" })}>Skip face-off, begin guessing</button>}
-        {s.phase === "play_or_pass" && winner && (
-          <>
-            <button type="button" className="bi-button host__btn" onClick={() => g.act({ type: "PLAY_OR_PASS", choice: "play" })}>{teamName(s, winner)} PLAYS</button>
-            <button type="button" className="bi-button host__btn" onClick={() => g.act({ type: "PLAY_OR_PASS", choice: "pass" })}>{teamName(s, winner)} PASSES to {teamName(s, otherTeam(winner))}</button>
-            <span className="hint">Ask the winning player: play or pass?</span>
-          </>
-        )}
-        {s.phase === "board_ready" && <button type="button" className="bi-button bi-button--outline host__btn" title="Only matters if you skip the face-off" onClick={() => g.act({ type: "SET_CONTROL", team: stealer })}>Skipping? {teamName(s, ctl)} starts. Switch to {teamName(s, stealer)}</button>}
-        {(s.phase === "intro" || s.phase === "board_ready") && <ConfirmButton label="Back to questions" confirmLabel="drop this round" onConfirm={() => g.act({ type: "ABANDON_ROUND" })} />}
-        {s.phase === "team_turn" && (
-          <>
-            <button type="button" className="bi-button host__btn host__btn--strike" onClick={() => g.act({ type: "STRIKE" })}>Add strike (X)</button>
-            <ConfirmButton label="End round early" confirmLabel="no more guesses" onConfirm={() => g.act({ type: "END_ROUND" })} />
-          </>
-        )}
-        {s.phase === "steal" && (
-          <>
-            <button type="button" className="bi-button host__btn host__btn--strike" onClick={() => g.act({ type: "STRIKE" })}>Steal missed (X)</button>
-            <span className="hint">{teamName(s, stealer)} gets one guess. A hit scores the answer and takes the pot.</span>
-          </>
-        )}
-        {s.phase === "round_over" && !r.settlement && (
-          <button type="button" className="bi-button host__btn host__btn--award" onClick={() => g.act({ type: "AWARD" })}>
-            Award {r.pot} to {teamName(s, awardTo)}
-          </button>
-        )}
-        {s.phase === "round_over" && r.settlement && (
-          <>
-            <span className="done">{r.settlement.amount} awarded to {teamName(s, r.settlement.winner)}.</span>
-            <button type="button" className="bi-button host__btn" onClick={() => g.act({ type: "NEXT_ROUND" })}>{s.roundsPlayed + 1 >= s.totalRounds ? "Finish match" : "Next round"}</button>
-          </>
-        )}
-        {undoBtn}
-        {(s.phase === "face_off" || s.phase === "team_turn" || s.phase === "steal") && <TimerGroup g={g} />}
-      </div>
+      <NextStep key={s.phase} g={g} />
       {s.note && <p className="note" role="status">{s.note}</p>}
-
-      {s.phase === "face_off" && r.faceOff && <FaceOffPanel g={g} />}
-      {s.phase !== "intro" && s.phase !== "board_ready" && <Answers g={g} />}
-      {s.phase === "round_over" && r.settlement && <p className="hint">Revealing the rest is for discussion only. It never changes the pot or scores.</p>}
-      <p className="hint">Undo restores the previous scores and pot. Answers already shown cannot become unknown to the audience.</p>
-      {s.phase === "team_turn" && <PollControls g={g} />}
-    </div>
+      <Answers g={g} />
+      <div className="actionbar">
+        <button
+          type="button"
+          className="bi-button host__btn host__btn--danger host__btn--lg"
+          data-tour="wrong"
+          disabled={!wrongOk}
+          title={s.phase === "face_off" ? "A face-off miss is not a strike" : undefined}
+          onClick={() => g.act(s.phase === "face_off" ? { type: "FACEOFF_MISS" } : { type: "STRIKE" })}
+        >
+          Wrong answer <kbd>X</kbd>
+        </button>
+        <button type="button" className="bi-button bi-button--outline host__btn host__btn--lg" data-tour="undo" disabled={!g.canUndo} onClick={() => g.act({ type: "UNDO" })}>
+          Undo <kbd>U</kbd>
+        </button>
+        <span className="actionbar__more">
+          {live && <TimerGroup g={g} />}
+          {s.phase === "team_turn" && <ConfirmButton label="End round early" confirmLabel="no more guesses" onConfirm={() => g.act({ type: "END_ROUND" })} className="link-btn" />}
+          {(s.phase === "intro" || s.phase === "board_ready") && <ConfirmButton label="Back to questions" confirmLabel="drop this round" onConfirm={() => g.act({ type: "ABANDON_ROUND" })} className="link-btn" />}
+        </span>
+      </div>
+    </section>
   );
 }
 
 function Over({ g }: { g: HostGame }) {
   const { A, B } = g.state.teams;
+  const tie = A.score === B.score;
   return (
-    <div className="panel">
-      <h2 className="panel__h">Match over</h2>
-      <p className="round__q">{A.score === B.score ? `Tie: ${A.score} each` : `${A.score > B.score ? A.name : B.name} wins, ${Math.max(A.score, B.score)} to ${Math.min(A.score, B.score)}`}</p>
-      {A.score === B.score && <p className="hint">Level. Play one more round to settle it: it gets its own face-off, strikes and steal, and the projector calls it the tie-break.</p>}
+    <section className="card over" data-tour="next">
+      <p className="round__meta">Game over</p>
+      <h2 className="round__q">{tie ? `It's a tie: ${A.score} each` : `${A.score > B.score ? A.name : B.name} wins, ${Math.max(A.score, B.score)} to ${Math.min(A.score, B.score)}`}</h2>
+      {tie && <p>Play one more round to settle it. It gets its own face-off, strikes and steal.</p>}
       <div className="row">
-        {A.score === B.score && <button type="button" className="bi-button host__btn host__btn--award" onClick={() => g.act({ type: "TIEBREAK" })}>Play a tie-break round</button>}
-        <ConfirmButton label="Start a new match" confirmLabel="reset scores" onConfirm={() => g.act({ type: "NEW_MATCH" })} className={A.score === B.score ? "bi-button bi-button--outline host__btn" : "bi-button host__btn"} />
-        {g.canUndo && <button type="button" className="bi-button bi-button--outline host__btn" onClick={() => g.act({ type: "UNDO" })}>Undo last (U)</button>}
+        {tie && <button type="button" className="bi-button host__btn host__btn--lg" onClick={() => g.act({ type: "TIEBREAK" })}>Play a tie-break round</button>}
+        <ConfirmButton label="Set up the next two teams" confirmLabel="new teams, scores to 0" onConfirm={g.nextTeams} className={`bi-button host__btn host__btn--lg ${tie ? "bi-button--outline" : ""}`} />
+        {g.canUndo && <button type="button" className="bi-button bi-button--outline host__btn" onClick={() => g.act({ type: "UNDO" })}>Undo <kbd>U</kbd></button>}
       </div>
-    </div>
+      <p className="muted small">The next teams keep the same questions. Ones already played are marked so you can pick fresh ones.</p>
+    </section>
   );
 }
 
-export function PlayTab({ g }: { g: HostGame }) {
+export function LiveTab({ g }: { g: HostGame }) {
   const s = g.state;
   return (
-    <div className="stack">
-      {s.phase === "lobby" && <Picker g={g} />}
-      {s.round && s.phase !== "lobby" && s.phase !== "match_over" && <Round g={g} />}
-      {s.phase === "match_over" && <Over g={g} />}
+    <div className="live">
+      <div className="live__main">
+        {s.phase === "lobby" && <Lobby g={g} />}
+        {s.round && s.phase !== "lobby" && s.phase !== "match_over" && <Round g={g} />}
+        {s.phase === "match_over" && <Over g={g} />}
+      </div>
+      <aside className="live__side" aria-label="Scores and audience screen">
+        <Scoreboard g={g} />
+        <AudiencePreview g={g} />
+      </aside>
     </div>
   );
 }

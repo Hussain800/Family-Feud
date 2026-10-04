@@ -9,7 +9,18 @@ export const KEYS = {
   packBackup: "ff.pack.backup.v1",
   session: "ff.session.v1",
   probe: "ff.probe.v1",
+  buzzers: "ff.buzzers.v2",
+  guide: "ff.guide.v1",
 } as const;
+
+/** Physical standalone buzzers judged by the hosts (default), or one assigned phone per team. */
+export type BuzzerMode = "physical" | "phone";
+export const loadBuzzerMode = (): BuzzerMode => (readJson(KEYS.buzzers) === "phone" ? "phone" : "physical");
+export const saveBuzzerMode = (m: BuzzerMode): WriteResult => writeJson(KEYS.buzzers, m);
+
+/** The quick guide was finished or skipped on this laptop. */
+export const guideSeen = (): boolean => readJson(KEYS.guide) !== null;
+export const markGuideSeen = (how: "done" | "skipped"): WriteResult => writeJson(KEYS.guide, how);
 
 export type WriteResult = { ok: true; at: number } | { ok: false; error: string };
 

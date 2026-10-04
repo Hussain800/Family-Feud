@@ -40,3 +40,6 @@ export interface Pack {
 
 export const MAX_ANSWERS = 10;
 export const DEMO_LABEL = "DEMO: INVENTED RESULTS";
+
+/** "q04" reads as "Question 4" wherever a person sees it. */
+export const questionLabel = (id: string): string => `Question ${Number(id.replace(/\D/g, "")) || id}`;

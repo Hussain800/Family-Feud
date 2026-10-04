@@ -1,22 +1,10 @@
 // The only shapes that ever leave the moderator window (BroadcastChannel to the projector,
-// Air Jam replicated store to phones). Built by an allowlist in project.ts, never by copying host state.
+// Air Jam replicated store to buzzer phones). Built by an allowlist in project.ts, never by copying host state.
 import type { Phase, TeamId } from "../engine/types";
 
 export type PublicSlot =
   | { index: number; revealed: false }
   | { index: number; revealed: true; text: string; count: number };
-
-export interface PublicPoll {
-  id: string;
-  status: "open" | "closed";
-  options: { id: string; label: string }[];
-  durationMs: number;
-  /** Milliseconds left when this snapshot was published. Phones count down from receipt; the host deadline is the authority. */
-  remainingMs: number;
-  /** Number of accepted ballots. Per-option totals appear only once closed. */
-  responses: number;
-  results: { optionId: string; votes: number }[] | null;
-}
 
 export type RelayStatus = "ready" | "connecting" | "offline";
 
@@ -49,14 +37,29 @@ export interface PublicSnapshot {
   timer: { endsAt: number; durationMs: number } | null;
   note: string | null;
   settlement: { winner: TeamId; amount: number; kind: string } | null;
-  poll: PublicPoll | null;
   /** The buzzer duel. Only who buzzed and whether each answer hit; the hit itself is already a revealed slot. */
   faceOff: PublicFaceOff | null;
+  /** Phone-buzzer mode only; null with physical buzzers. */
+  buzzers: PublicBuzzers | null;
+  /** This snapshot comes from an Undo: the projector replays no sound or effect for it. */
+  undone: boolean;
+}
+
+/** Times are when each press reached the moderator laptop, counted from when the buzzers opened. Not press times. */
+export interface PublicBuzzers {
+  open: boolean;
+  /** Changes every time the buzzers open, so a press meant for an earlier opening is refused. */
+  armId: string | null;
+  paired: Record<TeamId, boolean>;
+  first: { team: TeamId; ms: number } | null;
+  second: { team: TeamId; ms: number } | null;
 }
 
 export interface PublicFaceOff {
   buzzed: TeamId | null;
   tries: Record<TeamId, "hit" | "miss" | null>;
+  /** The answers so far settle it by the survey: the room waits for the hosts' call. */
+  awaitingHosts: boolean;
   winner: TeamId | null;
   choice: "play" | "pass" | null;
 }
@@ -78,6 +81,7 @@ export const EMPTY_SNAPSHOT: PublicSnapshot = {
   timer: null,
   note: null,
   settlement: null,
-  poll: null,
   faceOff: null,
+  buzzers: null,
+  undone: false,
 };

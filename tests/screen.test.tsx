@@ -28,14 +28,11 @@ const base: PublicSnapshot = {
 };
 
 describe("plain-text rendering", () => {
-  it("escapes revealed answers, team names and poll labels", () => {
+  it("escapes revealed answers, team names and banner text", () => {
     const html = renderToString(
       <ScreenView
-        snapshot={{
-          ...base,
-          teams: [{ id: "A", name: "<b>Foxes</b>", score: 0 }, { id: "B", name: "Owls", score: 0 }],
-          poll: { id: "p", status: "open", options: [{ id: "o1", label: "<img src=x onerror=alert(1)>" }, { id: "o2", label: "Two" }], durationMs: 20000, remainingMs: 20000, responses: 0, results: null },
-        }}
+        snapshot={{ ...base, teams: [{ id: "A", name: "<b>Foxes</b>", score: 0 }, { id: "B", name: "Owls", score: 0 }] }}
+        flash={{ id: 1, kind: "banner", text: "<img src=x onerror=alert(1)>" }}
       />,
     );
     expect(html).not.toContain("<script>alert");
@@ -50,9 +47,18 @@ describe("plain-text rendering", () => {
     expect(renderToString(<ScreenView snapshot={base} />)).not.toContain("DEMO:");
   });
 
-  it("concealed tiles render no answer content or points", () => {
+  it("concealed tiles render no answer content or points; shown tiles carry the face that flips over", () => {
     const html = renderToString(<ScreenView snapshot={base} />);
     expect(html).toContain('aria-label="2: hidden"');
+    expect(html).toMatch(/class="tile tile--shown"[^>]*><span class="tile__inner">/);
+    expect(html.split('aria-label="2: hidden"')[1].split("</li>")[0]).not.toMatch(/tile__t"/);
+  });
+
+  it("draws the red X and banners only when the projector page passes one", () => {
+    expect(renderToString(<ScreenView snapshot={base} />)).not.toContain("flash");
+    const x = renderToString(<ScreenView snapshot={base} flash={{ id: 1, kind: "x", count: 3 }} />);
+    expect(x.match(/class="flash__x"/g)).toHaveLength(3);
+    expect(renderToString(<ScreenView snapshot={base} flash={{ id: 2, kind: "banner", text: "TEAM A PLAYS" }} />)).toContain("TEAM A PLAYS");
   });
 
   it("between rounds the projector shows the scoreboard, not the join page", () => {
@@ -63,24 +69,40 @@ describe("plain-text rendering", () => {
     expect(html).not.toContain("ROOM CODE");
   });
 
-  it("a lobby without a usable join address says so instead of drawing a dead QR", () => {
-    const html = renderToString(<ScreenView snapshot={{ ...EMPTY_SNAPSHOT, room: { ...base.room, joinUrl: "http://localhost:5173/controller?room=ABCD" } }} />);
-    expect(html).toContain("Phones cannot reach this address");
+  it("physical buzzers: the lobby shows no QR code, room code or phone count", () => {
+    const html = renderToString(<ScreenView snapshot={{ ...EMPTY_SNAPSHOT, room: { code: null, joinUrl: null, status: "offline", connected: 0, capacity: 16 } }} />);
+    expect(html).not.toMatch(/ROOM|QR|phones? connected|<svg[^>]*qr/i);
+  });
+
+  it("phone buzzers: the pairing code shows only while a team still needs its phone, and never for a localhost link", () => {
+    const buzzers = { open: false, armId: null, paired: { A: true, B: false }, first: null, second: null };
+    const lobby = (b: PublicSnapshot["buzzers"], joinUrl = base.room.joinUrl) => renderToString(<ScreenView snapshot={{ ...EMPTY_SNAPSHOT, room: { ...base.room, joinUrl }, buzzers: b }} />);
+    expect(lobby(buzzers)).toContain("BUZZER PHONES");
+    expect(lobby({ ...buzzers, paired: { A: true, B: true } })).not.toContain("BUZZER PHONES");
+    expect(lobby(buzzers, "http://localhost:5173/controller?room=ABCD")).not.toContain("BUZZER PHONES");
   });
 });
 
 describe("sound cues are derived from public changes only", () => {
   const shown = (n: number): PublicSnapshot => ({ ...base, round: { ...base.round!, slots: base.round!.slots.map((s, i) => (i < n ? { index: i + 1, revealed: true as const, text: "x", count: 1 } : { index: i + 1, revealed: false as const })) } });
-  it("maps reveal, strike, steal, award, poll open and close", () => {
+  it("maps reveal, strike, steal, award, round start and final", () => {
     expect(cueFor(shown(0), shown(1))).toBe("reveal");
     expect(cueFor(base, { ...base, strikes: 1 })).toBe("strike");
-    expect(cueFor({ ...base, strikes: 2 }, { ...base, strikes: 3, phase: "steal" })).toBe("steal");
+    expect(cueFor({ ...base, strikes: 2 }, { ...base, strikes: 3, phase: "steal" })).toBe("strike"); // the third X first; the page follows with the steal
     expect(cueFor(base, { ...base, settlement: { winner: "A", amount: 5, kind: "clear" } })).toBe("award");
-    const poll = { id: "p", status: "open" as const, options: [], durationMs: 1, remainingMs: 1, responses: 0, results: null };
-    expect(cueFor(base, { ...base, poll })).toBe("pollOpen");
-    expect(cueFor({ ...base, poll }, { ...base, poll: { ...poll, status: "closed" } })).toBe("pollClose");
     expect(cueFor({ ...base, phase: "lobby" }, { ...base, phase: "intro" })).toBe("roundStart");
     expect(cueFor(base, { ...base, phase: "match_over" })).toBe("final");
+  });
+
+  it("a failed steal gets the X; a successful one gets the reveal", () => {
+    const steal = { ...shown(1), phase: "steal" as const, strikes: 3 };
+    expect(cueFor(steal, { ...steal, phase: "round_over" })).toBe("stealMiss");
+    expect(cueFor(steal, { ...shown(2), phase: "round_over", strikes: 3 })).toBe("reveal");
+  });
+
+  it("an Undo makes no sound or effect, whatever it changes", () => {
+    expect(cueFor({ ...base, phase: "round_over" }, { ...base, phase: "steal", undone: true })).toBeNull();
+    expect(cueFor(shown(0), { ...shown(1), undone: true })).toBeNull();
   });
 
   it("plays the theme only between rounds, on the intro and at the end; live play is silent", () => {
@@ -124,7 +146,7 @@ describe("question intro", () => {
 });
 
 describe("face-off on the projector", () => {
-  const fo = { buzzed: null, tries: { A: null, B: null }, winner: null, choice: null } as const;
+  const fo = { buzzed: null, tries: { A: null, B: null }, awaitingHosts: false, winner: null, choice: null } as const;
   const view = (faceOff: PublicSnapshot["faceOff"], phase: PublicSnapshot["phase"] = "face_off") =>
     renderToString(<ScreenView snapshot={{ ...base, phase, faceOff }} />).replace(/<!-- -->/g, "");
 
@@ -132,6 +154,8 @@ describe("face-off on the projector", () => {
     expect(view(fo)).toContain("ONE PLAYER FROM EACH TEAM TO THE BUZZERS");
     expect(view({ ...fo, buzzed: "A" })).toContain("TEAM A BUZZED FIRST: ANSWER NOW");
     expect(view({ ...fo, buzzed: "A", tries: { A: "hit", B: null } })).toContain("TEAM B: YOUR ANSWER");
+    expect(view({ ...fo, buzzed: "A", tries: { A: "hit", B: null }, awaitingHosts: true })).toContain("OVER TO THE HOSTS: WHO WINS THE FACE-OFF?");
+    expect(view({ ...fo, buzzed: "A", tries: { A: "hit", B: null }, awaitingHosts: true })).not.toContain("YOUR ANSWER");
     expect(view({ ...fo, buzzed: "A", tries: { A: "miss", B: "miss" } })).toContain("BOTH MISSED: NEXT TWO PLAYERS");
     expect(view({ ...fo, buzzed: "A", tries: { A: "hit", B: "miss" }, winner: "A" }, "play_or_pass")).toContain("TEAM A WINS THE FACE-OFF: PLAY OR PASS?");
     expect(view({ ...fo, buzzed: "A", tries: { A: "hit", B: "miss" }, winner: "A", choice: "pass" }, "play_or_pass")).toContain("TEAM A PASSES");
@@ -142,10 +166,20 @@ describe("face-off on the projector", () => {
     expect(renderToString(<ScreenView snapshot={{ ...base, faceOff: fo }} />)).not.toContain("FACE-OFF");
   });
 
-  it("cues: a buzz, a face-off winner", () => {
+  it("cues: a buzz, a miss, a face-off winner, play or pass", () => {
     const f = (x: Partial<NonNullable<PublicSnapshot["faceOff"]>>) => ({ ...base, phase: "face_off" as const, faceOff: { ...fo, ...x } });
     expect(cueFor(f({}), f({ buzzed: "B" }))).toBe("buzz");
+    expect(cueFor(f({ buzzed: "B" }), f({ buzzed: "B", tries: { A: null, B: "miss" } }))).toBe("faceoffMiss");
+    expect(cueFor(f({ buzzed: "B", tries: { A: "miss", B: "miss" } }), f({ buzzed: "A" }))).toBeNull(); // the next attempt clears the misses quietly
     expect(cueFor(f({ buzzed: "B" }), f({ buzzed: "B", winner: "B", tries: { A: null, B: "hit" } }))).toBe("faceoffWin");
+    expect(cueFor(f({ buzzed: "B", winner: "B" }), { ...f({ buzzed: "B", winner: "B", choice: "pass" }), phase: "team_turn" })).toBe("pass");
+  });
+
+  it("phone mode labels the arrival time honestly", () => {
+    const html = view({ ...fo, buzzed: "A" }).concat(renderToString(<ScreenView snapshot={{ ...base, phase: "face_off", faceOff: { ...fo, buzzed: "A" }, buzzers: { open: false, armId: "x", paired: { A: true, B: true }, first: { team: "A", ms: 843 }, second: { team: "B", ms: 1020 } } }} />).replace(/<!-- -->/g, ""));
+    expect(html).toContain("RECEIVED 0.84 S AFTER THE BUZZERS OPENED");
+    expect(html).toContain("TEAM B 0.18 S LATER");
+    expect(html).not.toMatch(/PROOF|REACTION/);
   });
 });
 

@@ -2,7 +2,7 @@
 // Only the projector window plays it. Cues react to public snapshots and never feed back into scoring.
 import type { PublicSnapshot } from "../public/types";
 
-export type Cue = "reveal" | "strike" | "steal" | "award" | "roundStart" | "final" | "pollOpen" | "pollClose" | "tick" | "buzz" | "faceoffWin" | "timeUp";
+export type Cue = "reveal" | "strike" | "faceoffMiss" | "stealMiss" | "steal" | "award" | "roundStart" | "final" | "tick" | "buzz" | "faceoffWin" | "play" | "pass" | "timeUp" | "test";
 
 const hz = (midi: number) => 440 * 2 ** ((midi - 69) / 12);
 
@@ -83,7 +83,7 @@ export class Sfx {
   }
 
   // ---- building blocks -------------------------------------------------------------------------
-  private tone(f: number, at: number, dur: number, type: OscillatorType, gain: number, bus: GainNode, opts: { to?: number; cutoff?: number; attack?: number; detune?: number } = {}) {
+  private tone(f: number, at: number, dur: number, type: OscillatorType, gain: number, bus: GainNode, opts: { to?: number; cutoff?: number; attack?: number; detune?: number; hold?: boolean } = {}) {
     const ctx = this.ctx!;
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
@@ -94,6 +94,7 @@ export class Sfx {
     const a = opts.attack ?? 0.008;
     g.gain.setValueAtTime(0.0001, at);
     g.gain.exponentialRampToValueAtTime(gain, at + a);
+    if (opts.hold) g.gain.setValueAtTime(gain, at + Math.max(a, dur - 0.06)); // a flat buzz, not a fading ping
     g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
     let node: AudioNode = osc;
     if (opts.cutoff) {
@@ -145,17 +146,25 @@ export class Sfx {
     if (!ctx || !bus || !this.unlocked || this.muted) return;
     const t = ctx.currentTime + 0.02;
     switch (cue) {
-      case "reveal": // whoosh, DING, sparkle
-        this.hiss(t, 0.22, "bandpass", 500, 0.35, bus, 5000);
-        this.bell(hz(84), t + 0.2, 0.5, bus);
-        [88, 91, 96].forEach((m, i) => this.tone(hz(m), t + 0.32 + i * 0.07, 0.35, "triangle", 0.18, bus));
+      case "test":
+      case "reveal": // the tile turns over (whoosh) and lands on a crisp DING, timed to the middle of the flip
+        this.hiss(t, 0.2, "bandpass", 600, 0.3, bus, 5000);
+        this.bell(hz(88), t + 0.22, 0.55, bus);
+        this.bell(hz(95), t + 0.22, 0.18, bus);
+        [91, 96].forEach((m, i) => this.tone(hz(m), t + 0.34 + i * 0.07, 0.3, "triangle", 0.14, bus));
         break;
-      case "strike": // big low BZZT, twice
-        [0, 0.28].forEach((d) => {
-          this.tone(110, t + d, 0.24, "sawtooth", 0.75, bus, { to: 82, cutoff: 900 });
-          this.tone(116, t + d, 0.24, "square", 0.4, bus, { to: 84, cutoff: 900 });
-          this.hiss(t + d, 0.1, "lowpass", 600, 0.3, bus);
-        });
+      case "strike":
+      case "faceoffMiss":
+      case "stealMiss": // one harsh, flat game-show buzzer
+        this.tone(148, t, 0.7, "sawtooth", 0.55, bus, { cutoff: 1500, hold: true });
+        this.tone(151, t, 0.7, "square", 0.42, bus, { cutoff: 1500, hold: true });
+        this.tone(74, t, 0.7, "square", 0.3, bus, { cutoff: 500, hold: true });
+        this.hiss(t, 0.7, "bandpass", 1100, 0.12, bus);
+        break;
+      case "play":
+      case "pass": // two quick chimes
+        this.bell(hz(79), t, 0.32, bus);
+        this.bell(hz(cue === "play" ? 86 : 74), t + 0.13, 0.32, bus);
         break;
       case "steal": // rising, wobbly "uh-oh" siren
         this.tone(330, t, 0.7, "sawtooth", 0.35, bus, { to: 740, cutoff: 1800, attack: 0.05 });
@@ -182,14 +191,6 @@ export class Sfx {
         this.brass([71, 74, 79, 83], t + 0.9, 1.6, 0.16, bus);
         this.hiss(t + 0.9, 1.6, "highpass", 5000, 0.25, bus);
         [0, 0.12, 0.24, 0.36].forEach((d, i) => this.bell(hz(91 + i * 2), t + 1.0 + d, 0.22, bus));
-        break;
-      case "pollOpen":
-        this.hiss(t, 0.3, "bandpass", 700, 0.25, bus, 4500);
-        [76, 83, 88].forEach((m, i) => this.tone(hz(m), t + 0.12 + i * 0.08, 0.3, "triangle", 0.28, bus));
-        break;
-      case "pollClose":
-        this.bell(hz(79), t, 0.4, bus);
-        this.bell(hz(72), t + 0.14, 0.4, bus);
         break;
       case "tick":
         this.tone(1400, t, 0.06, "square", 0.12, bus, { cutoff: 3500 });
@@ -267,19 +268,25 @@ export class Sfx {
   }
 }
 
-/** Decide which cue, if any, a change between two public snapshots deserves. */
+const misses = (s: PublicSnapshot) => (s.faceOff ? Object.values(s.faceOff.tries).filter((t) => t === "miss").length : 0);
+const shown = (s: PublicSnapshot) => s.round?.slots.filter((x) => x.revealed).length ?? 0;
+
+/**
+ * Decide which cue, if any, a change between two public snapshots deserves. Only a change makes a cue: the first
+ * snapshot after a load or reconnect makes none, and neither does an Undo, so each accepted action sounds once.
+ */
 export function cueFor(prev: PublicSnapshot | null, next: PublicSnapshot): Cue | null {
-  if (!prev) return null;
-  if (!prev.poll && next.poll?.status === "open") return "pollOpen";
-  if (prev.poll?.status === "open" && next.poll?.status === "closed") return "pollClose";
+  if (!prev || next.undone) return null;
   if (!prev.faceOff?.buzzed && next.faceOff?.buzzed) return "buzz";
+  if (next.faceOff && misses(next) > misses(prev)) return "faceoffMiss";
+  if (!prev.faceOff?.choice && next.faceOff?.choice) return next.faceOff.choice;
   if (!prev.faceOff?.winner && next.faceOff?.winner && !next.settlement) return "faceoffWin";
   if (prev.phase !== "match_over" && next.phase === "match_over") return "final";
   if (!prev.settlement && next.settlement) return "award";
+  if (next.strikes > prev.strikes) return "strike"; // the third X comes first; the projector follows it with the steal
   if (prev.phase !== "steal" && next.phase === "steal") return "steal";
   if (prev.phase !== "intro" && next.phase === "intro") return "roundStart";
-  if (next.strikes > prev.strikes) return "strike";
-  const shown = (s: PublicSnapshot) => s.round?.slots.filter((x) => x.revealed).length ?? 0;
+  if (prev.phase === "steal" && next.phase === "round_over" && shown(next) === shown(prev)) return "stealMiss";
   if (next.round && prev.round?.prompt === next.round.prompt && shown(next) > shown(prev)) return "reveal";
   return null;
 }

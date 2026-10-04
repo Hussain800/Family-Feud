@@ -55,6 +55,8 @@ export interface GameState {
   playedQuestionIds: string[];
   /** Rounds played when the first tie-break was added: every round from there on is a tie-break. Unset on saves made before it existed. */
   tieBreakFrom?: number | null;
+  /** Questions played by earlier pairs of teams at this event. They can be replayed, but the console marks them. */
+  usedEarlier?: string[];
   round: RoundState | null;
   /** Short host-facing message such as ALREADY ON THE BOARD. Not part of scoring. */
   note: string | null;
@@ -71,7 +73,7 @@ export interface ReadyQuestionSnapshot {
 }
 
 export type Action =
-  | { id: string; type: "NEW_MATCH"; totalRounds?: number }
+  | { id: string; type: "NEW_MATCH"; totalRounds?: number; /** Reset the team names too, for the next pair of teams. */ nextTeams?: boolean }
   | { id: string; type: "SET_TEAM_NAMES"; names: Record<TeamId, string> }
   | { id: string; type: "START_ROUND"; question: ReadyQuestionSnapshot; team: TeamId }
   | { id: string; type: "SET_CONTROL"; team: TeamId }
@@ -81,6 +83,8 @@ export type Action =
   /** The host taps the team whose standalone buzzer went first. */
   | { id: string; type: "BUZZ"; team: TeamId }
   | { id: string; type: "FACEOFF_MISS" }
+  /** The hosts' call on who won the face-off. */
+  | { id: string; type: "FACEOFF_WIN"; team: TeamId }
   | { id: string; type: "PLAY_OR_PASS"; choice: "play" | "pass" }
   | { id: string; type: "REVEAL"; answerId: string }
   | { id: string; type: "STRIKE" }

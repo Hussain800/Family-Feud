@@ -2,7 +2,7 @@ import { useState } from "react";
 import { DEMO_PACK_RAW } from "../content/canonical";
 import { validatePack } from "../content/schema";
 import { parseSheet, type SheetResult } from "../content/sheet";
-import type { Answer, Pack, Question, ResponseMode } from "../content/types";
+import { questionLabel, type Answer, type Pack, type Question, type ResponseMode } from "../content/types";
 import { ConfirmButton } from "./PlayTab";
 import { download } from "./persist";
 import type { HostGame } from "./useHostGame";
@@ -32,9 +32,9 @@ function SheetPanel({ g }: { g: HostGame }) {
   };
   const ok = checked?.parsed.ok && checked.errors.length === 0;
   return (
-    <div className="panel">
-      <h2 className="panel__h">Paste results from a spreadsheet</h2>
-      <p className="hint">
+    <div className="sub">
+      <h3 className="sub__h">Paste results from a spreadsheet</h3>
+      <p className="muted small">
         One row per answer: <b>question number (1 to 16), answer, number of students who said it</b>, and optionally a fourth column of other wordings to accept, separated by ;. Copy the rows straight from Google Sheets or Excel, or paste a CSV. A header row is fine. You can paste a few questions at a time: questions already loaded stay unless you paste them again. Real results stay in this browser.
       </p>
       <input
@@ -64,7 +64,7 @@ function SheetPanel({ g }: { g: HostGame }) {
           <b>{checked.parsed.preview.length} question(s) read{ok ? ". Looks good." : "."}</b>
           <ul>
             {checked.parsed.preview.map((q) => (
-              <li key={q.id}><b>{q.id}</b> {q.prompt} <br />{q.answers.map((a) => `${a.text} ${a.count}`).join(" · ")}</li>
+              <li key={q.id}><b>{questionLabel(q.id)}</b> {q.prompt} <br />{q.answers.map((a) => `${a.text} ${a.count}`).join(" · ")}</li>
             ))}
           </ul>
           {checked.warnings.length > 0 && <ul>{checked.warnings.slice(0, 10).map((w, i) => <li key={i}>{w}</li>)}</ul>}
@@ -90,9 +90,9 @@ function ImportPanel({ g }: { g: HostGame }) {
     if (r.ok) setText("");
   };
   return (
-    <details className="panel">
-      <summary className="panel__h">Advanced: import a pack file (JSON)</summary>
-      <p className="hint">Paste or choose the pack file. It is validated first; a rejected import changes nothing. Real results stay in this browser and are never published.</p>
+    <details className="more">
+      <summary>Advanced: import a pack file (JSON)</summary>
+      <p className="muted small">Paste or choose the pack file. It is validated first; a rejected import changes nothing. Real results stay in this browser and are never published.</p>
       <input
         type="file"
         accept="application/json,.json"
@@ -127,10 +127,8 @@ function ImportPanel({ g }: { g: HostGame }) {
 function PackPanel({ g }: { g: HostGame }) {
   const ready = g.pack.questions.filter((q) => q.status === "ready").length;
   return (
-    <div className="panel">
-      <h2 className="panel__h">Active pack</h2>
-      <p><b>{g.pack.title}</b> · {g.pack.purpose === "demo" ? "DEMO: INVENTED RESULTS" : "event pack"} · {ready} of 16 questions ready</p>
-      <p className="hint">A round already in progress keeps its own copy of its answers, so loading a pack cannot change points already on the board.</p>
+    <div className="sub">
+      <p><b>{ready} of {g.pack.questions.length} questions have results</b> · {g.pack.purpose === "demo" ? "DEMO: INVENTED RESULTS (practice only)" : g.pack.title}</p>
       <div className="row">
         <ConfirmButton label="Load demo pack" confirmLabel="replace pack with invented results" onConfirm={() => g.replacePack(DEMO_PACK_RAW)} />
         <ConfirmButton label="Reset to empty event template" confirmLabel="clear all results" onConfirm={g.resetPack} />
@@ -139,6 +137,7 @@ function PackPanel({ g }: { g: HostGame }) {
           <ConfirmButton label="Restore previous pack" confirmLabel={`swap back to “${g.backupPack.title}”`} onConfirm={() => g.replacePack(g.backupPack)} />
         )}
       </div>
+      <p className="muted small">A round in progress keeps its own copy of its answers, so loading new results never changes points already on the board.</p>
     </div>
   );
 }
@@ -159,17 +158,17 @@ function Editor({ g }: { g: HostGame }) {
   // The form is remounted whenever the question or its saved contents change, so its draft never goes stale.
   const stamp = `${q.id}:${q.status}:${q.survey.source}:${q.answers.map((a) => `${a.id}/${a.text}/${a.count}`).join("|")}`;
   return (
-    <div className="panel">
-      <h2 className="panel__h">Answer editor</h2>
+    <details className="more">
+      <summary>Type or correct one question's answers</summary>
       <label className="field">
-        <span className="bi-label">QUESTION (WORDING IS FIXED)</span>
+        <span className="field__label">Question (the wording is fixed)</span>
         <select className="input" value={qid} onChange={(e) => { setQid(e.target.value); setSaved(""); }}>
-          {g.pack.questions.map((x) => <option key={x.id} value={x.id}>{x.id} · {x.prompt}</option>)}
+          {g.pack.questions.map((x) => <option key={x.id} value={x.id}>{questionLabel(x.id)} · {x.prompt}</option>)}
         </select>
       </label>
       <EditorForm key={stamp} g={g} q={q} onSaved={setSaved} />
       {saved && <div className="alert alert--notice" role="status">{saved}</div>}
-    </div>
+    </details>
   );
 }
 
@@ -210,7 +209,7 @@ function EditorForm({ g, q, onSaved }: { g: HostGame; q: Question; onSaved: (msg
       {demoPack && <p className="warn">The demo pack is read-only so invented results can never be relabelled as real. Reset to the empty event template to enter real results.</p>}
       {locked && <p className="warn">This round is underway. Its answers are locked until the round ends.</p>}
       <fieldset className="editor" disabled={off}>
-        <div className="editor__head"><span className="bi-label">ANSWER · UP TO 10</span><span className="bi-label">COUNT</span><span className="bi-label">ALSO ACCEPT (OPTIONAL)</span><span /></div>
+        <div className="editor__head"><span className="field__label">Answer (up to 10)</span><span className="field__label">Points</span><span className="field__label">Also accept (optional)</span><span /></div>
         {rows.map((r, i) => (
           <div className="editor__row" key={i}>
             <input className="input" aria-label={`Answer ${i + 1}`} value={r.text} maxLength={80} onChange={(e) => setRows(rows.map((x, k) => (k === i ? { ...x, text: e.target.value } : x)))} />
@@ -223,9 +222,9 @@ function EditorForm({ g, q, onSaved }: { g: HostGame; q: Question; onSaved: (msg
           <button type="button" className="bi-button bi-button--outline host__btn host__btn--sm" disabled={rows.length >= 10} onClick={() => setRows([...rows, { id: "", text: "", count: "", aliases: "" }])}>Add answer</button>
         </div>
         <div className="editor__fields">
-          <label className="field"><span className="bi-label">WHERE THE RESULTS CAME FROM</span><input className="input" value={source} placeholder="e.g. events team survey sheet" maxLength={80} onChange={(e) => setSource(e.target.value)} /></label>
-          <label className="field"><span className="bi-label">RESPONDENTS</span><input className="input" inputMode="numeric" placeholder="if known" value={respondents} onChange={(e) => setRespondents(e.target.value)} /></label>
-          <label className="field"><span className="bi-label">EACH PERSON GAVE</span>
+          <label className="field"><span className="field__label">Where the results came from</span><input className="input" value={source} placeholder="e.g. events team survey sheet" maxLength={80} onChange={(e) => setSource(e.target.value)} /></label>
+          <label className="field"><span className="field__label">Respondents</span><input className="input" inputMode="numeric" placeholder="if known" value={respondents} onChange={(e) => setRespondents(e.target.value)} /></label>
+          <label className="field"><span className="field__label">Each person gave</span>
             <select className="input" value={mode} onChange={(e) => setMode(e.target.value as ResponseMode)}>
               <option value="unconfirmed">not sure</option><option value="single">one answer</option><option value="multiple">several answers</option>
             </select>
@@ -236,20 +235,22 @@ function EditorForm({ g, q, onSaved }: { g: HostGame; q: Question; onSaved: (msg
           <ConfirmButton label="Clear results" confirmLabel="mark awaiting survey" onConfirm={() => save("awaiting_survey")} />
         </div>
       </fieldset>
-      <p className="hint">Counts are survey points as supplied. They are not scaled to 100.</p>
+      <p className="muted small">Points are the survey counts as supplied. They are not scaled to 100.</p>
       {errors.length > 0 && <div className="alert" role="alert"><b>Not saved.</b><ul>{errors.slice(0, 10).map((e, i) => <li key={i}>{e}</li>)}</ul></div>}
     </>
   );
 }
 
+/** Setup: the survey results the board plays from. */
 export function DataTab({ g }: { g: HostGame }) {
   return (
-    <div className="stack">
+    <section className="card" aria-labelledby="results-h">
+      <h2 className="card__h" id="results-h">Survey results</h2>
       <PackPanel g={g} />
       <SheetPanel g={g} />
-      <ImportPanel g={g} />
       <Editor g={g} />
-    </div>
+      <ImportPanel g={g} />
+    </section>
   );
 }
 

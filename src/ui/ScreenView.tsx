@@ -1,15 +1,18 @@
 import { RoomQrCode } from "@air-jam/sdk/ui";
 import type { TeamId } from "../engine/types";
-import type { PublicFaceOff, PublicPoll, PublicSlot, PublicSnapshot } from "../public/types";
+import type { PublicFaceOff, PublicSlot, PublicSnapshot } from "../public/types";
 import { faceOffTurn } from "../public/faceoff";
 import { hostOf, isLocalOnly } from "../public/url";
-import { tally, useNow, useRemaining } from "./poll-bits";
+import { useNow } from "./poll-bits";
 import { Stage } from "./Stage";
 import { Wordmark } from "./Wordmark";
 
 const QR_FG = "#0A1B66";
 const QR_BG = "#F3F8FF";
 
+/** A one-off moment on the projector: the red X, or a short banner. Drawn by the projector page only, never the preview. */
+export type FlashSpec = { kind: "x"; count: number } | { kind: "banner"; text: string; sub?: string };
+export type Flash = FlashSpec & { id: number };
 
 const GdgMark = () => <img className="gdg-mark" src="/brand/gdg-mark-frost.svg" alt="" width={64} height={32} />;
 
@@ -33,18 +36,13 @@ function Header({ s, qr }: { s: PublicSnapshot; qr: boolean }) {
         <p className="s-head__title">hello, world! <span>&lt;FAMILY FEUD&gt;</span></p>
       </div>
       <div className="s-head__mid">
-        {s.round && s.round.number > 0 && s.phase !== "intro" && (
-          <>
-            <p className="bi-label">{s.round.category.toUpperCase()}</p>
-            {s.timer ? <Timer t={s.timer} /> : <p className="s-head__round">{s.progress.tieBreak ? "TIE-BREAK" : `ROUND ${s.round.number} OF ${s.round.total}`}</p>}
-          </>
-        )}
+        {s.round && s.round.number > 0 && s.phase !== "intro" && (s.timer ? <Timer t={s.timer} /> : <p className="s-head__round">{s.progress.tieBreak ? "TIE-BREAK" : `ROUND ${s.round.number} OF ${s.round.total}`}</p>)}
       </div>
       <div className="s-head__right">
         {canJoin && (
           <div className="s-join">
             <div className="s-join__text">
-              <p className="bi-label">JOIN ON YOUR PHONE</p>
+              <p className="bi-label">BUZZER PHONES: SCAN TO PAIR</p>
               <p className="s-join__code">{s.room.code}</p>
               <p className="s-join__url">{hostOf(s.room.joinUrl)}/join</p>
             </div>
@@ -61,35 +59,29 @@ function DemoBanner({ label }: { label: string | null }) {
   return label ? <div className="demo-banner" role="status">{label}</div> : null;
 }
 
+/** Phone-buzzer mode only, while a team still needs its buzzer phone. Physical mode never shows a code. */
+const pairing = (s: PublicSnapshot) => !!s.room.joinUrl && !isLocalOnly(s.room.joinUrl) && !!s.buzzers && !(s.buzzers.paired.A && s.buzzers.paired.B);
+
 function Lobby({ s }: { s: PublicSnapshot }) {
   const r = s.room;
-  const localOnly = isLocalOnly(r.joinUrl);
+  const pair = pairing(s);
   return (
-    <div className="lobby">
+    <div className={`lobby ${pair ? "" : "lobby--solo"}`}>
       <div className="lobby__left">
         <p className="bi-label">GDG ON CAMPUS · UNIVERSITY OF BIRMINGHAM DUBAI</p>
         <Wordmark width={860} />
         <p className="lobby__display">&lt;FAMILY FEUD&gt;</p>
         <p className="lobby__teams">{s.teams[0].name} <i>vs</i> {s.teams[1].name}</p>
       </div>
-      <div className="lobby__right">
-        {r.status === "ready" && r.joinUrl && !localOnly ? (
-          <>
-            <RoomQrCode value={r.joinUrl} size={400} padding={1} foregroundColor={QR_FG} backgroundColor={QR_BG} errorCorrectionLevel="M" alt="Join QR code" />
-            <p className="bi-label">ROOM CODE</p>
-            <p className="lobby__code">{r.code}</p>
-            <p className="lobby__url">{hostOf(r.joinUrl)}/join</p>
-            <p className="lobby__count">{r.connected} {r.connected === 1 ? "phone" : "phones"} connected</p>
-            <p className="lobby__hint">Scan the code, or enter it on the join page. Phones only vote when the host opens a poll.</p>
-          </>
-        ) : (
-          <div className="lobby__offline">
-            <p className="bi-label">PHONE JOINING</p>
-            <p className="lobby__offline-title">{r.status === "connecting" ? "Connecting to the relay…" : localOnly && r.status === "ready" ? "Phones cannot reach this address" : "Phone joining is unavailable"}</p>
-            <p className="lobby__hint">The game still runs from the host laptop.</p>
-          </div>
-        )}
-      </div>
+      {pair && (
+        <div className="lobby__right">
+          <RoomQrCode value={r.joinUrl!} size={360} padding={1} foregroundColor={QR_FG} backgroundColor={QR_BG} errorCorrectionLevel="M" alt="Buzzer phone QR code" />
+          <p className="bi-label">BUZZER PHONES · ROOM</p>
+          <p className="lobby__code">{r.code}</p>
+          <p className="lobby__url">{hostOf(r.joinUrl)}/join</p>
+          <p className="lobby__hint">One phone per team. The moderator assigns each phone to its team.</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -118,19 +110,29 @@ function Intro({ s }: { s: PublicSnapshot }) {
   const q = s.round!;
   return (
     <div className="intro">
-      <p className="bi-label">{q.category.toUpperCase()} · {s.progress.tieBreak ? "TIE-BREAK" : `ROUND ${q.number} OF ${q.total}`}</p>
+      <p className="bi-label">{s.progress.tieBreak ? "TIE-BREAK" : `ROUND ${q.number} OF ${q.total}`}</p>
       <h1 className="intro__q">{q.prompt}</h1>
       <p className="intro__sub">&lt;FACE-OFF NEXT: WHO BUZZES FIRST?&gt;</p>
     </div>
   );
 }
 
+// The flip is a CSS transition, so it plays when a tile turns over and never when a page loads with it already shown.
 function Tile({ slot }: { slot: PublicSlot }) {
   return (
     <li className={`tile ${slot.revealed ? "tile--shown" : ""}`} aria-label={slot.revealed ? `${slot.index}: ${slot.text}, ${slot.count}` : `${slot.index}: hidden`}>
-      <span className="tile__n">{slot.index}</span>
-      <span className="tile__text">{slot.revealed ? <span className="tile__t">{slot.text}</span> : null}</span>
-      <span className="tile__pts">{slot.revealed ? slot.count : ""}</span>
+      <span className="tile__inner">
+        <span className="tile__face tile__front" aria-hidden="true">
+          <span className="tile__n">{slot.index}</span>
+          <span className="tile__text" />
+          <span className="tile__pts" />
+        </span>
+        <span className="tile__face tile__back">
+          <span className="tile__n">{slot.index}</span>
+          <span className="tile__text">{slot.revealed ? <span className="tile__t">{slot.text}</span> : null}</span>
+          <span className="tile__pts">{slot.revealed ? slot.count : ""}</span>
+        </span>
+      </span>
     </li>
   );
 }
@@ -143,11 +145,21 @@ function FaceOffBar({ s, f }: { s: PublicSnapshot; f: PublicFaceOff }) {
   let text = "ONE PLAYER FROM EACH TEAM TO THE BUZZERS";
   if (f.winner) text = f.choice ? `${teamName(s, f.winner)} ${f.choice === "play" ? "PLAYS" : "PASSES"}` : `${teamName(s, f.winner)} WINS THE FACE-OFF: PLAY OR PASS?`;
   else if (turn) text = f.buzzed === turn ? `${teamName(s, turn)} BUZZED FIRST: ANSWER NOW` : `${teamName(s, turn)}: YOUR ANSWER`;
+  else if (f.awaitingHosts) text = "OVER TO THE HOSTS: WHO WINS THE FACE-OFF?";
   else if (bothMissed) text = "BOTH MISSED: NEXT TWO PLAYERS";
+  // Phone mode: when each press reached the moderator laptop, counted from opening. Not when it was pressed.
+  const b = s.buzzers;
+  const timing = b?.first && b.first.team === f.buzzed && !f.winner ? b.first : null;
   return (
     <div className={`fo ${f.winner ? "fo--won" : ""}`} role="status" aria-live="polite">
       <span className="fo__label">FACE-OFF</span>
       <span className="fo__text">{text}</span>
+      {timing && (
+        <span className="fo__time">
+          RECEIVED {(timing.ms / 1000).toFixed(2)} S AFTER THE BUZZERS OPENED
+          {b!.second && ` · ${teamName(s, b!.second.team)} ${((b!.second.ms - timing.ms) / 1000).toFixed(2)} S LATER`}
+        </span>
+      )}
     </div>
   );
 }
@@ -211,42 +223,6 @@ function Middle({ s }: { s: PublicSnapshot }) {
   );
 }
 
-function PollPanel({ poll, prompt }: { poll: PublicPoll; prompt: string }) {
-  const remaining = useRemaining(poll);
-  const closed = poll.status === "closed";
-  const t = closed ? tally(poll) : null;
-  const votes = (id: string) => poll.results?.find((r) => r.optionId === id)?.votes ?? 0;
-  return (
-    <div className="poll" role="status">
-      <p className="bi-label">CROWD ASSIST · A SUGGESTION, NOT AN ANSWER</p>
-      <h2 className="poll__title">{closed ? "The room suggests" : "Vote on your phone"}</h2>
-      <p className="poll__prompt">{prompt}</p>
-      <ul className="poll__opts">
-        {poll.options.map((o) => {
-          const v = votes(o.id);
-          const pct = t && t.total ? (v / t.total) * 100 : 0;
-          return (
-            <li key={o.id} className={`poll__opt ${t?.top.includes(o.id) ? "poll__opt--top" : ""}`}>
-              <span className="poll__bar" style={{ width: `${closed ? pct : 0}%` }} />
-              <span className="poll__label">{o.label}</span>
-              {closed && <span className="poll__votes">{v}</span>}
-            </li>
-          );
-        })}
-      </ul>
-      {closed ? (
-        <p className="poll__foot">{t!.total === 0 ? "No votes. The team decides." : t!.top.length > 1 ? "Tied. The team decides." : "The team decides whether to use it."}</p>
-      ) : (
-        <div className="poll__foot poll__foot--open">
-          <span className="poll__time">{Math.ceil(remaining / 1000)}s</span>
-          <span className="poll__meter"><i style={{ width: `${poll.durationMs ? (remaining / poll.durationMs) * 100 : 0}%` }} /></span>
-          <span>{poll.responses} {poll.responses === 1 ? "vote" : "votes"} in</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function Final({ s }: { s: PublicSnapshot }) {
   const [a, b] = s.teams;
   const tie = a.score === b.score;
@@ -269,7 +245,7 @@ function Final({ s }: { s: PublicSnapshot }) {
 }
 
 /** Pure renderer of the public snapshot. Used by the projector and by the moderator's preview. */
-export function ScreenView({ snapshot: s }: { snapshot: PublicSnapshot }) {
+export function ScreenView({ snapshot: s, flash }: { snapshot: PublicSnapshot; flash?: Flash | null }) {
   const phase = s.phase;
   const showBoard = s.round && (phase === "preview" || phase === "board_ready" || phase === "face_off" || phase === "play_or_pass" || phase === "team_turn" || phase === "steal" || phase === "round_over");
   return (
@@ -282,7 +258,6 @@ export function ScreenView({ snapshot: s }: { snapshot: PublicSnapshot }) {
           {phase === "lobby" && !s.round && s.progress.played > 0 && <Interlude s={s} />}
           {phase === "intro" && s.round && <Intro s={s} />}
           {showBoard && <Board s={s} />}
-          {showBoard && s.poll && s.round && <PollPanel poll={s.poll} prompt={s.round.prompt} />}
           {phase === "match_over" && <Final s={s} />}
         </main>
         {showBoard && phase !== "preview" && (
@@ -291,6 +266,17 @@ export function ScreenView({ snapshot: s }: { snapshot: PublicSnapshot }) {
             <Middle s={s} />
             <TeamCard s={s} id="B" />
           </footer>
+        )}
+        {flash?.kind === "x" && (
+          <div key={flash.id} className="flash flash--x" aria-hidden="true">
+            {Array.from({ length: flash.count }, (_, i) => <b key={i} className="flash__x">X</b>)}
+          </div>
+        )}
+        {flash?.kind === "banner" && (
+          <div key={flash.id} className="flash flash--banner" role="status">
+            <span className="flash__text">{flash.text}</span>
+            {flash.sub && <span className="flash__sub">{flash.sub}</span>}
+          </div>
         )}
       </div>
     </Stage>

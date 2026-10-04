@@ -1,16 +1,16 @@
 import { DEMO_LABEL } from "../content/types";
-import type { FaceOff, GameState } from "../engine/types";
-import { publicPoll, type PollState } from "../poll/poll";
-import type { PublicFaceOff, PublicSlot, PublicSnapshot, RelayStatus } from "./types";
+import { faceOffCall } from "../engine/reducer";
+import type { GameState, RoundState } from "../engine/types";
+import type { PublicBuzzers, PublicFaceOff, PublicSlot, PublicSnapshot, RelayStatus } from "./types";
 
 export interface ProjectInput {
   rev: number;
   game: GameState;
   demo: boolean;
   room: { code: string | null; joinUrl: string | null; status: RelayStatus; connected: number; capacity: number };
-  poll: PollState | null;
   timer?: { endsAt: number; durationMs: number } | null;
-  now: number;
+  buzzers?: PublicBuzzers | null;
+  undone?: boolean;
   /** Template preview: show a question with empty lines, no scores. */
   preview: { category: string; prompt: string } | null;
 }
@@ -66,13 +66,16 @@ export function projectPublic(i: ProjectInput): PublicSnapshot {
     timer: preview ? null : (i.timer ?? null),
     note: game.note,
     settlement: r?.settlement ? { winner: r.settlement.winner, amount: r.settlement.amount, kind: r.settlement.kind } : null,
-    poll: i.poll && i.poll.status !== "cancelled" ? publicPoll(i.poll, i.now) : null,
-    faceOff: !preview && r?.faceOff ? publicFaceOff(r.faceOff) : null,
+    faceOff: !preview && r?.faceOff ? publicFaceOff(r) : null,
+    buzzers: i.buzzers ? { ...i.buzzers, paired: { ...i.buzzers.paired } } : null,
+    undone: i.undone ?? false,
   };
 }
 
 const outcome = (t: { hit: boolean } | undefined) => (t ? (t.hit ? ("hit" as const) : ("miss" as const)) : null);
 
-function publicFaceOff(f: FaceOff): PublicFaceOff {
-  return { buzzed: f.buzzed, tries: { A: outcome(f.tries.A), B: outcome(f.tries.B) }, winner: f.winner, choice: f.choice };
+// Says only that the answers settle it, never which team the survey favours: that call is the hosts'.
+function publicFaceOff(r: RoundState): PublicFaceOff {
+  const f = r.faceOff!;
+  return { buzzed: f.buzzed, tries: { A: outcome(f.tries.A), B: outcome(f.tries.B) }, awaitingHosts: !f.winner && faceOffCall(r) !== null, winner: f.winner, choice: f.choice };
 }

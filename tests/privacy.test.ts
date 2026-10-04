@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { validatePack } from "../src/content/schema";
 import { apply, initialSession } from "../src/engine/reducer";
 import type { Action, Session } from "../src/engine/types";
-import { openPoll } from "../src/poll/poll";
 import { projectPublic } from "../src/public/project";
 
 // A freshly planted private pack. None of these strings exist anywhere in the repo's public data.
@@ -49,8 +48,7 @@ const room = { code: "ABCD", joinUrl: "http://192.168.1.2:5173/controller?room=A
 describe("public snapshot privacy", () => {
   it("never contains unrevealed answer text, aliases, counts or survey notes", () => {
     const s = playingSession();
-    const poll = openPoll(["Pizza", "Burgers"], 0, () => "p1")!;
-    const snap = projectPublic({ rev: 1, game: s.state, demo: false, room, poll: poll.ok ? poll.poll : null, now: 10, preview: null });
+    const snap = projectPublic({ rev: 1, game: s.state, demo: false, room, preview: null });
     const json = JSON.stringify(snap);
     for (const secret of [S.text, S.alias, S.note, String(S.count), "flask", "Water bottle", "p-hidden"]) {
       expect(json, `leaked ${secret}`).not.toContain(secret);
@@ -63,20 +61,20 @@ describe("public snapshot privacy", () => {
   });
 
   it("concealed slots carry no point value", () => {
-    const snap = projectPublic({ rev: 1, game: playingSession().state, demo: false, room, poll: null, now: 0, preview: null });
+    const snap = projectPublic({ rev: 1, game: playingSession().state, demo: false, room, preview: null });
     for (const slot of snap.round!.slots.filter((x) => !x.revealed)) expect(Object.keys(slot).sort()).toEqual(["index", "revealed"]);
   });
 
   it("reveals a secret only after the host reveals it", () => {
     const s = apply(playingSession(), act("REVEAL", { answerId: "p-hidden" }));
-    const json = JSON.stringify(projectPublic({ rev: 2, game: s.state, demo: false, room, poll: null, now: 0, preview: null }));
+    const json = JSON.stringify(projectPublic({ rev: 2, game: s.state, demo: false, room, preview: null }));
     expect(json).toContain(S.text);
     expect(json).not.toContain(S.alias);
     expect(json).not.toContain(S.note);
   });
 
   it("template preview shows six empty lines and no scores", () => {
-    const snap = projectPublic({ rev: 1, game: initialSession().state, demo: false, room, poll: null, now: 0, preview: { category: "Food", prompt: "Name something you would order at 2 a.m." } });
+    const snap = projectPublic({ rev: 1, game: initialSession().state, demo: false, room, preview: { category: "Food", prompt: "Name something you would order at 2 a.m." } });
     expect(snap.phase).toBe("preview");
     expect(snap.round!.slots).toHaveLength(6);
     expect(snap.round!.slots.every((x) => !x.revealed)).toBe(true);
@@ -84,7 +82,7 @@ describe("public snapshot privacy", () => {
   });
 
   it("carries the demo label whenever the demo pack is active", () => {
-    const snap = projectPublic({ rev: 1, game: initialSession().state, demo: true, room, poll: null, now: 0, preview: null });
+    const snap = projectPublic({ rev: 1, game: initialSession().state, demo: true, room, preview: null });
     expect(snap.demoLabel).toBe("DEMO: INVENTED RESULTS");
   });
 
@@ -101,9 +99,9 @@ describe("public snapshot privacy", () => {
       act("BUZZ", { team: "B" }),
       act("REVEAL", { answerId: "p-hidden" }),
     ].reduce(apply, initialSession());
-    const snap = projectPublic({ rev: 1, game: st.state, demo: false, room, poll: null, now: 0, preview: null });
+    const snap = projectPublic({ rev: 1, game: st.state, demo: false, room, preview: null });
     expect(snap.phase).toBe("face_off");
-    expect(snap.faceOff).toEqual({ buzzed: "B", tries: { A: null, B: "hit" }, winner: null, choice: null });
+    expect(snap.faceOff).toEqual({ buzzed: "B", tries: { A: null, B: "hit" }, awaitingHosts: false, winner: null, choice: null });
     expect(JSON.stringify(snap.faceOff)).not.toMatch(/count|ZZSENTINEL|7771913/);
     // the answer that was revealed is public as a slot; the aliases and the other answers still are not
     const json = JSON.stringify(snap);
@@ -115,10 +113,10 @@ describe("public snapshot privacy", () => {
   it("marks the tie-break and carries the host's timer, and drops the timer from a template preview", () => {
     const timer = { endsAt: 123456, durationMs: 10000 };
     const g = { ...initialSession().state, roundsPlayed: 3, totalRounds: 4, tieBreakFrom: 3 };
-    const snap = projectPublic({ rev: 1, game: g, demo: false, room, poll: null, timer, now: 0, preview: null });
+    const snap = projectPublic({ rev: 1, game: g, demo: false, room, timer, preview: null });
     expect(snap.progress.tieBreak).toBe(true);
     expect(snap.timer).toEqual(timer);
-    expect(projectPublic({ rev: 1, game: { ...g, tieBreakFrom: null }, demo: false, room, poll: null, now: 0, preview: null }).progress.tieBreak).toBe(false);
-    expect(projectPublic({ rev: 1, game: g, demo: false, room, poll: null, timer, now: 0, preview: { category: "Food", prompt: "x" } }).timer).toBeNull();
+    expect(projectPublic({ rev: 1, game: { ...g, tieBreakFrom: null }, demo: false, room, preview: null }).progress.tieBreak).toBe(false);
+    expect(projectPublic({ rev: 1, game: g, demo: false, room, timer, preview: { category: "Food", prompt: "x" } }).timer).toBeNull();
   });
 });

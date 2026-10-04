@@ -4,10 +4,17 @@ import type { PublicSnapshot } from "./types";
 
 const NAME = "gdg-ff-public";
 
+/** What the projector says about its sound: on, muted by the operator, or blocked until someone clicks it. */
+export type ScreenSound = "on" | "muted" | "off";
+
 export type ChannelMessage =
   | { kind: "snapshot"; snapshot: PublicSnapshot }
   | { kind: "heartbeat"; rev: number }
-  | { kind: "request" };
+  | { kind: "request" }
+  /** Projector to console, every heartbeat: it is open, and this is its sound. */
+  | { kind: "screen"; sound: ScreenSound }
+  /** Console to projector: play a short test cue. */
+  | { kind: "test-sound" };
 
 export const HEARTBEAT_MS = 2000;
 export const STALE_AFTER_MS = 6000;

@@ -3,7 +3,6 @@ import {
   MAX_STRIKES,
   SEEN_LIMIT,
   type Action,
-  type FaceOff,
   type GameState,
   type RoundState,
   type Session,
@@ -20,6 +19,7 @@ export const initialState = (totalRounds = 3): GameState => ({
   totalRounds,
   playedQuestionIds: [],
   tieBreakFrom: null,
+  usedEarlier: [],
   round: null,
   note: null,
   seen: [],
@@ -43,36 +43,41 @@ const settle = (r: RoundState): Settlement => {
 
 const topCount = (r: RoundState) => Math.max(...r.answers.map((x) => x.count));
 
-/** Who gives the next face-off answer: the first buzzer, then the other team, then nobody. */
-export const answering = (fo: FaceOff | null | undefined): TeamId | null => {
-  if (!fo?.buzzed || fo.winner) return null;
+/** Who gives the next face-off answer: the first buzzer, then the other team (unless the top answer already settled it), then nobody. */
+export const answering = (r: RoundState | null | undefined): TeamId | null => {
+  const fo = r?.faceOff;
+  if (!r || !fo?.buzzed || fo.winner) return null;
   if (!fo.tries[fo.buzzed]) return fo.buzzed;
+  if (faceOffCall(r)) return null;
   const other = otherTeam(fo.buzzed);
   return fo.tries[other] ? null : other;
 };
 
 /**
- * Record one face-off answer (a hit with its survey count, or a miss) and name the winner as soon as the rules allow:
- * the top answer wins on the spot; otherwise the second player gets a go and the higher count wins, a tie going to
- * the first buzzer; if both miss nobody wins and the host re-opens the buzzers for the next players.
+ * Who the survey says has won the face-off so far, for the hosts to confirm; null while it is still open.
+ * The top answer wins on the spot; otherwise the second player gets a go and the higher count wins, a tie going to
+ * the first buzzer. Both missing is no result: the next two players go.
  */
+export function faceOffCall(r: RoundState | null | undefined): TeamId | null {
+  const fo = r?.faceOff;
+  if (!r || !fo?.buzzed) return null;
+  const first = fo.buzzed;
+  const a = fo.tries[first];
+  const b = fo.tries[otherTeam(first)];
+  if (a && !b) return a.hit && a.count >= topCount(r) ? first : null;
+  if (a && b) {
+    if (b.hit && (!a.hit || b.count > a.count)) return otherTeam(first);
+    if (a.hit) return first;
+  }
+  return null;
+}
+
+/** Record one face-off answer: a hit with its survey count, or a miss. The hosts call the winner, never the software. */
 function faceOffTry(s: GameState, r: RoundState, hitCount: number | null): GameState {
   const fo = r.faceOff!;
-  const first = fo.buzzed!;
-  const tries = { ...fo.tries, [answering(fo)!]: { hit: hitCount !== null, count: hitCount ?? 0 } };
-  const a = tries[first];
-  const b = tries[otherTeam(first)];
-  let winner: TeamId | null = null;
-  if (a && !b) {
-    if (a.hit && a.count >= topCount(r)) winner = first;
-  } else if (a && b) {
-    if (b.hit && (!a.hit || b.count > a.count)) winner = otherTeam(first);
-    else if (a.hit) winner = first;
-  }
-  const faceOff = { ...fo, tries, winner };
-  if (!winner) return { ...s, round: { ...r, faceOff }, note: a && b ? "BOTH MISSED. NEXT PLAYERS." : null };
-  const cleared = r.revealed.length >= r.answers.length; // a one-answer board can end at the face-off
-  return { ...s, phase: cleared ? "round_over" : "play_or_pass", round: { ...r, faceOff, controllingTeam: winner, cleared } };
+  const tries = { ...fo.tries, [answering(r)!]: { hit: hitCount !== null, count: hitCount ?? 0 } };
+  const bothMissed = !!tries.A && !!tries.B && !tries.A.hit && !tries.B.hit;
+  return { ...s, round: { ...r, faceOff: { ...fo, tries } }, note: bothMissed ? "BOTH MISSED. NEXT PLAYERS." : null };
 }
 
 /** Pure rule step. Same state and action in, next state out. No timers, no I/O. */
@@ -82,8 +87,12 @@ export function step(prev: GameState, a: Action): GameState {
   const r = s.round;
 
   switch (a.type) {
-    case "NEW_MATCH":
-      return { ...initialState(a.totalRounds ?? s.totalRounds), teams: { A: { name: s.teams.A.name, score: 0 }, B: { name: s.teams.B.name, score: 0 } }, seen: s.seen };
+    case "NEW_MATCH": {
+      const fresh = initialState(a.totalRounds ?? s.totalRounds);
+      // The next pair of teams: fresh names, and the questions this audience has already seen stay marked.
+      if (a.nextTeams) return { ...fresh, usedEarlier: [...new Set([...(s.usedEarlier ?? []), ...s.playedQuestionIds])], seen: s.seen };
+      return { ...fresh, teams: { A: { name: s.teams.A.name, score: 0 }, B: { name: s.teams.B.name, score: 0 } }, usedEarlier: s.usedEarlier ?? [], seen: s.seen };
+    }
 
     case "SET_TEAM_NAMES": {
       const clean = (n: string, fb: string) => n.trim().slice(0, 24) || fb;
@@ -144,13 +153,22 @@ export function step(prev: GameState, a: Action): GameState {
     case "BUZZ": {
       const fo = r?.faceOff;
       if (s.phase !== "face_off" || !r || !fo || fo.winner) return prev;
-      const tries = Object.keys(fo.tries).length;
-      if (tries === 1) return prev;
-      return withRound(s, { faceOff: { ...fo, buzzed: a.team, tries: tries === 2 ? {} : fo.tries } });
+      const tries = Object.values(fo.tries);
+      // Mid-attempt, or an attempt with a hit waiting for the hosts' call: a tap cannot wipe it.
+      if (tries.length === 1 || tries.some((t) => t?.hit)) return prev;
+      return withRound(s, { faceOff: { ...fo, buzzed: a.team, tries: tries.length === 2 ? {} : fo.tries } });
+    }
+
+    // The hosts' call. Allowed at any point of the face-off, and once more to correct it before play or pass.
+    case "FACEOFF_WIN": {
+      const fo = r?.faceOff;
+      if (!r || !fo || (s.phase !== "face_off" && s.phase !== "play_or_pass")) return refuse(s, "Start the face-off first.");
+      const cleared = r.revealed.length >= r.answers.length; // a one-answer board can end at the face-off
+      return { ...s, phase: cleared ? "round_over" : "play_or_pass", round: { ...r, controllingTeam: a.team, cleared, faceOff: { ...fo, winner: a.team, choice: null } } };
     }
 
     case "FACEOFF_MISS":
-      if (s.phase !== "face_off" || !r?.faceOff || !answering(r.faceOff)) return refuse(s, "Wait for a buzz first.");
+      if (s.phase !== "face_off" || !r?.faceOff || !answering(r)) return refuse(s, "Wait for a buzz first.");
       return faceOffTry(s, r, null);
 
     case "PLAY_OR_PASS": {
@@ -168,7 +186,7 @@ export function step(prev: GameState, a: Action): GameState {
       if (r.revealed.includes(ans.id)) return refuse(s, "ALREADY ON THE BOARD");
       const revealed = [...r.revealed, ans.id];
       if (s.phase === "face_off") {
-        if (!answering(r.faceOff)) return refuse(s, "Wait for a buzz first.");
+        if (!answering(r)) return refuse(s, "Wait for a buzz first.");
         return faceOffTry(s, { ...r, revealed, pot: r.pot + ans.count }, ans.count);
       }
       if (s.phase === "team_turn") {

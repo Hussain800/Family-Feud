@@ -1,9 +1,34 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { HEARTBEAT_MS, STALE_AFTER_MS, openChannel } from "../public/channel";
+import { HEARTBEAT_MS, STALE_AFTER_MS, openChannel, type ChannelMessage, type ScreenSound } from "../public/channel";
+import type { TeamId } from "../engine/types";
 import type { PublicSnapshot } from "../public/types";
-import { ScreenView } from "../ui/ScreenView";
-import { Sfx, cueFor, musicWanted } from "../ui/sound";
+import { ScreenView, type Flash, type FlashSpec } from "../ui/ScreenView";
+import { Sfx, cueFor, musicWanted, type Cue } from "../ui/sound";
+
+const X_MS = 1100;
+const BANNER_MS = 1800;
+
+/** The banner or red X a cue shows on the projector, if any. */
+function flashFor(cue: Cue, s: PublicSnapshot): FlashSpec | null {
+  const team = (id: TeamId | null | undefined) => s.teams.find((t) => t.id === id)?.name.toUpperCase() ?? "";
+  switch (cue) {
+    case "strike":
+      return { kind: "x", count: Math.max(1, s.strikes) };
+    case "faceoffMiss":
+    case "stealMiss":
+      return { kind: "x", count: 1 };
+    case "steal":
+      return { kind: "banner", text: "STEAL!", sub: `${team(s.control === "A" ? "B" : "A")}: ONE GUESS` };
+    case "play":
+    case "pass":
+      return s.faceOff?.winner ? { kind: "banner", text: `${team(s.faceOff.winner)} ${cue === "play" ? "PLAYS" : "PASSES"}` } : null;
+    case "award":
+      return s.settlement ? { kind: "banner", text: `${team(s.settlement.winner)} +${s.settlement.amount}` } : null;
+    default:
+      return null;
+  }
+}
 
 export function ScreenPage() {
   const { roomCode = "" } = useParams();
@@ -12,37 +37,75 @@ export function ScreenPage() {
   const [now, setNow] = useState(Date.now());
   const sfx = useRef(new Sfx()).current;
   const [audio, setAudio] = useState({ unlocked: false, muted: false, music: true, volume: 0.7 });
+  const [gateClosed, setGateClosed] = useState(false);
   const [quiet, setQuiet] = useState(false);
   const [fs, setFs] = useState(false);
   const [awake, setAwake] = useState(true);
+  const [flash, setFlash] = useState<Flash | null>(null);
+  const [played, setPlayed] = useState<{ n: number; last: Cue | null }>({ n: 0, last: null });
   const prev = useRef<PublicSnapshot | null>(null);
-  const snapAt = useRef(Date.now());
+  const timers = useRef<number[]>([]);
+  const chan = useRef<ReturnType<typeof openChannel> | null>(null);
+
+  const sound: ScreenSound = !audio.unlocked ? "off" : audio.muted || quiet ? "muted" : "on";
+  const soundRef = useRef(sound);
 
   useEffect(() => {
-    const ch = openChannel((m) => {
+    const ch = openChannel((m: ChannelMessage) => {
       if (m.kind === "snapshot") {
         // Only accept newer revisions so a late message cannot roll the board back.
         setSnap((cur) => (cur && m.snapshot.rev < cur.rev ? cur : m.snapshot));
-        snapAt.current = Date.now();
         setLastSeen(Date.now());
       } else if (m.kind === "heartbeat") setLastSeen(Date.now());
+      else if (m.kind === "test-sound") sfx.play("test");
     });
+    chan.current = ch;
     ch.post({ kind: "request" }); // ask for the current snapshot on load
-    const retry = setInterval(() => ch.post({ kind: "request" }), HEARTBEAT_MS);
+    const beat = setInterval(() => {
+      ch.post({ kind: "request" });
+      ch.post({ kind: "screen", sound: soundRef.current }); // tell the console this window is open, and its sound
+    }, HEARTBEAT_MS);
     const tick = setInterval(() => setNow(Date.now()), 1000);
+    const pending = timers.current;
     return () => {
       ch.close();
-      clearInterval(retry);
+      chan.current = null;
+      clearInterval(beat);
       clearInterval(tick);
+      pending.forEach((t) => window.clearTimeout(t));
     };
+  }, [sfx]);
+
+  useEffect(() => {
+    soundRef.current = sound;
+    chan.current?.post({ kind: "screen", sound });
+  }, [sound]);
+
+  const show = useCallback((f: FlashSpec, ms: number) => {
+    const id = Date.now();
+    setFlash({ ...f, id });
+    timers.current.push(window.setTimeout(() => setFlash((cur) => (cur?.id === id ? null : cur)), ms));
   }, []);
 
+  // One accepted action, one cue: a sound and, for the big moments, a red X or a banner. Scores never wait on these.
   useEffect(() => {
     if (!snap) return;
     const cue = cueFor(prev.current, snap);
     prev.current = snap;
-    if (cue) sfx.play(cue);
-  }, [snap, sfx]);
+    if (!cue) return;
+    sfx.play(cue);
+    setPlayed((p) => ({ n: p.n + 1, last: cue }));
+    const f = flashFor(cue, snap);
+    if (f) show(f, f.kind === "x" ? X_MS : BANNER_MS);
+    if (cue === "strike" && snap.phase === "steal") {
+      // The third X, then the steal.
+      timers.current.push(window.setTimeout(() => {
+        sfx.play("steal");
+        const steal = flashFor("steal", snap);
+        if (steal) show(steal, BANNER_MS);
+      }, X_MS));
+    }
+  }, [snap, sfx, show]);
 
   // Settings reach the audio engine from here. Quiet mode silences everything and stops animation.
   useEffect(() => {
@@ -52,22 +115,11 @@ export function ScreenPage() {
     sfx.apply();
   }, [sfx, quiet, audio.muted, audio.music, audio.volume]);
 
-  // The theme plays between rounds, on the question intro and at the end; live play is silent so the host can talk.
+  // The theme plays between rounds, on the question intro and at the end; live play is silent so the hosts can talk.
   const wantMusic = !!snap && musicWanted(snap);
   useEffect(() => {
     sfx.setMusic(wantMusic);
   }, [sfx, wantMusic, audio.unlocked]);
-
-  // A tick for the last five seconds of a crowd-assist poll.
-  const pollId = snap?.poll?.status === "open" ? snap.poll.id : null;
-  useEffect(() => {
-    if (!pollId) return;
-    const t = setInterval(() => {
-      const left = (snap?.poll?.remainingMs ?? 0) - (Date.now() - snapAt.current);
-      if (left > 0 && left <= 5000) sfx.play("tick");
-    }, 1000);
-    return () => clearInterval(t);
-  }, [pollId, snap?.poll?.remainingMs, sfx]);
 
   // The host's countdown: a tick for each of the last three seconds, a buzzer at zero. A cancelled timer makes no sound.
   const timerEnd = snap?.timer?.endsAt ?? null;
@@ -108,9 +160,11 @@ export function ScreenPage() {
     return () => document.removeEventListener("fullscreenchange", onFs);
   }, []);
 
+  // Browsers only allow sound after a click on this window; the state shown is the browser's real answer.
   const unlock = useCallback(async () => {
     const ok = await sfx.unlock();
     setAudio((a) => ({ ...a, unlocked: ok }));
+    if (ok) setGateClosed(true);
   }, [sfx]);
   const toggleFs = () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => {});
   const setMuted = (muted: boolean) => setAudio((a) => ({ ...a, muted }));
@@ -120,9 +174,9 @@ export function ScreenPage() {
   const mismatch = snap?.room.code && roomCode !== "local" && roomCode.toUpperCase() !== snap.room.code;
 
   return (
-    <div className="screen-page" data-quiet={quiet || undefined}>
+    <div className="screen-page" data-quiet={quiet || undefined} data-cues={played.n} data-last-cue={played.last ?? undefined} data-sound={sound}>
       {snap ? (
-        <ScreenView snapshot={snap} />
+        <ScreenView snapshot={snap} flash={flash} />
       ) : (
         <div className="screen-wait" data-theme="ice">
           <p className="bi-label">GDG ON CAMPUS · UOBD</p>
@@ -137,8 +191,21 @@ export function ScreenPage() {
         </div>
       )}
       {mismatch && <div className="screen-mismatch" role="status">URL says room {roomCode.toUpperCase()}, host is on {snap!.room.code}</div>}
+      {!audio.unlocked && !gateClosed && (
+        <div className="sound-gate" data-theme="ice">
+          <div className="sound-gate__card">
+            <p className="bi-label">BEFORE THE SHOW</p>
+            <p className="sound-gate__h">Sound is off until you click here</p>
+            <p>Browsers only play sound after a click on this window.</p>
+            <div className="sound-gate__row">
+              <button type="button" className="bi-button" onClick={unlock}>Enable sound</button>
+              <button type="button" className="bi-button bi-button--outline" onClick={() => setGateClosed(true)}>Continue without sound</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className={`screen-bar ${!awake && (fs || audio.unlocked) ? "screen-bar--idle" : ""}`} data-theme="ice">
-        <button type="button" className="bar-btn" onClick={unlock} aria-pressed={audio.unlocked}>{audio.unlocked ? "SOUND READY" : "ENABLE SOUND"}</button>
+        <button type="button" className="bar-btn" onClick={audio.unlocked ? () => sfx.play("test") : unlock} aria-pressed={audio.unlocked}>{audio.unlocked ? "TEST SOUND" : "ENABLE SOUND"}</button>
         <button type="button" className="bar-btn" onClick={() => setMuted(!audio.muted)} aria-pressed={audio.muted}>{audio.muted ? "UNMUTE" : "MUTE"}</button>
         <label className="bar-vol">VOL
           <input type="range" min={0} max={1} step={0.05} value={audio.volume} onChange={(e) => setVolume(Number(e.target.value))} aria-label="Volume" />
