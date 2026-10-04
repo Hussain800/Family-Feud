@@ -44,7 +44,9 @@ export interface PublicSnapshot {
     slots: PublicSlot[];
   } | null;
   /** Rounds completed so far and the planned total. Drives the between-rounds scoreboard. */
-  progress: { played: number; total: number };
+  progress: { played: number; total: number; /** The round in play, or coming next, is a tie-break. */ tieBreak: boolean };
+  /** A countdown the host started. `endsAt` is the host's clock; the projector is a second window of the same browser, so the clocks agree. */
+  timer: { endsAt: number; durationMs: number } | null;
   note: string | null;
   settlement: { winner: TeamId; amount: number; kind: string } | null;
   poll: PublicPoll | null;
@@ -73,7 +75,8 @@ export const EMPTY_SNAPSHOT: PublicSnapshot = {
   pot: 0,
   strikes: 0,
   round: null,
-  progress: { played: 0, total: 3 },
+  progress: { played: 0, total: 3, tieBreak: false },
+  timer: null,
   note: null,
   settlement: null,
   poll: null,

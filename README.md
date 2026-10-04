@@ -28,11 +28,12 @@ Open the console on the laptop, click **Open projector**, and drag that window t
 | `pnpm run build` | Typecheck and production build to `dist/` |
 | `pnpm run build:lan` | Production build with the laptop's LAN address baked in |
 | `pnpm start` | Relay + the production build (run `build:lan` first) |
-| `pnpm test` | Unit tests (99) |
+| `pnpm test` | Unit tests (106) |
 | `pnpm run typecheck` / `pnpm run lint` | Types and lint |
 | `pnpm run e2e` | Full match across moderator, projector and two isolated phones (needs `pnpm run dev` and Chrome) |
 | `pnpm run e2e:failures` | Relay down, storage failing, rejected import, answer editor, template preview, sound unlock, direct navigation |
 | `pnpm run e2e:drop` | A phone drops mid-poll, and the 17th phone meets a full room |
+| `pnpm run e2e:extras` | A level match, the tie-break round, and the countdown timer on the projector |
 | `pnpm run e2e:paste` | Pasting survey rows from a spreadsheet: errors by line, preview, load, adding to a loaded pack, playing a pasted question |
 | `pnpm run e2e:faceoff` | Face-off with real key presses: buzz order, play or pass, learning a buzzer, a Space-bar buzzer, manual fallback |
 | `pnpm run probe` | Raw-socket checks of the relay: room limit, role spoofing, host takeover |
@@ -85,6 +86,9 @@ If something goes wrong: **Skip face-off** (confirm) goes straight to guessing w
 - **Not tested with the real buzzers**: their model is unknown. Keyboard behaviour was tested with real key presses in Chrome only. Buzzers that do not connect to the laptop need the manual buttons, and then the host's ears decide who was first; those cheap sets have no lock-out, so a second person watching helps.
 
 House rules (proposed, not attributed to the organisers): two teams, three rounds by default, human judging, three strikes and one steal, a buzzer face-off then play or pass, pot to the controlling team unless a steal succeeds. A repeated guess shows ALREADY ON THE BOARD and adds neither points nor a strike. Reveals after the award are for discussion and never change a score. Undo restores the previous state exactly; an answer already shown cannot become unknown to the audience.
+
+8. **Countdown timer** (during a face-off, a team turn or a steal): **5 s / 10 s / 20 s / 30 s** under the round buttons put a large countdown in the middle of the projector's header, with a tick for the last three seconds and a buzzer at zero (**TIME** stays up). **Stop timer** removes it, and so does anything that happens in the round (a buzz, a reveal, a strike, an undo), so start it after the buzz, once the answer is awaited. It is advice for the room: nothing is enforced when it hits zero, the host still decides. The projector must stay a window of the same browser as the console (it reads the host's clock).
+9. **Tie-break round**: if the match ends level, the Match over panel offers **Play a tie-break round**. It adds one round (a normal one, with its own face-off, strikes and steal, picked from the unplayed questions), and the projector calls it TIE-BREAK instead of "round 4 of 4". If that round is level too, the button appears again. Undo steps back to the finished tie. A tie is still allowed to stand: just do not press the button.
 
 Any change to the round while a poll is open (a reveal, strike, undo, score correction) cancels the poll, and the host is told.
 
@@ -152,7 +156,7 @@ Findings from checking the real relay (`pnpm run probe`):
 
 Ran on 4 Oct 2026, Windows 11, Chrome (headless via `playwright-core`, no browser download).
 
-**Run and passing:** `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (99 tests: rules including the face-off, validation, spreadsheet paste, polls, projection and privacy sentinel, store role gating, module boundaries, text escaping, sound cue mapping, storage failure), `pnpm run build`, `pnpm run build:lan`, and the five e2e scripts: 57 checks for a full match, 30 for failures, 12 for phone connection (a drop and the full room), 28 for the face-off with real key presses, 8 for pasting survey rows. Highlights: a repeated reveal adds nothing; a double click is one strike and a held key is ignored; clear board, successful steal, failed steal and repeated award give the exact totals; undo reverses exactly the recorded award; a planted sentinel answer, alias, count and survey note never appears in the projector, a phone's page, its websocket frames, a raw controller's traffic, phone storage or any script served to a phone until revealed (and an alias never appears).
+**Run and passing:** `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (106 tests: rules including the face-off and tie-break, validation, spreadsheet paste, polls, projection and privacy sentinel, store role gating, module boundaries, text escaping, sound cue mapping, storage failure), `pnpm run build`, `pnpm run build:lan`, and the six e2e scripts: 57 checks for a full match, 30 for failures, 12 for phone connection (a drop and the full room), 28 for the face-off with real key presses, 8 for pasting survey rows, 16 for the tie-break and the timer. Highlights: a repeated reveal adds nothing; a double click is one strike and a held key is ignored; clear board, successful steal, failed steal and repeated award give the exact totals; undo reverses exactly the recorded award; a planted sentinel answer, alias, count and survey note never appears in the projector, a phone's page, its websocket frames, a raw controller's traffic, phone storage or any script served to a phone until revealed (and an alias never appears).
 
 **Simulated, not physical:**
 - "Phones" are two isolated Chrome contexts emulating 390×844 touch devices on this laptop, plus raw socket clients. Not iOS Safari, not Android, not a real touchscreen.

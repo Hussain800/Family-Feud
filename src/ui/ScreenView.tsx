@@ -3,7 +3,7 @@ import type { TeamId } from "../engine/types";
 import type { PublicFaceOff, PublicPoll, PublicSlot, PublicSnapshot } from "../public/types";
 import { faceOffTurn } from "../public/faceoff";
 import { hostOf, isLocalOnly } from "../public/url";
-import { tally, useRemaining } from "./poll-bits";
+import { tally, useNow, useRemaining } from "./poll-bits";
 import { Stage } from "./Stage";
 import { Wordmark } from "./Wordmark";
 
@@ -12,6 +12,17 @@ const QR_BG = "#F3F8FF";
 
 
 const GdgMark = () => <img className="gdg-mark" src="/brand/gdg-mark-frost.svg" alt="" width={64} height={32} />;
+
+function Timer({ t }: { t: NonNullable<PublicSnapshot["timer"]> }) {
+  const left = Math.max(0, t.endsAt - useNow(true));
+  const secs = Math.ceil(left / 1000);
+  return (
+    <div className={`s-timer ${left === 0 ? "s-timer--up" : secs <= 3 ? "s-timer--low" : ""}`} role="timer" aria-label={left === 0 ? "Time is up" : `${secs} seconds left`}>
+      <span className="s-timer__n">{left === 0 ? "TIME" : secs}</span>
+      <span className="s-timer__bar"><i style={{ width: `${t.durationMs ? (left / t.durationMs) * 100 : 0}%` }} /></span>
+    </div>
+  );
+}
 
 function Header({ s, qr }: { s: PublicSnapshot; qr: boolean }) {
   const canJoin = qr && s.room.status === "ready" && s.room.joinUrl && !isLocalOnly(s.room.joinUrl);
@@ -25,7 +36,7 @@ function Header({ s, qr }: { s: PublicSnapshot; qr: boolean }) {
         {s.round && s.round.number > 0 && s.phase !== "intro" && (
           <>
             <p className="bi-label">{s.round.category.toUpperCase()}</p>
-            <p className="s-head__round">ROUND {s.round.number} OF {s.round.total}</p>
+            {s.timer ? <Timer t={s.timer} /> : <p className="s-head__round">{s.progress.tieBreak ? "TIE-BREAK" : `ROUND ${s.round.number} OF ${s.round.total}`}</p>}
           </>
         )}
       </div>
@@ -98,7 +109,7 @@ function Interlude({ s }: { s: PublicSnapshot }) {
           </div>
         ))}
       </div>
-      <p className="intro__sub">&lt;ROUND {Math.min(s.progress.played + 1, s.progress.total)} IS NEXT&gt;</p>
+      <p className="intro__sub">&lt;{s.progress.tieBreak ? "TIE-BREAK" : `ROUND ${Math.min(s.progress.played + 1, s.progress.total)}`} IS NEXT&gt;</p>
     </div>
   );
 }
@@ -107,7 +118,7 @@ function Intro({ s }: { s: PublicSnapshot }) {
   const q = s.round!;
   return (
     <div className="intro">
-      <p className="bi-label">{q.category.toUpperCase()} · ROUND {q.number} OF {q.total}</p>
+      <p className="bi-label">{q.category.toUpperCase()} · {s.progress.tieBreak ? "TIE-BREAK" : `ROUND ${q.number} OF ${q.total}`}</p>
       <h1 className="intro__q">{q.prompt}</h1>
       <p className="intro__sub">&lt;FACE-OFF NEXT: WHO BUZZES FIRST?&gt;</p>
     </div>

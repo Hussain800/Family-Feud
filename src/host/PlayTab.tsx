@@ -80,7 +80,7 @@ function Picker({ g }: { g: HostGame }) {
   const left = s.totalRounds - s.roundsPlayed;
   return (
     <div className="panel">
-      <h2 className="panel__h">Choose a question · round {Math.min(s.roundsPlayed + 1, s.totalRounds)} of {s.totalRounds}</h2>
+      <h2 className="panel__h">Choose a question · {s.tieBreakFrom != null && s.roundsPlayed >= s.tieBreakFrom ? "TIE-BREAK ROUND" : `round ${Math.min(s.roundsPlayed + 1, s.totalRounds)} of ${s.totalRounds}`}</h2>
       <div className="row">
         <fieldset className="seg">
           <legend className="bi-label">STARTING TEAM (ONLY IF YOU SKIP THE FACE-OFF)</legend>
@@ -210,6 +210,19 @@ function FaceOffPanel({ g, b }: { g: HostGame; b: Buzzers }) {
   );
 }
 
+/** A countdown on the projector. It ends by itself, and ends when anything happens in the round. */
+function TimerRow({ g }: { g: HostGame }) {
+  return (
+    <div className="row" role="group" aria-label="Countdown timer">
+      <span className="bi-label">TIMER ON THE SCREEN</span>
+      {[5, 10, 20, 30].map((n) => (
+        <button key={n} type="button" className="bi-button bi-button--outline host__btn host__btn--sm" onClick={() => g.startTimer(n)}>{n} s</button>
+      ))}
+      <button type="button" className="bi-button bi-button--outline host__btn host__btn--sm" disabled={!g.timer} onClick={g.stopTimer}>Stop timer</button>
+    </div>
+  );
+}
+
 function Round({ g, b }: { g: HostGame; b: Buzzers }) {
   const s = g.state;
   const r = s.round!;
@@ -269,6 +282,7 @@ function Round({ g, b }: { g: HostGame; b: Buzzers }) {
         )}
         {undoBtn}
       </div>
+      {(s.phase === "face_off" || s.phase === "team_turn" || s.phase === "steal") && <TimerRow g={g} />}
       {s.note && <p className="note" role="status">{s.note}</p>}
       {s.phase === "round_over" && r.settlement && <p className="hint">Revealing the rest is for discussion only. It never changes the pot or scores.</p>}
       <p className="hint">Undo restores the previous scores and pot. Answers already shown cannot become unknown to the audience.</p>
@@ -286,8 +300,10 @@ function Over({ g }: { g: HostGame }) {
     <div className="panel">
       <h2 className="panel__h">Match over</h2>
       <p className="round__q">{A.score === B.score ? `Tie: ${A.score} each` : `${A.score > B.score ? A.name : B.name} wins, ${Math.max(A.score, B.score)} to ${Math.min(A.score, B.score)}`}</p>
+      {A.score === B.score && <p className="hint">Level. Play one more round to settle it: it gets its own face-off, strikes and steal, and the projector calls it the tie-break.</p>}
       <div className="row">
-        <ConfirmButton label="Start a new match" confirmLabel="reset scores" onConfirm={() => g.act({ type: "NEW_MATCH" })} className="bi-button host__btn" />
+        {A.score === B.score && <button type="button" className="bi-button host__btn host__btn--award" onClick={() => g.act({ type: "TIEBREAK" })}>Play a tie-break round</button>}
+        <ConfirmButton label="Start a new match" confirmLabel="reset scores" onConfirm={() => g.act({ type: "NEW_MATCH" })} className={A.score === B.score ? "bi-button bi-button--outline host__btn" : "bi-button host__btn"} />
         {g.canUndo && <button type="button" className="bi-button bi-button--outline host__btn" onClick={() => g.act({ type: "UNDO" })}>Undo last (U)</button>}
       </div>
     </div>

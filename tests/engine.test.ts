@@ -341,3 +341,43 @@ describe("face-off", () => {
     expect(s.state.round!.faceOff).toMatchObject({ armed: true, buzzed: null });
   });
 });
+
+describe("tie-break", () => {
+  const level = (rounds = 1) => run(initialSession(rounds), act("ADJUST_SCORE", { team: "A", delta: 10 }), act("ADJUST_SCORE", { team: "B", delta: 10 }), act("END_MATCH"));
+  const playAndAward = (s: Session, qid: string, team: "A" | "B") =>
+    run(s, act("START_ROUND", { question: { ...Q, id: qid }, team }), act("SHOW_BOARD"), act("BEGIN_PLAY"), act("REVEAL", { answerId: "a1" }), act("END_ROUND"), act("AWARD"), act("NEXT_ROUND"));
+
+  it("only a finished, level match can be extended", () => {
+    expect(run(initialSession(), act("TIEBREAK")).state.phase).toBe("lobby");
+    const lead = run(initialSession(1), act("ADJUST_SCORE", { team: "A", delta: 5 }), act("END_MATCH"), act("TIEBREAK"));
+    expect(lead.state.phase).toBe("match_over");
+    expect(lead.state.note).toMatch(/level/);
+  });
+
+  it("a level match gets exactly one more round, marked as a tie-break", () => {
+    const s = run(level(), act("TIEBREAK"));
+    expect(s.state).toMatchObject({ phase: "lobby", totalRounds: 1, tieBreakFrom: 0 });
+    const r = run(initialSession(2), act("ADJUST_SCORE", { team: "A", delta: 3 }), act("ADJUST_SCORE", { team: "B", delta: 3 }));
+    const two = playAndAward(playAndAward(r, "q01", "A"), "q02", "B"); // 2 rounds: A 33, B 33
+    const level2 = run(two, act("TIEBREAK"));
+    expect(level2.state).toMatchObject({ phase: "lobby", totalRounds: 3, tieBreakFrom: 2 });
+  });
+
+  it("the tie-break round settles the match, or the match can go level again and be extended again", () => {
+    let s = playAndAward(run(level(), act("TIEBREAK")), "q05", "A");
+    expect(s.state.phase).toBe("match_over");
+    expect(s.state.teams.A.score).toBeGreaterThan(s.state.teams.B.score);
+    // level again after an awarded round: correct B up to A, then extend again
+    s = run(s, act("ADJUST_SCORE", { team: "B", delta: 30 }), act("TIEBREAK"));
+    expect(s.state).toMatchObject({ phase: "lobby", totalRounds: 2, tieBreakFrom: 0 }); // the first tie-break point is kept
+  });
+
+  it("undo steps back to the finished tie, and a new match clears the tie-break", () => {
+    let s = run(level(), act("TIEBREAK"));
+    s = apply(s, { id: "u-tb", type: "UNDO" });
+    expect(s.state.phase).toBe("match_over");
+    s = run(s, act("TIEBREAK"), act("NEW_MATCH"));
+    expect(s.state.tieBreakFrom).toBeNull();
+  });
+});
+

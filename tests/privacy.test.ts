@@ -112,5 +112,14 @@ describe("public snapshot privacy", () => {
     expect(json).not.toContain(S.alias);
     expect(json).not.toContain("Water bottle");
   });
-});
 
+  it("marks the tie-break and carries the host's timer, and drops the timer from a template preview", () => {
+    const timer = { endsAt: 123456, durationMs: 10000 };
+    const g = { ...initialSession().state, roundsPlayed: 3, totalRounds: 4, tieBreakFrom: 3 };
+    const snap = projectPublic({ rev: 1, game: g, demo: false, room, poll: null, timer, now: 0, preview: null });
+    expect(snap.progress.tieBreak).toBe(true);
+    expect(snap.timer).toEqual(timer);
+    expect(projectPublic({ rev: 1, game: { ...g, tieBreakFrom: null }, demo: false, room, poll: null, now: 0, preview: null }).progress.tieBreak).toBe(false);
+    expect(projectPublic({ rev: 1, game: g, demo: false, room, poll: null, timer, now: 0, preview: { category: "Food", prompt: "x" } }).timer).toBeNull();
+  });
+});

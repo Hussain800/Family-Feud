@@ -9,6 +9,7 @@ export interface ProjectInput {
   demo: boolean;
   room: { code: string | null; joinUrl: string | null; status: RelayStatus; connected: number; capacity: number };
   poll: PollState | null;
+  timer?: { endsAt: number; durationMs: number } | null;
   now: number;
   /** Template preview: show a question with empty lines, no scores. */
   preview: { category: string; prompt: string } | null;
@@ -61,7 +62,8 @@ export function projectPublic(i: ProjectInput): PublicSnapshot {
     pot: preview ? 0 : (r?.pot ?? 0),
     strikes: preview ? 0 : (r?.strikes ?? 0),
     round,
-    progress: { played: game.roundsPlayed, total: game.totalRounds },
+    progress: { played: game.roundsPlayed, total: game.totalRounds, tieBreak: game.tieBreakFrom != null && game.roundsPlayed >= game.tieBreakFrom },
+    timer: preview ? null : (i.timer ?? null),
     note: game.note,
     settlement: r?.settlement ? { winner: r.settlement.winner, amount: r.settlement.amount, kind: r.settlement.kind } : null,
     poll: i.poll && i.poll.status !== "cancelled" ? publicPoll(i.poll, i.now) : null,

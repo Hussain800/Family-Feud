@@ -15,6 +15,17 @@ export function useRemaining(poll: PublicPoll | null): number {
   return Math.max(0, poll.remainingMs - (now - start.at));
 }
 
+/** The current time, refreshed while `active`. */
+export function useNow(active: boolean, everyMs = 100): number {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (!active) return;
+    const t = setInterval(() => setNow(Date.now()), everyMs);
+    return () => clearInterval(t);
+  }, [active, everyMs]);
+  return now;
+}
+
 /** Top option(s) after close. Ties and empty polls are settled aloud, so we only report them. */
 export function tally(poll: PublicPoll): { total: number; top: string[]; topVotes: number } {
   const results = poll.results ?? [];

@@ -44,6 +44,7 @@ export function useHostGame() {
   const [poll, setPollState] = useState<PollState | null>(null);
   const pollRef = useRef<PollState | null>(null);
   const [snapshot, setSnapshot] = useState<PublicSnapshot | null>(null);
+  const [timer, setTimer] = useState<{ endsAt: number; durationMs: number } | null>(null);
 
   // -- room ------------------------------------------------------------------
   const relay: RelayStatus = host.connectionStatus === "connected" && host.roomId ? "ready" : host.connectionStatus === "connecting" || host.connectionStatus === "idle" ? "connecting" : "offline";
@@ -111,6 +112,8 @@ export function useHostGame() {
 
   // -- saving: after every meaningful host action, never from an effect --------
   const commit = useCallback((next: Session) => {
+    // Any change to the round (a buzz, a reveal, a strike, an undo) ends a running countdown: it belonged to the last moment.
+    if (next.state.round !== sessionRef.current.state.round || next.state.phase !== sessionRef.current.state.phase) setTimer(null);
     sessionRef.current = next;
     setSession(next);
     if (!holdSave.current) setSaveStatus(saveSession(packRef.current.packId, next));
@@ -170,6 +173,7 @@ export function useHostGame() {
       demo,
       room,
       poll,
+      timer,
       now: Date.now(),
       preview: preview && session.state.phase === "lobby" ? { category: preview.category, prompt: preview.prompt } : null,
     });
@@ -177,7 +181,7 @@ export function useHostGame() {
     chan.current?.post({ kind: "snapshot", snapshot: snap });
     publishSnapshot(snap);
     setSnapshot(snap);
-  }, [session.state, demo, room, poll, preview]);
+  }, [session.state, demo, room, poll, timer, preview]);
 
   useEffect(() => {
     const c = openChannel((m) => {
@@ -227,6 +231,9 @@ export function useHostGame() {
     poll,
     canPoll,
     startPoll,
+    timer,
+    startTimer: (seconds: number) => setTimer({ endsAt: Date.now() + seconds * 1000, durationMs: seconds * 1000 }),
+    stopTimer: () => setTimer(null),
     endPoll,
     clearPoll,
     previewId,

@@ -55,6 +55,8 @@ export interface GameState {
   roundsPlayed: number;
   totalRounds: number;
   playedQuestionIds: string[];
+  /** Rounds played when the first tie-break was added: every round from there on is a tie-break. Unset on saves made before it existed. */
+  tieBreakFrom?: number | null;
   round: RoundState | null;
   /** Short host-facing message such as ALREADY ON THE BOARD. Not part of scoring. */
   note: string | null;
@@ -89,6 +91,7 @@ export type Action =
   | { id: string; type: "NEXT_ROUND" }
   | { id: string; type: "END_MATCH" }
   | { id: string; type: "ADJUST_SCORE"; team: TeamId; delta: number }
+  | { id: string; type: "TIEBREAK" }
   | { id: string; type: "ABANDON_ROUND" };
 
 export interface Session {

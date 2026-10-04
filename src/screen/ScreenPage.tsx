@@ -69,6 +69,21 @@ export function ScreenPage() {
     return () => clearInterval(t);
   }, [pollId, snap?.poll?.remainingMs, sfx]);
 
+  // The host's countdown: a tick for each of the last three seconds, a buzzer at zero. A cancelled timer makes no sound.
+  const timerEnd = snap?.timer?.endsAt ?? null;
+  useEffect(() => {
+    if (timerEnd === null || timerEnd <= Date.now()) return;
+    const tick = setInterval(() => {
+      const left = timerEnd - Date.now();
+      if (left > 0 && left <= 3000) sfx.play("tick");
+    }, 1000);
+    const done = setTimeout(() => sfx.play("timeUp"), timerEnd - Date.now());
+    return () => {
+      clearInterval(tick);
+      clearTimeout(done);
+    };
+  }, [timerEnd, sfx]);
+
   // The control bar steps aside once sound is on or the screen is fullscreen; any pointer or key brings it back.
   useEffect(() => {
     let t = 0;

@@ -19,6 +19,7 @@ export const initialState = (totalRounds = 3): GameState => ({
   roundsPlayed: 0,
   totalRounds,
   playedQuestionIds: [],
+  tieBreakFrom: null,
   round: null,
   note: null,
   seen: [],
@@ -229,6 +230,11 @@ export function step(prev: GameState, a: Action): GameState {
       const t = s.teams[a.team];
       return { ...s, teams: { ...s.teams, [a.team]: { ...t, score: t.score + a.delta } } };
     }
+
+    // A finished, level match gets one more round. It plays like any other, so it has its own face-off and steal.
+    case "TIEBREAK":
+      if (s.phase !== "match_over" || s.teams.A.score !== s.teams.B.score) return refuse(s, "A tie-break needs a finished match that is level.");
+      return { ...s, phase: "lobby", totalRounds: s.roundsPlayed + 1, tieBreakFrom: s.tieBreakFrom ?? s.roundsPlayed };
 
     case "ABANDON_ROUND": {
       // Drop an unsettled round without scoring. A round with no play yet releases its question.

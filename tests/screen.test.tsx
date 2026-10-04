@@ -56,7 +56,7 @@ describe("plain-text rendering", () => {
   });
 
   it("between rounds the projector shows the scoreboard, not the join page", () => {
-    const html = renderToString(<ScreenView snapshot={{ ...EMPTY_SNAPSHOT, progress: { played: 1, total: 3 }, teams: [{ id: "A", name: "Foxes", score: 48 }, { id: "B", name: "Owls", score: 12 }] }} />).replace(/<!-- -->/g, ""); // drop React's text-node markers
+    const html = renderToString(<ScreenView snapshot={{ ...EMPTY_SNAPSHOT, progress: { played: 1, total: 3, tieBreak: false }, teams: [{ id: "A", name: "Foxes", score: 48 }, { id: "B", name: "Owls", score: 12 }] }} />).replace(/<!-- -->/g, ""); // drop React's text-node markers
     expect(html).toContain("AFTER ROUND 1 OF 3");
     expect(html).toContain("Foxes leads");
     expect(html).toContain("ROUND 2 IS NEXT");
@@ -91,6 +91,27 @@ describe("sound cues are derived from public changes only", () => {
     expect(cueFor(null, base)).toBeNull();
     expect(cueFor(base, base)).toBeNull();
     expect(cueFor(shown(1), { ...shown(0), round: { ...shown(0).round!, prompt: "Another question" } })).toBeNull();
+  });
+});
+
+describe("tie-break and countdown on the projector", () => {
+  const tb = { ...base, progress: { played: 3, total: 4, tieBreak: true } };
+  it("calls the extra round a tie-break everywhere it would say ROUND n OF m", () => {
+    const board = renderToString(<ScreenView snapshot={tb} />).replace(/<!-- -->/g, "");
+    expect(board).toContain("TIE-BREAK");
+    expect(board).not.toContain("ROUND 1 OF 3");
+    expect(renderToString(<ScreenView snapshot={{ ...tb, phase: "intro" }} />).replace(/<!-- -->/g, "")).toContain("TIE-BREAK");
+    const between = renderToString(<ScreenView snapshot={{ ...EMPTY_SNAPSHOT, progress: tb.progress, teams: [{ id: "A", name: "Foxes", score: 40 }, { id: "B", name: "Owls", score: 40 }] }} />).replace(/<!-- -->/g, "");
+    expect(between).toContain("All square");
+    expect(between).toContain("TIE-BREAK IS NEXT");
+    expect(renderToString(<ScreenView snapshot={base} />)).not.toContain("TIE-BREAK");
+  });
+
+  it("shows the seconds left, then TIME", () => {
+    const run = (ms: number) => renderToString(<ScreenView snapshot={{ ...base, timer: { endsAt: Date.now() + ms, durationMs: 10000 } }} />).replace(/<!-- -->/g, "");
+    expect(run(7400)).toMatch(/role="timer"[^>]*aria-label="8 seconds left"/);
+    expect(run(-500)).toContain("TIME");
+    expect(renderToString(<ScreenView snapshot={base} />)).not.toContain('role="timer"');
   });
 });
 

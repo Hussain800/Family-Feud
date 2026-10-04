@@ -2,7 +2,7 @@
 // Only the projector window plays it. Cues react to public snapshots and never feed back into scoring.
 import type { PublicSnapshot } from "../public/types";
 
-export type Cue = "reveal" | "strike" | "steal" | "award" | "roundStart" | "final" | "pollOpen" | "pollClose" | "tick" | "buzzersLive" | "buzz" | "faceoffWin";
+export type Cue = "reveal" | "strike" | "steal" | "award" | "roundStart" | "final" | "pollOpen" | "pollClose" | "tick" | "buzzersLive" | "buzz" | "faceoffWin" | "timeUp";
 
 const hz = (midi: number) => 440 * 2 ** ((midi - 69) / 12);
 
@@ -200,6 +200,11 @@ export class Sfx {
       case "buzz": // a short, soft "got it" ping: the real buzzers are loud already, this only confirms who was first
         this.bell(hz(84), t, 0.22, bus);
         this.tone(hz(60), t, 0.12, "sine", 0.3, bus);
+        break;
+      case "timeUp": // one long, flat BZZZT
+        this.tone(104, t, 0.7, "sawtooth", 0.75, bus, { to: 90, cutoff: 900 });
+        this.tone(110, t, 0.7, "square", 0.4, bus, { to: 94, cutoff: 900 });
+        this.hiss(t, 0.12, "lowpass", 600, 0.3, bus);
         break;
       case "faceoffWin": // short brass sting
         this.brass([67, 71, 74], t, 0.16, 0.14, bus);
