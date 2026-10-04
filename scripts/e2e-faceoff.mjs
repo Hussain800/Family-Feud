@@ -40,6 +40,12 @@ const startRound = async (qid) => {
   await host.locator(".qrow", { hasText: qid }).locator("button:has-text('Start round')").click();
   if (await host.locator("button:has-text('CONFIRM')").count()) await host.click("button:has-text('CONFIRM')");
 };
+const openBuzzers = async () => {
+  // The keyboard-buzzer controls sit in a collapsed section because the club's buzzers are standalone.
+  const d = host.locator("details");
+  if (!(await d.evaluate((el) => el.open))) await d.locator("summary").click();
+  await host.click("button:has-text('Open buzzers')");
+};
 const foText = async () => (await screen.locator(".fo__text").count()) ? text(screen, ".fo__text") : "";
 const tags = async () => [await text(screen, ".s-foot .team:nth-child(1) .team__tag"), await text(screen, ".s-foot .team:nth-child(3) .team__tag")];
 const scores = async () => [Number(await text(screen, ".s-foot .team:nth-child(1) .team__score")), Number(await text(screen, ".s-foot .team:nth-child(3) .team__score"))];
@@ -59,7 +65,7 @@ await sleep(250);
 check("a buzzer pressed before the host opens them does nothing", /ONE PLAYER FROM EACH TEAM/.test(await foText()));
 check("keys are not shortcuts either: nothing revealed", (await screen.locator(".tile--shown").count()) === 0);
 
-await host.click("button:has-text('Open buzzers')");
+await openBuzzers();
 await sleep(250);
 check("opening shows BUZZERS LIVE and lights both team lamps", /BUZZERS LIVE/.test(await foText()) && (await tags()).every((t) => t === "BUZZER LIVE"), JSON.stringify(await tags()));
 await snap(screen, "faceoff-1-buzzers-live");
@@ -145,7 +151,7 @@ await host.click("button:has-text('Start face-off')");
 await host.click("button:has-text('Team A buzzed first')"); // standalone buzzers: no Open buzzers step needed
 await sleep(250);
 check("standalone buzzers: one tap records who was first, without opening the buzzers", /TEAM A BUZZED FIRST/.test(await foText()), await foText());
-await host.click("button:has-text('Open buzzers')"); // clears that tap
+await openBuzzers(); // clears that tap
 await host.keyboard.press("q"); // Q is no longer a buzzer for anyone
 await sleep(200);
 check("an unmapped key no longer buzzes", /BUZZERS LIVE/.test(await foText()));
@@ -153,7 +159,7 @@ await host.locator("button:has-text('Undo last')").focus();
 await host.keyboard.press("Space");
 await sleep(300);
 check("a Space-bar buzzer buzzes and does not click the focused button", /TEAM A BUZZED FIRST/.test(await foText()), await foText());
-await host.click("button:has-text('Open buzzers')"); // accidental buzz: the host re-opens
+await openBuzzers(); // accidental buzz: the host re-opens
 await sleep(200);
 check("re-opening after an accidental buzz clears it", /BUZZERS LIVE/.test(await foText()));
 await host.click("button:has-text('Team B buzzed first')");

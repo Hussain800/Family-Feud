@@ -170,7 +170,7 @@ function faceOffHint(s: GameState, r: NonNullable<GameState["round"]>): string {
     return `${teamName(s, turn)} ${second ? "answers next" : "buzzed first"}. Click Reveal on the matching answer (or press its number), or Miss (X) if it is not on the board.`;
   }
   if (fo.tries.A && fo.tries.B) return "Both missed. Open the buzzers for the next two players.";
-  return fo.armed ? "Buzzers are live. Waiting for the first buzz…" : "Read the question aloud, then open the buzzers.";
+  return fo.armed ? "Buzzers are live. Waiting for the first buzz…" : "Read the question aloud. When a buzzer goes off, tap the team that was first.";
 }
 
 function FaceOffPanel({ g, b }: { g: HostGame; b: Buzzers }) {
@@ -184,25 +184,27 @@ function FaceOffPanel({ g, b }: { g: HostGame; b: Buzzers }) {
       <h3 className="panel__h">Face-off</h3>
       <p role="status"><b>{faceOffHint(s, r)}</b></p>
       <div className="row">
-        <button type="button" className="bi-button host__btn" disabled={!canOpen} onClick={() => g.act({ type: "FACEOFF_ARM" })}>Open buzzers (B)</button>
-        <button type="button" className="bi-button host__btn host__btn--strike" disabled={!turn} onClick={() => g.act({ type: "FACEOFF_MISS" })}>Miss: not on the board (X)</button>
-        <ConfirmButton label="Skip face-off" confirmLabel={`${teamName(s, r.controllingTeam)} starts, no face-off`} onConfirm={() => g.act({ type: "BEGIN_PLAY" })} />
-      </div>
-      <div className="row">
-        <span className="bi-label">STANDALONE BUZZERS? TAP WHO WAS FIRST</span>
         {(["A", "B"] as TeamId[]).map((t) => (
-          <button key={t} type="button" className="bi-button bi-button--outline host__btn host__btn--sm" disabled={!!fo.winner || Object.keys(fo.tries).length === 1} onClick={() => g.act({ type: "BUZZ", team: t, manual: true })}>
+          <button key={t} type="button" className="bi-button host__btn host__btn--award" disabled={!!fo.winner || Object.keys(fo.tries).length === 1} onClick={() => g.act({ type: "BUZZ", team: t, manual: true })}>
             {teamName(s, t)} buzzed first
           </button>
         ))}
+        <button type="button" className="bi-button host__btn host__btn--strike" disabled={!turn} onClick={() => g.act({ type: "FACEOFF_MISS" })}>Miss: not on the board (X)</button>
+        <ConfirmButton label="Skip face-off" confirmLabel={`${teamName(s, r.controllingTeam)} starts, no face-off`} onConfirm={() => g.act({ type: "BEGIN_PLAY" })} />
       </div>
       <p className="hint">
-        Buzzers that are not connected to the laptop (they just light up or make a noise)? Skip Open buzzers: listen, then tap which team was first. Tapping the wrong team? Tap the right one.
-      </p>
-      <p className="hint">
-        Buzzer keys: {teamName(s, "A")} = <kbd>{b.map.A.label}</kbd>, {teamName(s, "B")} = <kbd>{b.map.B.label}</kbd> (change them in the Session tab). The first press wins; the other is ignored until you open the buzzers again.
+        Standalone buzzers (the club’s): when one goes off, tap the team that was first. Tapped the wrong team? Tap the right one before anyone answers.
         Revealing the player’s answer adds its points to the round pot, which goes to whichever team finally takes control.
       </p>
+      <details>
+        <summary className="hint">USB keyboard-style buzzers instead? (not needed for standalone buzzers)</summary>
+        <div className="row">
+          <button type="button" className="bi-button bi-button--outline host__btn host__btn--sm" disabled={!canOpen} onClick={() => g.act({ type: "FACEOFF_ARM" })}>Open buzzers (B)</button>
+          <span className="hint">
+            Keys: {teamName(s, "A")} = <kbd>{b.map.A.label}</kbd>, {teamName(s, "B")} = <kbd>{b.map.B.label}</kbd> (change them in the Session tab). The first press wins once the buzzers are open.
+          </span>
+        </div>
+      </details>
       {fo.armed && !b.focused && <p className="warn" role="alert">This window is not focused: keyboard buzzers will not register. Click anywhere on it.</p>}
     </div>
   );

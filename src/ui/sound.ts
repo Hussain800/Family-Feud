@@ -197,11 +197,9 @@ export class Sfx {
       case "buzzersLive": // two quick rising pings: "hands on buzzers"
         [84, 91].forEach((m, i) => this.tone(hz(m), t + i * 0.11, 0.18, "triangle", 0.3, bus));
         break;
-      case "buzz": // loud game-show buzz-in: harsh honk plus a bell on top
-        this.tone(196, t, 0.45, "sawtooth", 0.8, bus, { cutoff: 1500 });
-        this.tone(294, t, 0.45, "square", 0.45, bus, { cutoff: 1500 });
-        this.hiss(t, 0.12, "bandpass", 1200, 0.35, bus, 3000);
-        this.bell(hz(96), t + 0.04, 0.35, bus);
+      case "buzz": // a short, soft "got it" ping: the real buzzers are loud already, this only confirms who was first
+        this.bell(hz(84), t, 0.22, bus);
+        this.tone(hz(60), t, 0.12, "sine", 0.3, bus);
         break;
       case "faceoffWin": // short brass sting
         this.brass([67, 71, 74], t, 0.16, 0.14, bus);
