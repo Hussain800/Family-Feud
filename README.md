@@ -28,7 +28,7 @@ Open the console on the laptop, click **Open projector**, and drag that window t
 | `pnpm run build` | Typecheck and production build to `dist/` |
 | `pnpm run build:lan` | Production build with the laptop's LAN address baked in |
 | `pnpm start` | Relay + the production build (run `build:lan` first) |
-| `pnpm test` | Unit tests (98) |
+| `pnpm test` | Unit tests (99) |
 | `pnpm run typecheck` / `pnpm run lint` | Types and lint |
 | `pnpm run e2e` | Full match across moderator, projector and two isolated phones (needs `pnpm run dev` and Chrome) |
 | `pnpm run e2e:failures` | Relay down, storage failing, rejected import, answer editor, template preview, sound unlock, direct navigation |
@@ -152,7 +152,7 @@ Findings from checking the real relay (`pnpm run probe`):
 
 Ran on 4 Oct 2026, Windows 11, Chrome (headless via `playwright-core`, no browser download).
 
-**Run and passing:** `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (98 tests: rules including the face-off, validation, spreadsheet paste, polls, projection and privacy sentinel, store role gating, module boundaries, text escaping, sound cue mapping, storage failure), `pnpm run build`, `pnpm run build:lan`, and the five e2e scripts: 57 checks for a full match, 30 for failures, 12 for phone connection (a drop and the full room), 28 for the face-off with real key presses, 8 for pasting survey rows. Highlights: a repeated reveal adds nothing; a double click is one strike and a held key is ignored; clear board, successful steal, failed steal and repeated award give the exact totals; undo reverses exactly the recorded award; a planted sentinel answer, alias, count and survey note never appears in the projector, a phone's page, its websocket frames, a raw controller's traffic, phone storage or any script served to a phone until revealed (and an alias never appears).
+**Run and passing:** `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (99 tests: rules including the face-off, validation, spreadsheet paste, polls, projection and privacy sentinel, store role gating, module boundaries, text escaping, sound cue mapping, storage failure), `pnpm run build`, `pnpm run build:lan`, and the five e2e scripts: 57 checks for a full match, 30 for failures, 12 for phone connection (a drop and the full room), 28 for the face-off with real key presses, 8 for pasting survey rows. Highlights: a repeated reveal adds nothing; a double click is one strike and a held key is ignored; clear board, successful steal, failed steal and repeated award give the exact totals; undo reverses exactly the recorded award; a planted sentinel answer, alias, count and survey note never appears in the projector, a phone's page, its websocket frames, a raw controller's traffic, phone storage or any script served to a phone until revealed (and an alias never appears).
 
 **Simulated, not physical:**
 - "Phones" are two isolated Chrome contexts emulating 390×844 touch devices on this laptop, plus raw socket clients. Not iOS Safari, not Android, not a real touchscreen.

@@ -109,7 +109,7 @@ function Intro({ s }: { s: PublicSnapshot }) {
     <div className="intro">
       <p className="bi-label">{q.category.toUpperCase()} · ROUND {q.number} OF {q.total}</p>
       <h1 className="intro__q">{q.prompt}</h1>
-      <p className="intro__sub">&lt;{s.teams.find((t) => t.id === s.control)?.name.toUpperCase() ?? "STARTING TEAM"} STARTS&gt;</p>
+      <p className="intro__sub">&lt;FACE-OFF NEXT: WHO BUZZES FIRST?&gt;</p>
     </div>
   );
 }

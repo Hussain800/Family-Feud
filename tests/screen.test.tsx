@@ -94,6 +94,14 @@ describe("sound cues are derived from public changes only", () => {
   });
 });
 
+describe("question intro", () => {
+  it("does not name a starting team: the face-off decides it", () => {
+    const html = renderToString(<ScreenView snapshot={{ ...base, phase: "intro", control: "A" }} />).replace(/<!-- -->/g, "");
+    expect(html).toContain("FACE-OFF NEXT");
+    expect(html).not.toMatch(/STARTS/);
+  });
+});
+
 describe("face-off on the projector", () => {
   const fo = { armed: false, buzzed: null, tries: { A: null, B: null }, winner: null, choice: null } as const;
   const view = (faceOff: PublicSnapshot["faceOff"], phase: PublicSnapshot["phase"] = "face_off") =>
