@@ -49,8 +49,8 @@ function SheetPanel({ g }: { g: HostGame }) {
       />
       <textarea className="input input--area" rows={7} placeholder={"1 [tab] Scrolling social media [tab] 23\n1 [tab] Sleeping [tab] 16\n2 [tab] Laptop [tab] 30"} value={text} onChange={(e) => { setText(e.target.value); setChecked(null); }} aria-label="Spreadsheet rows" />
       <div className="row">
-        <button type="button" className="bi-button host__btn" disabled={!text.trim()} onClick={check}>Check these rows</button>
-        <button type="button" className="bi-button host__btn host__btn--award" disabled={!ok} onClick={load}>Load these results</button>
+        <button type="button" className="bi-button bi-button--outline host__btn" disabled={!text.trim()} onClick={check}>Check these rows</button>
+        <button type="button" className="bi-button host__btn" disabled={!ok} onClick={load}>Load these results</button>
       </div>
       {checked && checked.errors.length > 0 && (
         <div className="alert" role="alert">
@@ -90,8 +90,8 @@ function ImportPanel({ g }: { g: HostGame }) {
     if (r.ok) setText("");
   };
   return (
-    <div className="panel">
-      <h2 className="panel__h">Import survey results (JSON)</h2>
+    <details className="panel">
+      <summary className="panel__h">Advanced: import a pack file (JSON)</summary>
       <p className="hint">Paste or choose the pack file. It is validated first; a rejected import changes nothing. Real results stay in this browser and are never published.</p>
       <input
         type="file"
@@ -120,7 +120,7 @@ function ImportPanel({ g }: { g: HostGame }) {
           {report.warnings.length > 0 && <ul>{report.warnings.slice(0, 10).map((w, i) => <li key={i}>{w}</li>)}</ul>}
         </div>
       )}
-    </div>
+    </details>
   );
 }
 
@@ -210,7 +210,7 @@ function EditorForm({ g, q, onSaved }: { g: HostGame; q: Question; onSaved: (msg
       {demoPack && <p className="warn">The demo pack is read-only so invented results can never be relabelled as real. Reset to the empty event template to enter real results.</p>}
       {locked && <p className="warn">This round is underway. Its answers are locked until the round ends.</p>}
       <fieldset className="editor" disabled={off}>
-        <div className="editor__head"><span className="bi-label">ANSWER (UP TO 10)</span><span className="bi-label">COUNT</span><span className="bi-label">ALSO ACCEPT (COMMA SEPARATED)</span><span /></div>
+        <div className="editor__head"><span className="bi-label">ANSWER · UP TO 10</span><span className="bi-label">COUNT</span><span className="bi-label">ALSO ACCEPT (OPTIONAL)</span><span /></div>
         {rows.map((r, i) => (
           <div className="editor__row" key={i}>
             <input className="input" aria-label={`Answer ${i + 1}`} value={r.text} maxLength={80} onChange={(e) => setRows(rows.map((x, k) => (k === i ? { ...x, text: e.target.value } : x)))} />
@@ -222,12 +222,12 @@ function EditorForm({ g, q, onSaved }: { g: HostGame; q: Question; onSaved: (msg
         <div className="row">
           <button type="button" className="bi-button bi-button--outline host__btn host__btn--sm" disabled={rows.length >= 10} onClick={() => setRows([...rows, { id: "", text: "", count: "", aliases: "" }])}>Add answer</button>
         </div>
-        <div className="row">
+        <div className="editor__fields">
           <label className="field"><span className="bi-label">WHERE THE RESULTS CAME FROM</span><input className="input" value={source} placeholder="e.g. events team survey sheet" maxLength={80} onChange={(e) => setSource(e.target.value)} /></label>
-          <label className="field"><span className="bi-label">RESPONDENTS (IF KNOWN)</span><input className="input input--sm" inputMode="numeric" value={respondents} onChange={(e) => setRespondents(e.target.value)} /></label>
-          <label className="field"><span className="bi-label">RESPONSE MODE</span>
-            <select className="input input--sm" value={mode} onChange={(e) => setMode(e.target.value as ResponseMode)}>
-              <option value="unconfirmed">unconfirmed</option><option value="single">single answer each</option><option value="multiple">multiple answers each</option>
+          <label className="field"><span className="bi-label">RESPONDENTS</span><input className="input" inputMode="numeric" placeholder="if known" value={respondents} onChange={(e) => setRespondents(e.target.value)} /></label>
+          <label className="field"><span className="bi-label">EACH PERSON GAVE</span>
+            <select className="input" value={mode} onChange={(e) => setMode(e.target.value as ResponseMode)}>
+              <option value="unconfirmed">not sure</option><option value="single">one answer</option><option value="multiple">several answers</option>
             </select>
           </label>
         </div>

@@ -1,16 +1,13 @@
 import { useState } from "react";
-import type { Buzzers } from "./buzzers";
-import { BuzzerSetup } from "./BuzzerSetup";
 import { ConfirmButton } from "./PlayTab";
 import { download, makeBackup, parseBackup } from "./persist";
 import type { HostGame } from "./useHostGame";
 
-export function SessionTab({ g, b }: { g: HostGame; b: Buzzers }) {
+export function SessionTab({ g }: { g: HostGame }) {
   const [restore, setRestore] = useState<ReturnType<typeof parseBackup> | null>(null);
   const [done, setDone] = useState("");
   return (
     <div className="stack">
-      <BuzzerSetup g={g} b={b} />
 
       <div className="panel">
         <h2 className="panel__h">Saving and backup</h2>
@@ -71,7 +68,7 @@ export function SessionTab({ g, b }: { g: HostGame; b: Buzzers }) {
           <li><b>This window refreshes:</b> you are offered Resume. Any unfinished poll is cancelled. If the room code changed, show the new QR.</li>
           <li><b>Misclick:</b> Undo (U). A shown answer cannot become unknown to the audience.</li>
         </ul>
-        <p className="hint">Shortcuts on the Play tab: 1–9 and 0 reveal slots 1–10, X strike (or miss in a face-off), B open buzzers, U undo. Held keys and text fields are ignored.</p>
+        <p className="hint">Shortcuts on the Play tab: 1–9 and 0 reveal slots 1–10, X strike (or miss in a face-off), U undo. Held keys and text fields are ignored.</p>
       </div>
     </div>
   );

@@ -16,8 +16,6 @@ export interface Settlement {
 
 /** The opening buzzer duel between one player from each team. Strikes do not apply here. */
 export interface FaceOff {
-  /** Buzzers are live: the first press is recorded, later presses are ignored. */
-  armed: boolean;
   /** Team whose buzzer landed first this attempt. */
   buzzed: TeamId | null;
   /** How the host judged each player's answer. A hit is already revealed on the board; count is its survey count. */
@@ -80,8 +78,8 @@ export type Action =
   | { id: string; type: "SHOW_BOARD" }
   | { id: string; type: "BEGIN_PLAY" }
   | { id: string; type: "FACEOFF_START" }
-  | { id: string; type: "FACEOFF_ARM" }
-  | { id: string; type: "BUZZ"; team: TeamId; /** The host recording who was first by hand (standalone buzzers): needs no Open buzzers step. */ manual?: boolean }
+  /** The host taps the team whose standalone buzzer went first. */
+  | { id: string; type: "BUZZ"; team: TeamId }
   | { id: string; type: "FACEOFF_MISS" }
   | { id: string; type: "PLAY_OR_PASS"; choice: "play" | "pass" }
   | { id: string; type: "REVEAL"; answerId: string }

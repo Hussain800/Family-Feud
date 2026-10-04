@@ -124,13 +124,12 @@ describe("question intro", () => {
 });
 
 describe("face-off on the projector", () => {
-  const fo = { armed: false, buzzed: null, tries: { A: null, B: null }, winner: null, choice: null } as const;
+  const fo = { buzzed: null, tries: { A: null, B: null }, winner: null, choice: null } as const;
   const view = (faceOff: PublicSnapshot["faceOff"], phase: PublicSnapshot["phase"] = "face_off") =>
     renderToString(<ScreenView snapshot={{ ...base, phase, faceOff }} />).replace(/<!-- -->/g, "");
 
-  it("walks the room through open buzzers, first buzz, the other player, the winner and the choice", () => {
+  it("walks the room through the first buzz, the other player, the winner and the choice", () => {
     expect(view(fo)).toContain("ONE PLAYER FROM EACH TEAM TO THE BUZZERS");
-    expect(view({ ...fo, armed: true })).toContain("BUZZERS LIVE");
     expect(view({ ...fo, buzzed: "A" })).toContain("TEAM A BUZZED FIRST: ANSWER NOW");
     expect(view({ ...fo, buzzed: "A", tries: { A: "hit", B: null } })).toContain("TEAM B: YOUR ANSWER");
     expect(view({ ...fo, buzzed: "A", tries: { A: "miss", B: "miss" } })).toContain("BOTH MISSED: NEXT TWO PLAYERS");
@@ -138,16 +137,14 @@ describe("face-off on the projector", () => {
     expect(view({ ...fo, buzzed: "A", tries: { A: "hit", B: "miss" }, winner: "A", choice: "pass" }, "play_or_pass")).toContain("TEAM A PASSES");
   });
 
-  it("shows the board, the team lamps and no face-off bar during normal play", () => {
-    const html = view({ ...fo, armed: true });
-    expect(html).toContain("BUZZER LIVE");
+  it("shows the team lamps in a face-off and no face-off bar during normal play", () => {
+    expect(view({ ...fo, buzzed: "B" })).toContain("BUZZED FIRST");
     expect(renderToString(<ScreenView snapshot={{ ...base, faceOff: fo }} />)).not.toContain("FACE-OFF");
   });
 
-  it("cues: live buzzers, a buzz, a face-off winner", () => {
+  it("cues: a buzz, a face-off winner", () => {
     const f = (x: Partial<NonNullable<PublicSnapshot["faceOff"]>>) => ({ ...base, phase: "face_off" as const, faceOff: { ...fo, ...x } });
-    expect(cueFor(f({}), f({ armed: true }))).toBe("buzzersLive");
-    expect(cueFor(f({ armed: true }), f({ buzzed: "B" }))).toBe("buzz");
+    expect(cueFor(f({}), f({ buzzed: "B" }))).toBe("buzz");
     expect(cueFor(f({ buzzed: "B" }), f({ buzzed: "B", winner: "B", tries: { A: null, B: "hit" } }))).toBe("faceoffWin");
   });
 });

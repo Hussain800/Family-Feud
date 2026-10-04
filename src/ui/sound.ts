@@ -2,7 +2,7 @@
 // Only the projector window plays it. Cues react to public snapshots and never feed back into scoring.
 import type { PublicSnapshot } from "../public/types";
 
-export type Cue = "reveal" | "strike" | "steal" | "award" | "roundStart" | "final" | "pollOpen" | "pollClose" | "tick" | "buzzersLive" | "buzz" | "faceoffWin" | "timeUp";
+export type Cue = "reveal" | "strike" | "steal" | "award" | "roundStart" | "final" | "pollOpen" | "pollClose" | "tick" | "buzz" | "faceoffWin" | "timeUp";
 
 const hz = (midi: number) => 440 * 2 ** ((midi - 69) / 12);
 
@@ -194,9 +194,6 @@ export class Sfx {
       case "tick":
         this.tone(1400, t, 0.06, "square", 0.12, bus, { cutoff: 3500 });
         break;
-      case "buzzersLive": // two quick rising pings: "hands on buzzers"
-        [84, 91].forEach((m, i) => this.tone(hz(m), t + i * 0.11, 0.18, "triangle", 0.3, bus));
-        break;
       case "buzz": // a short, soft "got it" ping: the real buzzers are loud already, this only confirms who was first
         this.bell(hz(84), t, 0.22, bus);
         this.tone(hz(60), t, 0.12, "sine", 0.3, bus);
@@ -277,7 +274,6 @@ export function cueFor(prev: PublicSnapshot | null, next: PublicSnapshot): Cue |
   if (prev.poll?.status === "open" && next.poll?.status === "closed") return "pollClose";
   if (!prev.faceOff?.buzzed && next.faceOff?.buzzed) return "buzz";
   if (!prev.faceOff?.winner && next.faceOff?.winner && !next.settlement) return "faceoffWin";
-  if (!prev.faceOff?.armed && next.faceOff?.armed) return "buzzersLive";
   if (prev.phase !== "match_over" && next.phase === "match_over") return "final";
   if (!prev.settlement && next.settlement) return "award";
   if (prev.phase !== "steal" && next.phase === "steal") return "steal";

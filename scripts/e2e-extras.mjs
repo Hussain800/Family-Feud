@@ -54,7 +54,7 @@ check("the console offers a tie-break only for a level match", (await host.locat
 await host.click("button:has-text('Play a tie-break round')");
 await sleep(300);
 check("the projector says all square and that the tie-break is next", /All square/.test(await text(screen, ".final")) && /TIE-BREAK IS NEXT/.test(await text(screen, ".final")), await text(screen, ".final"));
-check("the question list says TIE-BREAK ROUND", /TIE-BREAK ROUND/i.test(await text(host, ".panel__h")), await text(host, ".panel__h"));
+check("the question list says TIE-BREAK ROUND", /TIE-BREAK ROUND/i.test(await text(host, ".host__main .panel__h")), await text(host, ".host__main .panel__h"));
 await screen.screenshot({ path: `${OUT}extras-1-tiebreak-next.png` });
 
 await startRound("q01");
@@ -75,7 +75,7 @@ const n = Number(await text(screen, ".s-timer__n"));
 check("a 10 s timer shows on the projector, counting down", n >= 8 && n <= 10, String(n));
 check("the round line gives way to the timer", (await screen.locator(".s-head__round").count()) === 0);
 await screen.screenshot({ path: `${OUT}extras-2-timer.png` });
-await host.click("button:has-text('Stop timer')");
+await host.click("button:has-text('Stop')");
 await sleep(300);
 check("Stop timer removes it", (await screen.locator(".s-timer").count()) === 0 && /TIE-BREAK/.test(await text(screen, ".s-head__mid")));
 

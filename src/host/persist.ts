@@ -9,7 +9,6 @@ export const KEYS = {
   packBackup: "ff.pack.backup.v1",
   session: "ff.session.v1",
   probe: "ff.probe.v1",
-  buzzers: "ff.buzzers.v1",
 } as const;
 
 export type WriteResult = { ok: true; at: number } | { ok: false; error: string };

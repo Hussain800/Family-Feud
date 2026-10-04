@@ -74,5 +74,5 @@ export function projectPublic(i: ProjectInput): PublicSnapshot {
 const outcome = (t: { hit: boolean } | undefined) => (t ? (t.hit ? ("hit" as const) : ("miss" as const)) : null);
 
 function publicFaceOff(f: FaceOff): PublicFaceOff {
-  return { armed: f.armed, buzzed: f.buzzed, tries: { A: outcome(f.tries.A), B: outcome(f.tries.B) }, winner: f.winner, choice: f.choice };
+  return { buzzed: f.buzzed, tries: { A: outcome(f.tries.A), B: outcome(f.tries.B) }, winner: f.winner, choice: f.choice };
 }

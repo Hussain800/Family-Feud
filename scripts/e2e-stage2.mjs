@@ -8,9 +8,9 @@ export async function stage2(c) {
   check("BETWEEN ROUNDS: the projector shows a scoreboard (AFTER ROUND 1 OF 3, Team B leads), not the join page", /AFTER ROUND 1 OF 3/.test(await text(screen, ".final")) && /Team B leads/.test(await text(screen, ".final")) && (await screen.locator(".lobby").count()) === 0);
   await snap(screen, "20-between-rounds-1920x1080");
   await snap(host, "17-host-question-picker-1920x1080");
-  await host.locator(".seg__opt", { hasText: "Team B" }).click();
   await startRound("q01");
   await host.click("button:has-text('Show the board')");
+  await host.click("button:has-text('Skipping?')"); // the face-off is skipped here: Team B starts
   await host.click("button:has-text('Begin guessing')");
   check("six-answer board is a single column", (await screen.locator(".board__slots.cols-1").count()) === 1 && (await screen.locator(".tile").count()) === 6);
 
@@ -149,6 +149,7 @@ export async function stage2(c) {
     ],
   };
   await host.click("role=tab[name='Questions & data']");
+  await host.evaluate(() => { const d = document.querySelector("details"); if (d) d.open = true; });
   await host.fill('[aria-label="Pack JSON"]', JSON.stringify(priv));
   await host.click("button:has-text('Validate and load')");
   await host.waitForSelector("text=Pack loaded");
@@ -240,6 +241,7 @@ export async function stage2(c) {
   await host.click("button:has-text('Start a new match')");
   await host.click("button:has-text('CONFIRM')");
   await host.click("role=tab[name='Questions & data']");
+  await host.evaluate(() => { const d = document.querySelector("details"); if (d) d.open = true; });
   await host.fill('[aria-label="Pack JSON"]', JSON.stringify(long));
   await host.click("button:has-text('Validate and load')");
   await host.click("role=tab[name='Play']");

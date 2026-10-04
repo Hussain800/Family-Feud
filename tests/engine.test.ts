@@ -201,7 +201,7 @@ describe("new match", () => {
 
 describe("face-off", () => {
   const toFace = (q: ReadyQuestionSnapshot = Q) =>
-    run(initialSession(), act("START_ROUND", { question: q, team: "A" }), act("SHOW_BOARD"), act("FACEOFF_START"), act("FACEOFF_ARM"));
+    run(initialSession(), act("START_ROUND", { question: q, team: "A" }), act("SHOW_BOARD"), act("FACEOFF_START"));
   const reveal = (id: string) => act("REVEAL", { answerId: id });
   const tie: ReadyQuestionSnapshot = {
     ...Q,
@@ -213,36 +213,25 @@ describe("face-off", () => {
     ],
   };
 
-  it("buzzers do nothing until the host opens them; then the first press wins and the second is ignored", () => {
-    const closed = run(initialSession(), act("START_ROUND", { question: Q, team: "A" }), act("SHOW_BOARD"), act("FACEOFF_START"), act("BUZZ", { team: "A" }));
-    expect(closed.state.round!.faceOff!.buzzed).toBeNull();
-    const s = run(toFace(), act("BUZZ", { team: "B" }), act("BUZZ", { team: "A" }));
-    expect(s.state.round!.faceOff).toMatchObject({ buzzed: "B", armed: false });
-  });
-
-  it("the host's own tap records who was first without opening the buzzers, and can correct a wrong tap", () => {
-    const noArm = () => run(initialSession(), act("START_ROUND", { question: Q, team: "A" }), act("SHOW_BOARD"), act("FACEOFF_START"));
-    let s = run(noArm(), act("BUZZ", { team: "A", manual: true }));
-    expect(s.state.round!.faceOff).toMatchObject({ buzzed: "A", armed: false });
-    s = run(s, act("BUZZ", { team: "B", manual: true })); // wrong tap, corrected before anyone answered
+  it("the host's tap records which standalone buzzer was first, and can correct a wrong tap before anyone answers", () => {
+    let s = run(toFace(), act("BUZZ", { team: "A" }));
+    expect(s.state.round!.faceOff).toMatchObject({ buzzed: "A" });
+    s = run(s, act("BUZZ", { team: "B" })); // wrong tap, corrected
     expect(s.state.round!.faceOff!.buzzed).toBe("B");
     s = run(s, reveal("a1"));
     expect(s.state.round!.faceOff!.winner).toBe("B");
-    // a real buzzer press (not manual) still needs the buzzers open
-    expect(run(noArm(), act("BUZZ", { team: "A" })).state.round!.faceOff!.buzzed).toBeNull();
   });
 
-  it("a manual tap cannot overwrite an attempt in progress, but starts the next one after both missed", () => {
-    const mid = run(toFace(), act("BUZZ", { team: "A" }), reveal("a2"), act("BUZZ", { team: "B", manual: true }));
-    expect(mid.state.round!.faceOff).toMatchObject({ buzzed: "A" });
-    expect(mid.state.round!.faceOff!.tries.A).toBeDefined();
-    const next = run(toFace(), act("BUZZ", { team: "A" }), act("FACEOFF_MISS"), act("FACEOFF_MISS"), act("BUZZ", { team: "B", manual: true }));
-    expect(next.state.round!.faceOff).toMatchObject({ buzzed: "B", tries: {} });
+  it("taps before the face-off starts, or after it is decided, do nothing", () => {
+    const before = run(initialSession(), act("START_ROUND", { question: Q, team: "A" }), act("SHOW_BOARD"), act("BUZZ", { team: "A" }));
+    expect(before.state.phase).toBe("board_ready");
+    const done = run(toFace(), act("BUZZ", { team: "A" }), reveal("a1"), act("BUZZ", { team: "B" }));
+    expect(done.state.round!.faceOff!.buzzed).toBe("A");
   });
 
-  it("the same buzz delivered twice is one buzz", () => {
-    const buzz = act("BUZZ", { team: "A" });
-    const s = run(toFace(), buzz, buzz);
+  it("the same tap delivered twice is one tap", () => {
+    const tap = act("BUZZ", { team: "A" });
+    const s = run(toFace(), tap, tap);
     expect(s.state.round!.faceOff!.buzzed).toBe("A");
   });
 
@@ -283,17 +272,25 @@ describe("face-off", () => {
     expect(run(toFace(), act("BUZZ", { team: "A" }), act("FACEOFF_MISS"), reveal("a3")).state.round!.faceOff!.winner).toBe("B");
   });
 
-  it("both missing names no winner and costs no strike; the host re-opens for the next players", () => {
+  it("both missing names no winner and costs no strike; the next tap starts the next attempt", () => {
     let s = run(toFace(), act("BUZZ", { team: "A" }), act("FACEOFF_MISS"), act("FACEOFF_MISS"));
     expect(s.state.phase).toBe("face_off");
     expect(s.state.round!.faceOff!.winner).toBeNull();
     expect(s.state.round!.strikes).toBe(0);
     expect(s.state.note).toMatch(/BOTH MISSED/);
-    s = run(s, act("FACEOFF_ARM"), act("BUZZ", { team: "B" }), reveal("a1"));
+    s = run(s, act("BUZZ", { team: "B" }));
+    expect(s.state.round!.faceOff).toMatchObject({ buzzed: "B", tries: {} });
+    s = run(s, reveal("a1"));
     expect(s.state.round!.faceOff!.winner).toBe("B");
   });
 
-  it("strikes do not exist in a face-off, and reveals wait for a buzz", () => {
+  it("a tap cannot overwrite an attempt in progress", () => {
+    const mid = run(toFace(), act("BUZZ", { team: "A" }), reveal("a2"), act("BUZZ", { team: "B" }));
+    expect(mid.state.round!.faceOff).toMatchObject({ buzzed: "A" });
+    expect(mid.state.round!.faceOff!.tries.A).toBeDefined();
+  });
+
+  it("strikes do not exist in a face-off, and reveals wait for a tap", () => {
     let s = run(toFace(), act("STRIKE"), reveal("a1"));
     expect(s.state.round!.strikes).toBe(0);
     expect(s.state.round!.revealed).toEqual([]);
@@ -306,14 +303,6 @@ describe("face-off", () => {
     expect(s.state.note).toBe("ALREADY ON THE BOARD");
     expect(s.state.round!.faceOff!.tries.B).toBeUndefined();
     expect(s.state.round!.pot).toBe(12);
-  });
-
-  it("the buzzers cannot be re-opened half way through; an accidental buzz can be cleared", () => {
-    const half = run(toFace(), act("BUZZ", { team: "A" }), reveal("a2"), act("FACEOFF_ARM"));
-    expect(half.state.round!.faceOff!.buzzed).toBe("A");
-    expect(half.state.note).toMatch(/Finish/);
-    const oops = run(toFace(), act("BUZZ", { team: "A" }), act("FACEOFF_ARM"));
-    expect(oops.state.round!.faceOff).toMatchObject({ armed: true, buzzed: null });
   });
 
   it("a one-answer board cleared at the face-off goes straight to the award", () => {
@@ -332,13 +321,13 @@ describe("face-off", () => {
     expect(s.state.phase).toBe("team_turn"); // no face-off at all: the old flow is intact
   });
 
-  it("undo steps back through a buzz and a result", () => {
+  it("undo steps back through a tap and a result", () => {
     let s = run(toFace(), act("BUZZ", { team: "A" }), reveal("a1"));
     s = apply(s, { id: "u-f1", type: "UNDO" });
     expect(s.state.round!.faceOff).toMatchObject({ buzzed: "A", winner: null });
     expect(s.state.round!.pot).toBe(0);
     s = apply(s, { id: "u-f2", type: "UNDO" });
-    expect(s.state.round!.faceOff).toMatchObject({ armed: true, buzzed: null });
+    expect(s.state.round!.faceOff).toMatchObject({ buzzed: null });
   });
 });
 

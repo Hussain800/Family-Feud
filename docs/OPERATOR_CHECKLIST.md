@@ -8,13 +8,13 @@ Confirm the game's stage time, operator, actual attendance, survey results, and 
 
 Use the laptop's extended display. Project only the public board. Check long answers, QR readability, sound, and fullscreen. Run one complete match with at least two independent phones; exercise a successful steal, failed steal, duplicate tap, correction, vote, disconnect, and host refresh.
 
-Test the physical buzzers on the Session tab (Learn each team's buzzer, press to see its lamp) and run one face-off with the console window focused. If a buzzer will not register, the manual buttons are the fallback.
+Rehearse one face-off with the real standalone buzzers and the two judges: they call which buzzer went first and the person at the laptop taps that team. Agree beforehand that the judges' call is final.
 
 Verify that the displayed join URL is reachable from a participant phone. Confirm the actual configured and tested room capacity. A frontend link alone is not a relay test.
 
 ## During play
 
-Choose a question, introduce it, open the concealed board, run the buzzer face-off (open buzzers, first buzz answers, reveal or miss, the winner chooses play or pass), and judge guesses aloud. Reveal matching answers or add strikes. Resolve one steal at three strikes and award the pot once. Reveal remaining answers without scoring and continue.
+Choose a question, introduce it, open the concealed board, run the buzzer face-off (tap which team's buzzer was first, reveal or miss, the winner chooses play or pass), and judge guesses aloud. Reveal matching answers or add strikes. Resolve one steal at three strikes and award the pot once. Reveal remaining answers without scoring and continue.
 
 For crowd assist, enter two to six spoken suggestions, open the poll, wait for accepted votes, close it, and offer the result as a suggested guess. Do not turn votes into survey points.
 

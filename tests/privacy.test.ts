@@ -98,13 +98,12 @@ describe("public snapshot privacy", () => {
       act("START_ROUND", { team: "A", question: { id: q.id, category: q.category, prompt: q.prompt, demo: false, answers: q.answers } }),
       act("SHOW_BOARD"),
       act("FACEOFF_START"),
-      act("FACEOFF_ARM"),
       act("BUZZ", { team: "B" }),
       act("REVEAL", { answerId: "p-hidden" }),
     ].reduce(apply, initialSession());
     const snap = projectPublic({ rev: 1, game: st.state, demo: false, room, poll: null, now: 0, preview: null });
     expect(snap.phase).toBe("face_off");
-    expect(snap.faceOff).toEqual({ armed: false, buzzed: "B", tries: { A: null, B: "hit" }, winner: null, choice: null });
+    expect(snap.faceOff).toEqual({ buzzed: "B", tries: { A: null, B: "hit" }, winner: null, choice: null });
     expect(JSON.stringify(snap.faceOff)).not.toMatch(/count|ZZSENTINEL|7771913/);
     // the answer that was revealed is public as a slot; the aliases and the other answers still are not
     const json = JSON.stringify(snap);

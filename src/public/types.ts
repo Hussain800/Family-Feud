@@ -55,7 +55,6 @@ export interface PublicSnapshot {
 }
 
 export interface PublicFaceOff {
-  armed: boolean;
   buzzed: TeamId | null;
   tries: Record<TeamId, "hit" | "miss" | null>;
   winner: TeamId | null;

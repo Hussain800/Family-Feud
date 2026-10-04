@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
 import { isLocalOnly } from "../public/url";
 import { ScreenView } from "../ui/ScreenView";
-import { useBuzzers } from "./buzzers";
 import { DataTab } from "./DataTab";
-import { PlayTab } from "./PlayTab";
+import { PlayTab, ScorePanel } from "./PlayTab";
 import { SessionTab } from "./SessionTab";
 import { useHostGame, type HostGame } from "./useHostGame";
 
 type Tab = "play" | "data" | "session";
 
-/** Optional shortcuts: 1-9 and 0 reveal slots 1-10, X strike (miss in a face-off), B open buzzers, U undo. Held keys and text fields are ignored. */
+/** Optional shortcuts: 1-9 and 0 reveal slots 1-10, X strike (miss in a face-off), U undo. Held keys and text fields are ignored. */
 function useShortcuts(g: HostGame, enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
@@ -21,10 +20,7 @@ function useShortcuts(g: HostGame, enabled: boolean) {
       const k = e.key.toLowerCase();
       if (k === "u") return void (g.canUndo && g.act({ type: "UNDO" }));
       if (!round) return;
-      if (phase === "face_off") {
-        if (k === "b") return void g.act({ type: "FACEOFF_ARM" });
-        if (k === "x") return void g.act({ type: "FACEOFF_MISS" });
-      }
+      if (k === "x" && phase === "face_off") return void g.act({ type: "FACEOFF_MISS" });
       if (k === "x" && (phase === "team_turn" || phase === "steal")) return void g.act({ type: "STRIKE" });
       if (/^[0-9]$/.test(k) && (phase === "face_off" || phase === "team_turn" || phase === "steal" || phase === "round_over")) {
         const slot = k === "0" ? 10 : Number(k);
@@ -39,7 +35,6 @@ function useShortcuts(g: HostGame, enabled: boolean) {
 
 export function HostConsole() {
   const g = useHostGame();
-  const b = useBuzzers(g);
   const [tab, setTab] = useState<Tab>("play");
   useShortcuts(g, tab === "play" && !g.resumeOffer);
   const { room } = g;
@@ -49,7 +44,7 @@ export function HostConsole() {
   return (
     <div className="host" data-theme="frost">
       <header className="host__head">
-        <div>
+        <div className="host__brand">
           <p className="bi-label">GDG ON CAMPUS · UOBD · MODERATOR</p>
           <h1 className="host__title">hello, world! <span>&lt;FAMILY FEUD&gt;</span></h1>
         </div>
@@ -61,8 +56,8 @@ export function HostConsole() {
           </li>
         </ul>
         <div className="host__open">
-          <a className="bi-button bi-button--outline host__btn" href={screenHref} target="gdg-ff-screen" rel="noopener">Open projector</a>
-          {room.joinUrl && <button type="button" className="bi-button bi-button--outline host__btn" onClick={() => void navigator.clipboard?.writeText(room.joinUrl!)}>Copy join link</button>}
+          <a className="bi-button bi-button--outline host__btn host__btn--sm" href={screenHref} target="gdg-ff-screen" rel="noopener">Open projector</a>
+          {room.joinUrl && <button type="button" className="bi-button bi-button--outline host__btn host__btn--sm" onClick={() => void navigator.clipboard?.writeText(room.joinUrl!)}>Copy join link</button>}
         </div>
       </header>
 
@@ -112,11 +107,12 @@ export function HostConsole() {
         <aside className="host__side" aria-label="Public screen preview">
           <p className="bi-label">PUBLIC SCREEN (WHAT THE ROOM SEES)</p>
           <div className="preview">{g.snapshot ? <ScreenView snapshot={g.snapshot} /> : null}</div>
+          {tab === "play" && <ScorePanel g={g} />}
         </aside>
         <section className="host__main">
-          {tab === "play" && <PlayTab g={g} b={b} />}
+          {tab === "play" && <PlayTab g={g} />}
           {tab === "data" && <DataTab g={g} />}
-          {tab === "session" && <SessionTab g={g} b={b} />}
+          {tab === "session" && <SessionTab g={g} />}
         </section>
       </div>
     </div>

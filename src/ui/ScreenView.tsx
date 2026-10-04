@@ -144,9 +144,8 @@ function FaceOffBar({ s, f }: { s: PublicSnapshot; f: PublicFaceOff }) {
   if (f.winner) text = f.choice ? `${teamName(s, f.winner)} ${f.choice === "play" ? "PLAYS" : "PASSES"}` : `${teamName(s, f.winner)} WINS THE FACE-OFF: PLAY OR PASS?`;
   else if (turn) text = f.buzzed === turn ? `${teamName(s, turn)} BUZZED FIRST: ANSWER NOW` : `${teamName(s, turn)}: YOUR ANSWER`;
   else if (bothMissed) text = "BOTH MISSED: NEXT TWO PLAYERS";
-  else if (f.armed) text = "BUZZERS LIVE";
   return (
-    <div className={`fo ${f.armed ? "fo--live" : ""} ${f.winner ? "fo--won" : ""}`} role="status" aria-live="polite">
+    <div className={`fo ${f.winner ? "fo--won" : ""}`} role="status" aria-live="polite">
       <span className="fo__label">FACE-OFF</span>
       <span className="fo__text">{text}</span>
     </div>
@@ -182,7 +181,7 @@ function TeamCard({ s, id }: { s: PublicSnapshot; id: TeamId }) {
   const won = s.settlement?.winner === id ? s.settlement : null;
   const f = s.phase === "face_off" || s.phase === "play_or_pass" ? s.faceOff : null;
   const mine = f?.tries[id];
-  const faceTag = !f ? "" : f.winner === id ? "WINS THE FACE-OFF" : mine ? (mine === "hit" ? "ON THE BOARD" : "MISSED") : f.buzzed === id ? "BUZZED FIRST" : f.armed ? "BUZZER LIVE" : "";
+  const faceTag = !f ? "" : f.winner === id ? "WINS THE FACE-OFF" : mine ? (mine === "hit" ? "HIT" : "MISSED") : f.buzzed === id ? "BUZZED FIRST" : faceOffTurn(f) === id ? "ANSWERS NEXT" : "";
   const faceActive = !!f && (f.winner === id || faceOffTurn(f) === id);
   const tag = faceTag || (onBoard ? "ON THE BOARD" : stealing ? "STEALING" : won ? `ROUND +${won.amount}` : "");
   return (

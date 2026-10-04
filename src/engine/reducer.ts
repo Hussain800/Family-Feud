@@ -137,25 +137,16 @@ export function step(prev: GameState, a: Action): GameState {
 
     case "FACEOFF_START":
       if (s.phase !== "board_ready" || !r) return s;
-      return { ...s, phase: "face_off", round: { ...r, faceOff: { armed: false, buzzed: null, tries: {}, winner: null, choice: null } } };
+      return { ...s, phase: "face_off", round: { ...r, faceOff: { buzzed: null, tries: {}, winner: null, choice: null } } };
 
-    case "FACEOFF_ARM": {
-      const fo = r?.faceOff;
-      if (s.phase !== "face_off" || !r || !fo || fo.winner) return s;
-      // Re-opening is safe before anyone has answered (accidental buzz) or after both missed; not half way through.
-      if (fo.buzzed && Object.keys(fo.tries).length === 1) return refuse(s, "Finish this face-off first.");
-      return withRound(s, { faceOff: { armed: true, buzzed: null, tries: {}, winner: null, choice: null } });
-    }
-
+    // The judges call which standalone buzzer went first and the host taps that team. A wrong tap can be corrected
+    // before anyone answers, and a tap after both players missed starts the next attempt, but never mid-attempt.
     case "BUZZ": {
       const fo = r?.faceOff;
       if (s.phase !== "face_off" || !r || !fo || fo.winner) return prev;
       const tries = Object.keys(fo.tries).length;
-      // A real buzzer needs the buzzers open and counts only the first press. The host's own tap needs neither: it
-      // records who was first (or corrects a wrong tap, or starts the next attempt after both missed), but not mid-attempt.
-      const accepted = a.manual ? tries !== 1 : fo.armed && !fo.buzzed;
-      if (!accepted) return prev; // too early, or the other buzzer was first
-      return withRound(s, { faceOff: { ...fo, armed: false, buzzed: a.team, tries: tries === 2 ? {} : fo.tries } });
+      if (tries === 1) return prev;
+      return withRound(s, { faceOff: { ...fo, buzzed: a.team, tries: tries === 2 ? {} : fo.tries } });
     }
 
     case "FACEOFF_MISS":
