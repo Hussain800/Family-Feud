@@ -5,6 +5,8 @@ Date: Tuesday 6 October 2026, 16:00 to 18:00, Dubai time.
 Location: Innovation Lounge, room 0201.  
 Status: implementation instructions and seed content, not an implemented or tested game.
 
+> **Superseded in part (5 Oct 2026).** After testing it, the tech lead confirmed the game is hosted verbally with standalone physical buzzers. Phone joining and audience voting are no longer required: crowd-assist polls were removed, and phones are now an optional one-per-team buzzer mode. The current operating model is in `README.md`; the rest of this brief still applies.
+
 ## 1. Product and established requirements
 
 Build a polished, host-led Family Feud game with three views: a private moderator console, a public projector board, and phone controllers for audience voting. Prioritize the quality of a complete playable game: clear controls, readable presentation, satisfying reveals, smooth phone participation, and straightforward recovery. Do not trade these for a large platform.

@@ -70,11 +70,17 @@ await host.click('button:has-text("Load demo pack")');
 await host.click("button:has-text('Confirm')");
 check("demo results stay labelled on the console", /DEMO: INVENTED RESULTS/.test(await text(host, ".alerts")));
 await host.click("role=tab[name='Live']");
-for (const [i, n] of [[0, "Foxes"], [1, "Owls"]]) {
-  await host.locator(".names input").nth(i).fill(n);
-  await host.locator(".names input").nth(i).press("Enter");
-}
+// typed the way a person does: one box, then click straight into the other
+await host.locator(".names input").nth(0).click();
+await host.keyboard.press("Control+A");
+await host.keyboard.type("Foxes");
+await host.locator(".names input").nth(1).click();
+check("clicking from one team-name box to the other keeps the cursor there", await host.evaluate(() => document.activeElement === document.querySelectorAll(".names input")[1]));
+await host.keyboard.press("Control+A");
+await host.keyboard.type("Owls");
+await host.keyboard.press("Tab");
 await sleep(200);
+check("both names are saved", JSON.stringify(await host.locator(".score__name").allInnerTexts()) === '["Foxes","Owls"]', JSON.stringify(await host.locator(".score__name").allInnerTexts()));
 check("the projector shows the team names and the demo label", /FOXES/i.test(await text(screen, ".lobby__teams")) && /DEMO: INVENTED RESULTS/.test(await text(screen, ".demo-banner")), `${await text(screen, ".lobby__teams")} / ${await text(screen, ".demo-banner").catch(() => "no banner")}`);
 check("questions read as Question N, with no category labels", /Question 1\b/.test(await text(host, ".qlist")) && !/\bq\d\d\b|STUDENT LIFE|EVERYDAY LIFE|PHONES & TECH|Student Life|Everyday Life/.test(await text(host, ".live__main")));
 await spy();

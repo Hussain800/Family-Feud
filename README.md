@@ -1,212 +1,247 @@
 # hello, world! Family Feud
 
-Host-led Family Feud for the GDG on Campus UOBD event: *hello, world!*, Tue 6 Oct 2026, Innovation Lounge, room 0201. A private moderator console, a separate projector board, and phones that join and vote in an optional crowd-assist poll. Blue Ice theme.
+Host-led Family Feud for the GDG on Campus UOBD event *hello, world!* (Tue 6 Oct 2026, Innovation Lounge, room 0201), in the Blue Ice theme.
 
-**Status: playable, tested in a browser simulation, not yet event-ready.** The survey results have not arrived, so only the labelled demo pack has been played. No physical phone, venue Wi-Fi or venue projector has been tried. See [Verification](#verification) and [Remaining checks](#remaining-checks).
+**How it is played (agreed with the tech lead, 4 Oct):**
+- Two teams come to the front, and Salena and Manahil present.
+- The club's standalone physical buzzers settle the face-off; the presenters judge it.
+- Team members answer out loud.
+- One person (Hussain) runs the laptop: they reveal answers, record wrong answers and keep score.
+
+The app has two screens, a private **moderator console** and a public **projector board**. Phones are optional: an off-by-default phone-buzzer mode gives one paired phone per team, pending Rayyan's final decision. Team size never depends on phones.
+
+**Status: playable and tested in a browser simulation; not yet event-ready.**
+- The survey results arrive on the evening of 5 Oct, so only the three clearly labelled demo questions have been played.
+- No venue projector, venue Wi-Fi, speakers or real buzzer phones have been tried.
+
+See [Verification](#verification).
 
 ## Quick start
 
-Needs Node and pnpm. Built and tested only on Node 24.16, pnpm 12.6, Windows 11; other versions are untried.
+Needs Node and pnpm (built and tested on Node 24.16, pnpm 12.6, Windows 11).
 
 ```bash
 pnpm install
 pnpm run dev
 ```
 
-`pnpm run dev` starts the realtime relay on `:4000` and the web app on `:5173`, and prints the address phones should use:
+1. Open `http://localhost:5173/host` on the laptop.
+2. Click **Open projector**, drag that window to the projector and click **Fullscreen**.
+3. Click **Enable sound** on the projector.
 
-```
-Moderator console   http://localhost:5173/host
-Phones join at      http://192.168.1.236:5173/join
-```
-
-Open the console on the laptop, click **Open projector**, and drag that window to the extended display. Phones need the laptop's LAN address, which the launcher detects. If it picks the wrong adapter: `FEUD_HOST=192.168.1.50 pnpm run dev`.
+The console's header shows whether the projector is open and whether its sound is on.
 
 | Command | What it does |
 |---|---|
-| `pnpm run dev` | Relay + Vite dev server with the LAN address baked in |
+| `pnpm run dev` | Relay on `:4000` + Vite dev server on `:5173` (the LAN address is baked in for phone mode) |
 | `pnpm run build` | Typecheck and production build to `dist/` |
-| `pnpm run build:lan` | Production build with the laptop's LAN address baked in |
-| `pnpm start` | Relay + the production build (run `build:lan` first) |
 | `pnpm run serve` | The Render server: relay and built game on one port (`PORT`, default 4000); run `pnpm run build` first |
-| `pnpm test` | Unit tests (105) |
+| `pnpm test` | Unit tests |
 | `pnpm run typecheck` / `pnpm run lint` | Types and lint |
-| `pnpm run e2e` | Full match across moderator, projector and two isolated phones (needs `pnpm run dev` and Chrome) |
-| `pnpm run e2e:failures` | Relay down, storage failing, rejected import, answer editor, template preview, sound unlock, direct navigation |
-| `pnpm run e2e:drop` | A phone drops mid-poll, and the 17th phone meets a full room |
-| `pnpm run e2e:extras` | A level match, the tie-break round, and the countdown timer on the projector |
-| `pnpm run e2e:paste` | Pasting survey rows from a spreadsheet: errors by line, preview, load, adding to a loaded pack, playing a pasted question |
-| `pnpm run e2e:faceoff` | The face-off: taps, correcting a tap, misses, both missing, higher count wins, play or pass, skipping |
-| `pnpm run probe` | Raw-socket checks of the relay: room limit, role spoofing, host takeover |
+| `pnpm run e2e` | A complete physical-buzzer game with the relay unreachable (needs `pnpm run dev` and Chrome) |
+| `pnpm run e2e:guide` | The quick guide: offer, Skip, replay, keyboard, no effect on the game |
+| `pnpm run e2e:phones` | Phone buzzers: two phones, pairing, a full face-off, an impostor, stale and duplicate presses, a drop |
+| `pnpm run e2e:faceoff` | Face-off rules: taps, corrections, misses, the hosts' call, play or pass, skipping |
+| `pnpm run e2e:failures` | Relay down, storage failing, rejected import, answer editor, preview, projector sound, odd URLs |
+| `pnpm run e2e:extras` | A level game, the tie-break round, the countdown timer |
+| `pnpm run e2e:paste` | Pasting survey rows from a spreadsheet |
+| `pnpm run probe` | Raw-socket checks of the relay (room limit, role spoofing, host takeover) |
 
-Windows notes: pnpm 12 blocks esbuild's install script unless allowed, which `pnpm-workspace.yaml` does (`allowBuilds`). The stock `air-jam-server dev` wrapper fails on Windows (`spawn pnpm ENOENT`), so `scripts/dev.mjs` replaces it. The upstream command is kept as `pnpm run dev:sdk`.
+Windows notes:
+- `pnpm-workspace.yaml` allows esbuild's install script.
+- `scripts/dev.mjs` replaces the stock `air-jam-server dev`, which fails on Windows. The upstream command is kept as `pnpm run dev:sdk`.
 
-Keep one `/host` window per browser. A second one warns, because two consoles share one saved game.
+Keep one `/host` window per browser. A second one shows a warning.
 
-## Routes
+## Running the game
 
-| Route | Who | Notes |
-|---|---|---|
-| `/host` | Organiser | Moderator console. The only Air Jam host. |
-| `/screen/:roomCode` | Projector | Reads the public snapshot from the console over `BroadcastChannel`. Must be a second window of the same browser on the same origin. `/screen/local` works with no relay. |
-| `/join` | Phones | Manual code entry. `/join?room=ABCD` goes straight in. |
-| `/controller?room=ABCD` | Phones | The SDK's controller route. **The QR code points here**, not at `/join`, because the SDK builds join links this way. |
-| `/play/:roomCode` | Phones | Alias that lands on `/controller`. |
+**First visit:** the console offers *New here? Learn the controls in about a minute.* That is five small popovers over the real controls; **Skip** is remembered on that laptop. **Quick guide** in the header replays it at any time, and it never starts on its own during a game.
 
-The projector is not a second network host. It never reads the answer pack or the moderator's storage; `tests/boundaries.test.ts` enforces that statically.
+The console has two screens:
+- **Live**: the game itself.
+- **Setup**: survey results, buzzer choice, projector check, backups. Visit it before the event.
 
-## Running a match
+During a round the console shows:
+- the question, large;
+- one box saying **what happens now**, with the buttons for it;
+- every private answer with its points and a **Reveal** button;
+- **Wrong answer** (`X`) and **Undo** (`U`), always at the bottom;
+- scores, round points and strikes on the right, with **Adjust score** for penalties and corrections;
+- a small copy of the audience screen, which you can collapse.
 
-1. **Load results** (below). With nothing loaded, questions preview with six empty lines and cannot start a scored round.
-2. **Play** tab: pick a question, **Start round**. The projector shows the question introduction.
-3. **Show the board** (concealed lines), then **Start face-off (buzzers)** (below). **Skip face-off, begin guessing** is the old flow: the starting team picked in the question list (or **Switch start to**) plays.
-4. After the face-off the winner chooses; then judge guesses aloud. **Reveal** a matching answer, or **Add strike (X)**. Keys: `1`–`9`, `0` reveal slots 1–10, `X` strike (a miss, during the face-off), `B` open buzzers, `U` undo. Held keys and text fields are ignored.
-5. Three strikes give the other team one steal guess: **Steal hit** on the answer, or **Steal missed (X)**.
-6. **Award N to Team X** once. **Next round**, or **Finish match**. Between rounds the projector shows the scoreboard ("After round 1 of 3 … Team B leads … round 2 is next"), not the join page.
-7. **Crowd assist** (optional, during a team turn): type 2–6 guesses the room is shouting, choose seconds, **Open poll**. Phones vote once each. **Close poll now** or wait for the deadline; totals show on the projector and phones, and the team decides. Votes never reveal an answer or score points.
+Keys: `1`–`9` and `0` reveal answers 1–10, `X` wrong answer, `U` undo. Keys do nothing while you are typing in a box.
 
-### Face-off
+1. **Live**: type the two team names and press **Start** on a question (Question 1 to 16; a question without results says *No results yet* and can only be previewed).
+2. **Show the board** once the presenters have read the question.
+3. **Start the face-off.**
+   - Tap **Team X buzzed first** for whichever buzzer the presenters name. A buzz only decides who answers first.
+   - Press **Reveal** if their answer is on the board, or **Wrong answer** (one red X, no strike).
+   - If the first answer is not the top one, the other player answers too.
+   - Then record the presenters' decision with **Team X wins the face-off**. The console shows what the survey suggests (*By the survey, Team A wins: Team A found the top answer*), but the presenters decide and can overrule it. **Hosts already decided?** and **Wrong call?** cover the rest.
+4. Choose **Team X plays** or **Team X passes**.
+5. The team answers out loud, one by one. Press **Reveal** for a match (the tile flips over on the projector, with a bell). Press **Wrong answer** for a miss (a big red X and a buzzer).
+6. The third wrong answer opens the **steal**: the other team gets one guess. **Reveal** if it is right (they take the round), **Wrong answer** if not.
+7. **Give N points to Team X** (once), then **Next question**. Reveal the rest for fun afterwards; it never changes a score.
+8. After the last round the projector shows the winner. **Set up the next two teams** clears the names and scores and keeps the answers. Questions already played are tagged *Used in an earlier game* so the next pair gets fresh ones.
 
-The tech lead confirmed a buzzer face-off between one player from each team, the winner choosing play or pass. On 4 Oct he also confirmed the club's buzzers are **standalone** ones (they are not connected to any computer) and that two named club members (Salena and Manahil) will judge it. So the game does not read the buzzers: the judges say which buzzer went first and whoever runs the laptop taps that team. Every round opens with the face-off unless you skip it.
+Also available:
+- **Skip the face-off**, then pick who plays first.
+- **End round early.**
+- **Timer** (5 to 30 s, advice only; it ends by itself or when anything happens).
+- **Play a tie-break round** when a game ends level.
 
-1. **Start face-off**. The projector says to bring one player per team to the buzzers. Read the question aloud.
-2. When a buzzer goes off, tap **Team X buzzed first**. The projector shows which team buzzed (a soft ping plus a lit team card). Tapped the wrong team? Tap the right one before anyone answers. The player answers aloud.
-3. Judge it: **Reveal** the matching answer (click it or press its number), or **Miss** (`X`). A miss is not a strike.
-4. If the first buzzer's answer is the top answer, that team wins the face-off immediately. Otherwise the other team's player answers: the higher survey count wins, a tie goes to the first buzzer, and if one misses the other's hit wins. If both miss, tap the team whose buzzer goes first for the next two players.
-5. The winner is asked **play or pass**; click **Team X PLAYS** or **Team X PASSES to Team Y**. The face-off answers already revealed stay on the board and in the pot, which goes to whichever team ends up in control (Wikipedia describes the TV show the same way: the winning family scores every revealed answer, including the face-off ones).
-6. Strikes, steal and award continue exactly as before.
+House rules (proposed, not set by the organisers):
+- Three rounds per game by default (Setup).
+- Three strikes and one steal.
+- Face-off answers count once, in the round's points, for whichever team ends up playing.
+- A repeated answer shows ALREADY ON THE BOARD and costs nothing.
+- Undo restores the previous state exactly. An answer the room has seen cannot be hidden again.
 
-If something goes wrong: **Skip face-off** (confirm) goes straight to guessing with the team shown as starting (the **Skipping? Team A starts. Switch to Team B** button on the board screen changes it); **Undo** (`U`) steps back through a tap or a result.
+### The projector
 
-Standalone buzzers have no lock-out: a near-tie cannot be settled by software, so the judges' call is final. Nobody has run the real buzzers with the game; there is nothing to connect.
+- Answers flip over with a bell.
+- Every wrong answer shows a large red X with a harsh buzzer (red is used only for wrong answers and strikes).
+- Short banners mark play or pass, the steal and the points awarded; the final screen names the winner.
+- Each effect plays once per accepted action. Nothing replays when the projector reloads or reconnects, or when the console undoes something, and scores never wait for an animation.
+- With reduced motion the tiles turn over instantly; **QUIET** on the projector's control bar stops all sound and animation.
+- All sounds are original and synthesised in the browser: no samples, nothing taken from the TV show.
 
-House rules (proposed, not attributed to the organisers): two teams, three rounds by default, human judging, three strikes and one steal, a buzzer face-off (the host taps who was first) then play or pass, pot to the controlling team unless a steal succeeds. A repeated guess shows ALREADY ON THE BOARD and adds neither points nor a strike. Reveals after the award are for discussion and never change a score. Undo restores the previous state exactly; an answer already shown cannot become unknown to the audience.
+Browsers only allow sound after a click in that window. So the projector opens with *Sound is off until you click here*, and the console warns until it is on. The projector bar has Test sound, Mute, Volume, Music and Fullscreen, and Setup → Projector can play a test sound from the laptop.
 
-8. **Countdown timer** (during a face-off, a team turn or a steal): **5 s / 10 s / 20 s / 30 s** under the round buttons put a large countdown in the middle of the projector's header, with a tick for the last three seconds and a buzzer at zero (**TIME** stays up). **Stop timer** removes it, and so does anything that happens in the round (a buzz, a reveal, a strike, an undo), so start it after the buzz, once the answer is awaited. It is advice for the room: nothing is enforced when it hits zero, the host still decides. The projector must stay a window of the same browser as the console (it reads the host's clock).
-9. **Tie-break round**: if the match ends level, the Match over panel offers **Play a tie-break round**. It adds one round (a normal one, with its own face-off, strikes and steal, picked from the unplayed questions), and the projector calls it TIE-BREAK instead of "round 4 of 4". If that round is level too, the button appears again. Undo steps back to the finished tie. A tie is still allowed to stand: just do not press the button.
+### Phone buzzers (optional, off by default)
 
-Any change to the round while a poll is open (a reveal, strike, undo, score correction) cancels the poll, and the host is told.
+Rayyan has not yet decided between physical and phone buzzers, so this mode is built but off. **Setup → Buzzers → Phone buzzers** turns it on:
+
+1. One player per team opens the join address on their phone (the projector shows a QR code until both teams are paired).
+2. Each phone holder types their team's **4-digit code**. The codes are shown only on the console, so read each code to its own team only.
+3. During the face-off press **Open phone buzzers**. The first press counts and becomes the same "Team X buzzed first" a tap makes. The other phone shows *Locked out*.
+
+**Reset and reopen** handles a dispute, and the tap buttons still work as the presenters' override. **New code / Unpair** forgets a phone. **Set up the next two teams** always makes new codes, so the last pair's phones control nothing. Switching back to physical buzzers keeps the game and discards any press still in flight.
+
+Honest limits:
+- **Timing:** the projector says *RECEIVED 0.84 S AFTER THE BUZZERS OPENED*. That is when the press reached the laptop, including network delay. It is arrival order, not proof of who physically pressed first. Times from different phones are never compared.
+- **Impersonation:** the Air Jam relay tells every phone in a room the controller id and device id of every other phone, and a phone presenting both can take over that seat. Tested: a third client did exactly that.
+  - The pairing token blocks it from buzzing. Only the phone that typed the team's code gets the token, and every press needs it, so the impostor's presses were all refused.
+  - It does knock the real phone offline. The fix is **Unpair**, then pair again with the new code: about ten seconds.
+  - Ten wrong codes lock pairing until you make new codes.
+  - Using phone mode at the event is Hussain's and Rayyan's decision.
+- **Drops:** a dropped phone shows as disconnected after about 8 seconds (the relay's grace period, lowered from its default 30 s in `scripts/dev.mjs` and `scripts/serve.mjs`). The presenters then judge that face-off and you tap.
+- **Phone refresh:** a phone that refreshes forgets its pairing (it holds it in memory only) and pairs again with a new code.
 
 ## Survey data
 
-The 16 supplied questions are fixed. `data/templates/event_questions.pending.json` is the empty template. Real answers are never committed and never bundled; they live in the moderator's browser storage only.
+The 16 supplied questions are fixed (`data/templates/event_questions.pending.json`). Real answers are never committed or bundled; they live in the moderator's browser storage only.
 
-The events team surveys students on Monday 5 Oct and Rayyan expects the answers at the end of that day, the night before the event. Ask them for a sheet with one row per answer: **question number, answer, number of students who said it** (and optionally a fourth column of other wordings to accept). Then, on the *Questions & data* tab:
+Ask the events team for one row per answer: **question number, answer, number of students who said it**, plus an optional column of other wordings to accept. Then use **Setup → Survey results**:
 
-- **Paste results from a spreadsheet** (the fast way): copy the rows from Google Sheets or Excel (or paste a CSV, or choose a `.csv` file), **Check these rows** (errors are listed by line, nothing changes), read the preview, **Load these results**. Question numbers are 1 to 16; the question wording always comes from the supplied list. Paste a few questions at a time if you like: questions already loaded stay unless you paste them again, and the previous pack is kept as a recoverable copy. Rows are sorted by count; a duplicate answer, a non-whole count or more than 10 answers per question is refused with a reason. Pasted rows are always an event pack, never the demo pack.
+- **Paste results from a spreadsheet** (the fast way):
+  1. Paste the rows (or choose a CSV).
+  2. Click **Check these rows**. Errors are listed by line and nothing changes.
+  3. Read the preview.
+  4. Click **Load these results**.
 
-Two other ways:
+  Questions already loaded stay unless you paste them again, and the previous answers are kept as a recoverable copy.
+- **Type or correct one question's answers**: the answer editor.
+- **Advanced: import a pack file (JSON)**: the bundled structure.
 
-- **Import JSON**: paste or choose a file in the bundled structure (`schemaVersion`, `packId`, `title`, `purpose`, `questions[]` with `id`, `category`, `prompt`, `status`, `survey`, `answers[]`, `approval`). Answer rows are `id`, `rank`, `text`, `count`, `aliases`. A partial pack is fine: questions you leave out stay `awaiting_survey`.
-- **Answer editor**: pick a question, add rows (up to 10), set where the results came from, **Confirm these as event results**.
+The validator refuses bad data with specific errors and leaves the current game alone:
+- wording must match the supplied questions;
+- 1–10 answers per question;
+- counts must be positive whole numbers, never scaled to 100;
+- duplicate labels and conflicting aliases are flagged.
 
-Rules the validator enforces, with specific errors and **no change to the current game on failure**: prompts and categories must match the supplied wording exactly; 1–10 answers; positive integer counts (never scaled to 100); unique ids; duplicate labels and conflicting aliases are flagged; answers sort by count and keep the supplied order on ties; single-response totals cannot exceed the respondent count if given; labels over about 30 characters raise a warning before the round starts and wrap rather than shrink. All text renders as plain text.
+All text renders as plain text.
 
-`data/demo/demo_pack.json` holds invented practice answers (q01, q03, q10). **Load demo pack** shows **DEMO: INVENTED RESULTS** on the moderator, projector and phones, and it stays visible after a reload. The demo pack is read-only in the editor and cannot be relabelled as event data. A resumed round keeps its own demo flag.
-
-Ask the events team for aggregate answer groups, counts and accepted synonyms only. No student identities, emails or phone numbers are needed or stored.
+`data/demo/demo_pack.json` holds invented practice answers for Questions 1, 3 and 10, ready for the rehearsal. **Load demo pack** shows **DEMO: INVENTED RESULTS** on the console and projector (and on buzzer phones), and the demo pack cannot be relabelled as real.
 
 ## Saving and recovery
 
 | Situation | Behaviour |
 |---|---|
-| Host refresh | Offers **Resume** (restores question, reveals, scores, strikes, any award) or a new match. An unfinished poll is cancelled. The room code changes, so show the new QR. |
-| Projector reload | Asks the console for the latest board. Nothing is re-awarded. |
-| A phone drops | Shows *Reconnecting*. Board and scoring carry on. If the poll is still open it recovers its accepted vote. |
-| Relay down | Crowd assist is disabled with a reason. Reveals, scoring, saving and projector keep working. |
-| Browser storage fails | A **NOT SAVED** chip and an UNSAVED warning. The live game continues in memory; **Session → Export private backup** still works. |
-| Misclick | **Undo** (`U`). Score corrections (`±1`, `±5`) are separate and undoable. |
+| Console refresh | Offers **Resume the game**: question, reveals, scores, strikes and points given. The quick guide never interrupts it. |
+| Projector reload | Asks the console for the latest board. Nothing is scored twice and no effect replays. |
+| Relay or internet down | Physical mode needs neither: board, scores, effects, saving and projector all run on the laptop. Phone mode says plainly that phones are offline. |
+| Browser storage fails | **Not saved** in the header plus a warning. The game continues in memory, and **Setup → Export private backup** still works. |
+| Wrong click | **Undo** (`U`). Penalties and corrections via **Adjust score** are undoable too. |
 
-Progress and the pack save in this browser after every action. That is a local copy, not a cloud backup. **Session → Export private backup** writes `*.session-backup.json` (already in `.gitignore`); **Restore** validates the whole file first and leaves the current game alone if it is bad. Keep backups out of the public repository.
+Export a private backup before the event (**Setup → Backup and recovery**) and keep it out of the public repository.
 
 ## Architecture
 
-One authority: the moderator page. It owns the rules engine (`src/engine`, a pure reducer with explicit phases and per-action ids so a repeated delivery is a no-op), the answer pack, undo history, the poll and saving. The public view is built by an allowlist (`src/public/project.ts`) and fanned out two ways: `BroadcastChannel` to the projector, and the Air Jam replicated store to phones. Phones can only call `castVote` and `pollStatus`.
+One authority: the moderator page. It owns the pieces below, and the public view is built by an allowlist (`src/public/project.ts`) and sent to the projector over `BroadcastChannel` and, in phone mode, to buzzer phones through the Air Jam store.
+- the rules engine (`src/engine`): a pure reducer with explicit phases, per-action ids (a repeated delivery is a no-op) and undo;
+- the answers;
+- saving;
+- the phone-buzzer rules (`src/buzzers`, pure).
 
-- Air Jam: `@air-jam/sdk` and `@air-jam/server` **0.9.2**, from `create-airjam` (minimal template). The unscoped `airjam` and `@airjam/*` packages on npm are an unrelated product.
-- Votes use the store's discrete action with an accept/reject acknowledgement, not the per-frame input lane. **VOTE RECEIVED** appears only after the host accepts. Identity is the framework's connection identity, never the payload. A retry of the same choice confirms without recounting; a different later choice is refused; late, stale, unknown-option and malformed votes are refused.
-- Phones keep one stable identity per browser (the SDK stores a device id), so a refresh keeps the same participant: tested, the refreshed phone recovered its vote without a second ballot. Separate browsers count as separate participants (tested with isolated contexts). Two tabs in one browser should share an identity per the SDK docs; that was not tested.
-- `src/ui/ScreenView.tsx` is the single renderer for the projector and the console's preview, so the preview shows the real public projection.
+- The only network actions are `pairBuzzer` and `buzz`. Both refuse calls stamped as the host (the relay lets a phone spoof that channel), take the team from the console's pairing rather than the payload, and are refused outright in physical mode. Nothing on the network can reveal, score, award or reset (`tests/store.test.ts`).
+- `src/ui/ScreenView.tsx` renders both the projector and the console's preview. The preview never plays sound; the red X and banners are drawn by the projector page only.
+- The projector and buzzer phones never import the answer pack, host storage or the console (`tests/boundaries.test.ts`).
+- Air Jam `@air-jam/sdk` and `@air-jam/server` 0.9.2.
+- The crowd-assist poll from the first version was removed on 5 Oct after the tech lead's feedback. It remains in git history before commit `3ea5cea`.
 
-Findings from checking the real relay (`pnpm run probe`):
+## Deploying
 
-- **Room size is capped at 16 phones.** The SDK protocol schema rejects `maxPlayers` above 16; the 17th phone gets `ROOM_FULL` (the phone shows "This room is full", tested). Left unset the default is 8. Crowd assist works for up to 16 voters per room. If more than 16 people must vote, the SDK cannot do it; the smallest fallback would be a small Express/Socket.IO relay. **Not built, because attendance is unknown.**
-- **A `ctx.role === "host"` check is not a security boundary.** A phone can emit `controller:host_action_rpc` and the relay then stamps the call as the host. So the only network-reachable actions are the two vote actions, which distrust the caller. The host publishes through `_publish`, whose underscore prefix makes the relay refuse it on both channels. There is no reveal, score, award or reset action on the network.
-- Room codes are 4 characters from `ABCDEFGHJKLMNPQRSTUVWXYZ23456789`.
-- Phones cannot send host events (`host:state_sync`, `removeController`, `resetRoom`), and a second host cannot take over a room with an active host.
-- **Known gap:** with local auth disabled, a client that knows the room code can adopt a room in the window after the real host drops. It can change what phones see, not scores or the projector. A public product should set `AIR_JAM_AUTH_MODE=required` with a registered app id; the club deployment deliberately runs with it disabled (see *Deploying*).
-- Relay limits by default: 120 controller joins per minute per IP and 30 host registrations per minute, comfortable for 16 phones behind one campus address.
-- Local dev runs with auth disabled and CORS `*`. That is for a laptop on a trusted LAN only.
+Deployed by Hussain at `https://gdg-family-feud.onrender.com` (Render free plan, `render.yaml`, `scripts/serve.mjs`: relay and game on one port). Every push to `main` redeploys. **The changes on branch `feedback-simplify` are local and not pushed or deployed.**
 
-## Deploying (a public link for friends and the tech lead)
-
-**Status: nothing is deployed, and no account, spend or credential has been used.** The config is ready (`render.yaml`, `scripts/serve.mjs`) and the same server was run locally in production mode; it has not been run on Render itself.
-
-How it fits together: `scripts/serve.mjs` runs the Air Jam relay and serves the built game from one port, so one Render web service gives one link, the same shape as the other club games on Render. Phones, the console and the projector all use that address; phones no longer need to be on the laptop's Wi-Fi.
-
-To put it on Render (about 10 minutes, free plan):
-
-1. On render.com, **New + > Blueprint**, connect the GitHub repo `Hussain800/Family-Feud`, and **Apply**. Render reads `render.yaml`. (Manual alternative: New + > Web Service, same repo, build command and start command copied from `render.yaml`, plus the three env vars in it.)
-2. Wait for the build (a few minutes). The address looks like `https://gdg-family-feud.onrender.com` (Render may add letters if the name is taken). Every push to `main` redeploys it by itself.
-3. Open `<address>/host` on the laptop, **Open projector** on the same browser, and phones scan the QR on the projector. Share `<address>/host` only with whoever runs the game; friends testing phone voting use the QR or `<address>/join`.
-
-Things to know:
-
-- **Free plan sleeps.** After about 15 minutes with no traffic the service stops, and the next visit takes 30 to 60 seconds to wake; all rooms are lost whenever it restarts. For the event, open it 10 minutes early, and consider a paid instance for the day (a spending decision for the club; not made here).
-- **Results stay in the moderator's browser, per address.** Browser storage belongs to one address, so results pasted at `localhost:5173` are not there at the Render address. Load the real results at the address you will use on the day, and keep **Session > Export private backup** (Restore works on any address).
-- **The relay runs with Air Jam app authentication disabled** (`AIR_JAM_AUTH_MODE=disabled`), because the framework otherwise insists on an account-backed app id. Consequences: anyone who can reach the address can open `/host` (they get their own empty console; the real answers live only in your browser) and create rooms; and, as noted under *Known gap* above, someone who knows a room code can adopt a room after its real host drops, which can change what phones see but not scores or the projector. Acceptable for a club evening; not for a public product.
-- The laptop needs internet to load the page and keep phones connected. Keep the local route (`pnpm run dev`) as the backup if the venue connection is poor. The board and scoring keep working in an open console even if the connection drops.
-- To test the same thing locally in production mode: `pnpm run build`, then `NODE_ENV=production PORT=8080 pnpm run serve`, and open it by your LAN address (not `localhost`, which phones cannot reach, so the projector would not show a QR).
-
-## Local network status
-
-`pnpm run dev` and `pnpm start` (after `pnpm run build:lan`) were both run, and the full match passes against each. Fonts, logos and scripts are served locally, so the board and the same-laptop projector work offline. Phone networking still needs the relay and a reachable network.
-
-- In dev, phones reach the relay through the web port (`:5173`). In production preview they connect to `:4000` directly (baked in at build time), so allow both ports through the laptop firewall.
-- `pnpm run serve` (the Render server) was also run in production mode, on one port, through the full match with two phones, the failure scenarios, the 16-phone limit, the face-off, spreadsheet paste and the tie-break and timer scripts, all against the laptop's LAN address.
-- A fully self-run public host needs the relay (`@air-jam/server`) and the static frontend: `scripts/serve.mjs` does both. Air Jam's own app-id authentication (`AIR_JAM_AUTH_MODE=required` with a database or master key) was not set up. **Ask before publishing, deploying, spending or changing accounts.**
-- `vercel.json` came with the starter and is unused (Vercel cannot host the relay).
+- **The free plan sleeps** after about 15 minutes idle (30–60 s to wake) and loses rooms on restart. Open it 10 minutes early. A paid instance for the day is a club spending decision.
+- **Results stay in the browser, per address.** Results pasted at `localhost:5173` are not at the Render address, so load them where you will play and keep a backup.
+- **Authentication is off.** The relay runs with Air Jam app authentication disabled (`AIR_JAM_AUTH_MODE=disabled`), so anyone with the address can open their own empty console. The real answers live only in the operator's browser.
+- **Offline fallback:** physical mode works with no internet once the page is loaded. `pnpm run dev` on the laptop is the offline fallback.
 
 ## Verification
 
-Ran on 4 Oct 2026, Windows 11, Chrome (headless via `playwright-core`, no browser download).
+Ran on 5 Oct 2026, Windows 11, headless Chrome via `playwright-core`, against `pnpm run dev`.
 
-**Run and passing:** `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (105 tests: rules including the face-off and tie-break, validation, spreadsheet paste, polls, projection and privacy sentinel, store role gating, module boundaries, text escaping, sound cue mapping, storage failure), `pnpm run build`, `pnpm run build:lan`, and the six e2e scripts: 57 checks for a full match, 30 for failures, 12 for phone connection (a drop and the full room), 22 for the face-off, 8 for pasting survey rows, 16 for the tie-break and the timer. Highlights: a repeated reveal adds nothing; a double click is one strike and a held key is ignored; clear board, successful steal, failed steal and repeated award give the exact totals; undo reverses exactly the recorded award; a planted sentinel answer, alias, count and survey note never appears in the projector, a phone's page, its websocket frames, a raw controller's traffic, phone storage or any script served to a phone until revealed (and an alias never appears).
+**Run and passing:**
+- `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (111 unit tests) and `pnpm run build`.
+- The browser suites (results below).
 
-**Simulated, not physical:**
-- "Phones" are two isolated Chrome contexts emulating 390×844 touch devices on this laptop, plus raw socket clients. Not iOS Safari, not Android, not a real touchscreen.
-- Disconnects are simulated by blocking websocket and polling traffic, not by a real Wi-Fi drop.
-- Projector layouts were captured at 1920×1080, 1366×768 and 1280×720 in headless Chrome, not on the venue projector. Screenshots are in `docs/screenshots/` (`13-final` and the host-resume shot use the privacy test pack, so their totals are test numbers).
-- 16 raw sockets filled a room to the cap; that is a limit check, not a load test.
-- The audio context unlocks from the button and the cue mapping is unit-tested. The sound effects and the theme loop are original and synthesised in the browser (no samples, nothing copied from any show), but nobody has judged how they sound yet; that needs a person with speakers. The theme plays on the lobby, the question intro, between rounds and at the end, and is silent during live play so the host can talk. Switch it off with **MUSIC OFF** on the projector's control bar.
+| Suite | Checks | Covers |
+|---|---|---|
+| `e2e` | 46 | A complete physical-buzzer game with every realtime connection refused: face-off with the hosts' call, pass, reveals, three wrong answers (X, XX, XXX, then the steal banner), a missed steal, points, penalty and Undo, a projector reload, a console refresh and Resume, finishing, the next two teams. It also checks that nothing sent to the projector ever held an unrevealed answer, and that each effect fired once. |
+| `e2e:guide` | 28 | First-visit offer, Skip remembered, Done, replay, Escape, Tab kept inside, focus returned, popovers inside 1366×768. Mid-round, keys and clicks change nothing and the projector's revision never moves; no offer during a resumed game. An empty autosave still gets the offer. |
+| `e2e:phones` | 40 | Two phone pages pair with codes, the first press locks, the other phone is locked out, honest timing labels, reset, a double tap counted once. An impostor takes a seat but is refused, as are host-channel spoofs, stale, duplicate and unpaired presses. Also: a drop shown in 8 s, switching to physical, next teams. |
+| `e2e:faceoff` | 27 | Taps, corrections, misses, both missing, the hosts overruling the survey, play or pass, skipping |
+| `e2e:failures` | 32 | Relay down, storage failing, rejected import, editor, preview, projector sound status, odd URLs |
+| `e2e:extras` | 16 | Tie-break, timer |
+| `e2e:paste` | 8 | Spreadsheet paste |
 
-**Done by a person, on 4 Oct 2026:** one physical phone (Samsung S25 FE, Samsung Internet) on the home Wi-Fi joined from the QR code, voted, and saw the results; the join was almost instant.
+**Also checked by hand, through scripts:**
+- A layout scan of every tab and round state (including ten answers and the guide) at 1366×768 and 1920×1080, at 100% zoom: no overflow, and Wrong answer and Undo reachable without scrolling.
+- The tile flip measured in the running projector: 0°, 111°, 163°, 177°, then 180° over about 450 ms, and an instant swap with reduced motion.
+- The red X shows for about 1.1 s.
 
-**Not run:** the physical buzzers (standalone: the host taps, nothing is connected); more than one physical phone; venue Wi-Fi, including client isolation; the real projector, fullscreen on it and its legibility from the back; Safari, Firefox; a screen-reader pass; more than one operator rehearsal; a Windows Firewall prompt on a fresh laptop.
+Screenshots are in `docs/screenshots/`: `before-*` for the old console, `after-*`, `physical-*`, `guide-*` and `phone-*` for the new one.
 
-## Remaining checks
+**Not run** (needs people, devices or the venue):
+- real phones on venue Wi-Fi (phone mode was tested with emulated phones and raw sockets on this laptop);
+- the speakers, and anyone listening to the sounds;
+- the venue projector, legibility from the back;
+- the real standalone buzzers with the presenters;
+- Safari or Firefox;
+- a screen reader;
+- whether someone new learns the console in about a minute. That is a goal to test at the rehearsal, not a result.
 
-Work through [`docs/OPERATOR_CHECKLIST.md`](docs/OPERATOR_CHECKLIST.md). Short version:
+## Before the event
 
-- [ ] Real survey results loaded, counts and spelling checked, DEMO label gone.
-- [ ] A face-off with the real buzzers and the two judges: they call who was first, the person on the laptop taps it. Agree beforehand that the judges' call is final.
-- [ ] At least two physical phones join over the venue Wi-Fi; one vote each, a refresh, a screen lock.
-- [ ] The join URL on the screen opens from a phone that is not on the laptop's account.
-- [ ] Expected attendance known; decide whether the 16-phone cap is acceptable.
-- [ ] Projector: fullscreen, sound enabled, QR scans from the back, long labels readable.
-- [ ] One full rehearsal by the person who will operate it, including an undo, a host refresh and a relay-off run.
-- [ ] Confirm the game's stage time and operator with Rayyan.
+Work through [`docs/OPERATOR_CHECKLIST.md`](docs/OPERATOR_CHECKLIST.md).
 
 ## Third-party material
 
-Blue Ice values were checked against the club guide on 4 Oct 2026 and match (`#1E3FD9`, `#0A1B66`, `#142FB0`, `#F3F8FF`, `#CFE0FF`, `#B8CEFF`). From `UdayAhuja19/gdg-resources`: `src/styles/blue-ice.css` (font paths edited to `/fonts/`), `src/styles/blue-ice-club.js` (unmodified; draws the cracked wordmark), `public/brand/gdg-mark-*.svg`. Fonts are Archivo and DM Mono under the SIL Open Font License, with licences beside them in `public/fonts/`. No font is loaded from a network host at runtime.
+Blue Ice values match the club guide (checked 4 Oct 2026). From `UdayAhuja19/gdg-resources`:
+- `src/styles/blue-ice.css` (font paths edited);
+- `src/styles/blue-ice-club.js` (unmodified; draws the wordmark);
+- `public/brand/gdg-mark-*.svg`.
+
+Fonts are Archivo and DM Mono under the SIL Open Font License (`public/fonts/`), served locally.
 
 ## Layout
 
 ```
 src/engine/    rules reducer, phases, undo          src/public/   public snapshot, channel, projection
-src/content/   canonical questions, validation      src/poll/     ballot logic
-src/host/      moderator console, saving            src/game/     the Air Jam store (public state + votes only)
-src/screen/    projector page                       src/play/     join page, phone controller
-src/ui/        shared renderer, sound, stage        scripts/      launcher, relay probe, e2e runs
+src/content/   canonical questions, validation      src/buzzers/  phone-buzzer pairing and presses (pure)
+src/host/      console, guide, saving               src/game/     the Air Jam store (public state + buzzer calls)
+src/screen/    projector page, effects              src/play/     join page, buzzer phone
+src/ui/        shared renderer, sound, stage        scripts/      launcher, server, relay probe, e2e runs
 ```

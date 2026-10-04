@@ -377,3 +377,4 @@ input[type="file"]::file-selector-button:hover { background: var(--cobalt); colo
 .phones { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--hair); border-radius: 2px; }
 .phones__warn { font-size: 14px; font-weight: 700; color: var(--strike-ink); }
 .phones__result { font-size: 15px; }
+.step > .link-btn { align-self: flex-start; }

@@ -63,7 +63,7 @@ export function Scoreboard({ g }: { g: HostGame }) {
       <div className="score__teams">
         {TEAMS.map((t) => (
           <div key={t} className={`score__team ${on?.team === t ? "is-on" : ""}`}>
-            <span className="score__name">{name(s, t)}</span>
+            <span className="score__name" title={name(s, t)}>{name(s, t)}</span>
             <span className="score__num">{s.teams[t].score}</span>
             <span className="score__tag">{on?.team === t ? on.label : " "}</span>
           </div>
@@ -123,8 +123,13 @@ export function AudiencePreview({ g }: { g: HostGame }) {
 
 function TeamNames({ g }: { g: HostGame }) {
   const s = g.state;
-  const [names, setNames] = useState({ A: s.teams.A.name, B: s.teams.B.name });
+  // A draft only while a box is being typed in; otherwise the boxes show the game's names (next teams, a restore).
+  const [draft, setDraft] = useState<{ team: TeamId; value: string } | null>(null);
   const editable = s.roundsPlayed === 0;
+  const save = () => {
+    if (draft) g.act({ type: "SET_TEAM_NAMES", names: { A: s.teams.A.name, B: s.teams.B.name, [draft.team]: draft.value } });
+    setDraft(null);
+  };
   return (
     <section className="card" aria-label="Teams">
       <h2 className="card__h">Teams</h2>
@@ -135,10 +140,11 @@ function TeamNames({ g }: { g: HostGame }) {
               <span className="field__label">Team {t}</span>
               <input
                 className="input"
-                value={names[t]}
+                value={draft?.team === t ? draft.value : s.teams[t].name}
                 maxLength={24}
-                onChange={(e) => setNames({ ...names, [t]: e.target.value })}
-                onBlur={() => g.act({ type: "SET_TEAM_NAMES", names })}
+                onFocus={() => setDraft({ team: t, value: s.teams[t].name })}
+                onChange={(e) => setDraft({ team: t, value: e.target.value })}
+                onBlur={save}
                 onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
               />
             </label>
@@ -189,7 +195,7 @@ function Lobby({ g }: { g: HostGame }) {
   const { A, B } = s.teams;
   return (
     <>
-      <TeamNames key={`${A.name}|${B.name}|${s.roundsPlayed}`} g={g} />
+      <TeamNames g={g} />
       <section className="card" data-tour="questions" aria-label="Questions">
         <div className="card__bar">
           <h2 className="card__h">{roundLabel(s)}: choose a question</h2>

@@ -1,25 +1,61 @@
 # Operator rehearsal checklist
 
-Complete after the game has been implemented. This is not a record of completed checks.
+A list to work through, not a record of checks already done.
 
-## Before the event
+## The night before (Monday 5 Oct)
 
-Confirm the game's stage time, operator, actual attendance, survey results, and projector/network setup with the organisers. Load aggregate results (Questions & data tab, Paste results from a spreadsheet), verify counts and spelling, play through the preview of each board once, and ensure DEMO: INVENTED RESULTS is not being mistaken for genuine data. Keep a private local backup.
+- [ ] Load the survey results at the address you will use on the day: **Setup → Survey results → Paste results from a spreadsheet**, then check them and load them.
+- [ ] Read every question's answers and points for spelling.
+- [ ] Confirm the DEMO label has gone.
+- [ ] Export a private backup (**Setup → Backup and recovery**) and keep it off the public repository.
+- [ ] Decide buzzers with Rayyan: physical (default) or phone.
+  - If phone: decide who holds each team's phone, and accept the limits in the README (arrival-order timing; an impostor can knock a phone offline but cannot buzz).
 
-Use the laptop's extended display. Project only the public board. Check long answers, QR readability, sound, and fullscreen. Run one complete match with at least two independent phones; exercise a successful steal, failed steal, duplicate tap, correction, vote, disconnect, and host refresh.
+## Rehearsal with Rayyan and the presenters
 
-Rehearse one face-off with the real standalone buzzers and the two judges: they call which buzzer went first and the person at the laptop taps that team. Agree beforehand that the judges' call is final.
+- [ ] Use the three labelled demo questions if the results are not in yet.
+- [ ] Ask someone who has not seen the console to take the **Quick guide**. Then, without help, they should:
+  - reveal an answer;
+  - record a wrong answer;
+  - undo a mistake.
 
-Verify that the displayed join URL is reachable from a participant phone. Confirm the actual configured and tested room capacity. A frontend link alone is not a relay test.
+  Note where they hesitate.
+- [ ] Run one face-off with the real buzzers. The presenters say who buzzed first and who won; the operator taps it. Agree that the presenters' call is final.
+- [ ] Run a whole round:
+  - play or pass;
+  - reveals;
+  - three wrong answers;
+  - a steal (one right, one missed in another round);
+  - a penalty with **Adjust score**;
+  - an Undo;
+  - **Next question**.
+- [ ] **Set up the next two teams**: the names reset, the answers stay, and the played questions are tagged.
+
+## At the venue
+
+- [ ] Use the laptop's extended display. Open the projector, make it fullscreen, and click **Enable sound**. The console header should say *Projector ready*.
+- [ ] Use **Setup → Projector → Play a test sound**, and set the volume for the room.
+- [ ] Check long answers and the red X from the back of the room.
+- [ ] Phone mode only:
+  - pair both phones on the venue Wi-Fi;
+  - open, press, reset;
+  - lock one phone's screen and see the console report it.
 
 ## During play
 
-Choose a question, introduce it, open the concealed board, run the buzzer face-off (tap which team's buzzer was first, reveal or miss, the winner chooses play or pass), and judge guesses aloud. Reveal matching answers or add strikes. Resolve one steal at three strikes and award the pot once. Reveal remaining answers without scoring and continue.
-
-For crowd assist, enter two to six spoken suggestions, open the poll, wait for accepted votes, close it, and offer the result as a suggested guess. Do not turn votes into survey points.
+1. **Start** a question. The presenters read it.
+2. **Show the board.**
+3. **Start the face-off.** Tap who buzzed first, then **Reveal** or **Wrong answer**.
+4. Record the presenters' call: **Team X wins the face-off**.
+5. **Plays** or **Passes.**
+6. Reveal each right answer as the team says it. Press **Wrong answer** for misses.
+7. Steal at three wrong answers.
+8. **Give the points** once, then **Next question**.
 
 ## If something fails
 
-Phone/relay failure: continue manually with the local board. Host refresh: resume saved progress, cancel unfinished voting, and display a new room code if needed. Storage warning: export a private save where possible. A scoring error: use undo/correction rather than resetting the match.
-
-Record untested conditions and the actual fallback procedure in the application README before handing the laptop to another operator.
+- **Projector window closed or asleep:** the header says *Projector not open*. Reopen it; it catches up and plays nothing twice.
+- **Wrong click:** **Undo** (`U`). Use **Adjust score** for corrections; never restart a game to fix a score.
+- **Console refreshed:** choose **Resume the game**.
+- **Storage warning:** export a backup at once.
+- **Phone buzzer drops or misbehaves:** the presenters judge, and you tap the team. **Setup → Buzzers → Unpair** gives a new code.
