@@ -182,7 +182,7 @@ One authority: the moderator page. It owns the pieces below, and the public view
 
 ## Deploying
 
-Deployed by Hussain at `https://gdg-family-feud.onrender.com` (Render free plan, `render.yaml`, `scripts/serve.mjs`: relay and game on one port). Every push to `main` redeploys. **The changes on branch `feedback-simplify` are local and not pushed or deployed.**
+Deployed by Hussain at `https://gdg-family-feud.onrender.com` (Render free plan, `render.yaml`, `scripts/serve.mjs`: relay and game on one port). Every push to `main` redeploys. The 5 Oct changes (simplified console, game-show effects, quick guide, optional phone buzzers) were pushed to `main` on 5 Oct; the pre-change version is tagged `pre-feedback-2026-10-04`.
 
 - **The free plan sleeps** after about 15 minutes idle (30–60 s to wake) and loses rooms on restart. Open it 10 minutes early. A paid instance for the day is a club spending decision.
 - **Results stay in the browser, per address.** Results pasted at `localhost:5173` are not at the Render address, so load them where you will play and keep a backup.
