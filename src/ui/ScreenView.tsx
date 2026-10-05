@@ -20,7 +20,7 @@ const teamName = (s: PublicSnapshot, id: TeamId) => teamOf(s, id).name.toUpperCa
 /** Long names and answers step down a size instead of being cut off. */
 const fit = (text: string, steps: [number, string][]) => steps.find(([n]) => text.length > n)?.[1] ?? "";
 
-/** The game title as a frost plate, its brackets drawn as the club mark's coloured chevrons. */
+/** The game title in frost on the ice, its brackets drawn as the club mark's coloured chevrons. */
 function TitlePlate({ size }: { size: "lg" | "sm" }) {
   return (
     <span className={`title-plate title-plate--${size}`}>

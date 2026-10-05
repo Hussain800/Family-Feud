@@ -50,14 +50,13 @@ a { color: inherit; }
 
 .s-label { font-family: var(--font-mono); font-size: 16px; letter-spacing: 0.22em; color: var(--rime); text-transform: uppercase; }
 .s-pill { display: inline-block; padding: 10px 22px; border: 2px solid var(--frost); font-family: var(--font-mono); font-size: 20px; letter-spacing: 0.22em; color: var(--frost); }
-.gdg-plate { display: inline-grid; place-items: center; flex: none; background: var(--frost); }
-.gdg-plate svg { display: block; }
+.gdg-mark { display: block; flex: none; }
 .chevron { display: block; flex: none; }
 
-/* the game title, always on frost so the coloured brackets sit where Blue Ice allows them */
-.title-plate { display: inline-flex; align-items: center; background: var(--frost); color: var(--cobalt-deep); font-weight: 900; font-variation-settings: "wdth" 112; line-height: 0.9; white-space: nowrap; }
-.title-plate--lg { gap: 30px; padding: 26px 46px 24px; font-size: 136px; letter-spacing: -0.01em; outline: 2px solid rgba(243, 248, 255, 0.42); outline-offset: 14px; box-shadow: 0 0 80px 0 rgba(191, 214, 255, 0.28); }
-.title-plate--sm { gap: 10px; padding: 9px 16px 8px; font-size: 30px; letter-spacing: 0.01em; }
+/* the game title in frost straight on the ice, its brackets drawn as the club mark's coloured chevrons */
+.title-plate { display: inline-flex; align-items: center; color: var(--frost); font-weight: 900; font-variation-settings: "wdth" 112; line-height: 0.9; white-space: nowrap; }
+.title-plate--lg { gap: 36px; font-size: 144px; letter-spacing: -0.01em; text-shadow: 0 0 44px rgba(191, 214, 255, 0.45); }
+.title-plate--sm { gap: 12px; font-size: 30px; letter-spacing: 0.01em; }
 .title-plate__text { display: block; transform: translateY(0.03em); }
 
 /* header on every screen but the title card */
@@ -82,7 +81,7 @@ a { color: inherit; }
 .lobby__mark svg { overflow: visible; }
 .lobby__title, .lobby__teams { position: relative; z-index: 1; }
 .lobby__mark .wordmark-host { margin: 0 auto; }
-.lobby__title { margin: 0 0 58px; font-size: inherit; }
+.lobby__title { margin: 6px 0 62px; font-size: inherit; }
 .lobby__teams { width: 1460px; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: stretch; gap: 30px; }
 .lobby__team { display: flex; align-items: center; justify-content: center; gap: 20px; min-height: 108px; padding: 18px 30px; border: 2px solid rgba(243, 248, 255, 0.5); background: var(--well); font-size: 54px; font-weight: 900; font-variation-settings: "wdth" 100; letter-spacing: -0.01em; line-height: 1.02; text-transform: uppercase; text-wrap: balance; overflow-wrap: anywhere; }
 .lobby__team--long { font-size: 40px; }
@@ -340,7 +339,6 @@ a { color: inherit; }
 .team-dot { display: inline-block; width: 10px; height: 10px; margin-right: 8px; vertical-align: 1px; }
 .team-dot--a { background: #FBBC04; }
 .team-dot--b { background: #34A853; }
-.host .gdg-plate { border: 1px solid var(--hair); }
 .score__name { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .score__num { font-size: 40px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
 .score__tag { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }

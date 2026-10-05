@@ -111,7 +111,7 @@ Every state is one centred composition inside a frost frame:
 - **Steal, points, between rounds and the winner**, all in the same style.
 
 **GDG colours** follow the club's own rules:
-- The *hello, world!* Blue Ice guide allows the four-colour bracket mark only small and on frost. So the official mark (yellow, red, blue, black) sits on frost plates, and FAMILY FEUD's code brackets are drawn as the mark's coloured chevrons on its frost title plate.
+- The official mark (yellow, red, blue, and black, drawn in frost on blue so it stays visible) and FAMILY FEUD's code brackets, drawn as the mark's coloured chevrons, sit straight on the ice with no white plates. The *hello, world!* guide keeps the Google colours off the ice, so this is a deliberate exception chosen for the game.
 - Each team keeps one fixed club colour everywhere, on the projector and the console: Team A yellow, Team B green.
 - Red means a wrong answer and nothing else.
 
