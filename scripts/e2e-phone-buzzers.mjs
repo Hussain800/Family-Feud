@@ -56,7 +56,7 @@ const armId = () => screen.evaluate(() => window.__last?.buzzers?.armId ?? null)
 const openOrReset = () => host.locator("button:has-text('Open phone buzzers'), button:has-text('Reset and reopen')").first().click();
 
 await host.click("role=tab[name='Setup']");
-await host.click('button:has-text("Load demo pack")');
+await host.click('button:has-text("Load practice pack")');
 await host.click("button:has-text('Confirm')");
 await host.click("label:has-text('Phone buzzers')");
 await host.waitForSelector("text=/enters room [A-Z0-9]{4}/", { timeout: 20000 });
@@ -216,7 +216,10 @@ await host.click("label:has-text('Phone buzzers')");
 await host.click("role=tab[name='Live']");
 await host.click("button:has-text('Back to questions')").catch(() => {});
 await host.click("role=tab[name='Setup']");
-await host.click("button:has-text('Set up the next two teams')");
+await host.click("summary:has-text('Next two teams')");
+await host.locator('input[name="next-A"][value="green"]').check({ force: true });
+await host.locator('input[name="next-B"][value="yellow"]').check({ force: true });
+await host.click("button:has-text('Start the next game')");
 await host.click("button:has-text('Confirm')");
 await sleep(400);
 const codes2 = await host.locator(".pairs__code").allInnerTexts();

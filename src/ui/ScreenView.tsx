@@ -7,7 +7,8 @@ import { Chevron, GdgMark } from "./GdgMark";
 import { useNow } from "./poll-bits";
 import { Stage } from "./Stage";
 import { Wordmark } from "./Wordmark";
-import { Swatch, teamStyle } from "./teamStyle";
+import { Swatch } from "./Swatch";
+import { teamStyle } from "./teamStyle";
 
 const QR_FG = "#0A1B66";
 const QR_BG = "#F3F8FF";
@@ -210,7 +211,7 @@ function TeamCard({ s, id }: { s: PublicSnapshot; id: TeamId }) {
   const mine = f?.tries[id];
   const faceTag = !f ? "" : f.winner === id ? "WINS THE FACE-OFF" : mine ? (mine === "hit" ? "HIT" : "MISSED") : f.buzzed === id ? "BUZZED FIRST" : faceOffTurn(f) === id ? "ANSWERS NEXT" : "";
   const faceActive = !!f && (f.winner === id || faceOffTurn(f) === id);
-  const tag = faceTag || (onBoard ? "ON THE BOARD" : stealing ? "STEALING" : won ? `ROUND +${won.amount}` : "");
+  const tag = faceTag || (onBoard ? "PLAYING" : stealing ? "STEALING" : won ? `ROUND +${won.amount}` : "");
   return (
     <div className={`team ${onBoard || stealing || faceActive ? "team--active" : ""}`} style={teamStyle(t.color)}>
       <span className="team__tab" aria-hidden="true" />

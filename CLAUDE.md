@@ -9,6 +9,8 @@ Read `BUILD_SPEC.md` for the original brief, and `README.md` for the current ope
 - Prefer direct Air Jam reuse. Choose one state authority and test the actual host/controller flow.
 - Keep real answer packs private to the moderator and publish only allowlisted public state.
 - The game is in person and verbally hosted (tech lead, 4 Oct): the moderator console and projector board are the product. Physical buzzers are the default and need no phones. Phones are optional phone buzzers only, one paired phone per team; crowd-assist polls were retired. Team size must never depend on the phone connection limit.
+- Teams are named by colour (Team Red, Blue, Yellow, Green, Black, White): an explicit `color` on each engine team, shown consistently on the console, the projector and buzzer phones, never guessed from the A/B slot. An identity correction never touches scores or the round.
+- The events team's answers are the real event pack. Score `count` (workbook Points), keep `votes` and column-G `notes` beside it (moderator only), and number questions as the workbook does. Never commit, bundle or serve the pack: it lives in git-ignored `private/` and in the moderator's browser storage.
 - Prevent duplicate reveals, presses, and awards. Keep local host play usable without the relay.
 - Run focused checks and a full match. Report unrun and physical-device checks honestly.
 - Keep optional extensions separate from the baseline. Do not add a platform or elaborate recovery service without an observed need.

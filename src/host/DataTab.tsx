@@ -7,8 +7,6 @@ import { ConfirmButton } from "./ConfirmButton";
 import { download } from "./persist";
 import type { HostGame } from "./useHostGame";
 
-type Report = { ok: true; warnings: string[]; text: string } | { ok: false; errors: string[] } | null;
-
 /** The fast way to load the events team's results: paste rows copied from a spreadsheet, check them, load them. */
 function SheetPanel({ g }: { g: HostGame }) {
   const [text, setText] = useState("");

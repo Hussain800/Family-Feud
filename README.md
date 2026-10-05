@@ -10,8 +10,9 @@ Host-led Family Feud for the GDG on Campus UOBD event *hello, world!* (Tue 6 Oct
 
 The app has two screens, a private **moderator console** and a public **projector board**. Phones are optional: an off-by-default phone-buzzer mode gives one paired phone per team, pending Rayyan's final decision. Team size never depends on phones.
 
-**Status: playable and tested in a browser simulation; not yet event-ready.**
-- The survey results arrive on the evening of 5 Oct, so only the three clearly labelled demo questions have been played.
+**Status: release candidate for Tuesday 6 Oct, tested in a browser simulation; not yet event-ready.**
+- The events team's workbook (14 questions, 73 answers) is converted to a private event pack and has been played end to end. It is not in this repository: it has to be loaded into the browser on the event laptop ([Survey data](#survey-data)).
+- Teams are chosen by colour: Team Red, Blue, Yellow, Green, Black or White.
 - No venue projector, venue Wi-Fi, speakers or real buzzer phones have been tried.
 
 See [Verification](#verification).
@@ -40,6 +41,8 @@ The console's header shows whether the projector is open and whether its sound i
 | `pnpm run typecheck` / `pnpm run lint` | Types and lint |
 | `pnpm run e2e` | A complete physical-buzzer game with the relay unreachable (needs `pnpm run dev` and Chrome) |
 | `pnpm run e2e:guide` | The quick guide: offer, Skip, replay, keyboard, no effect on the game |
+| `pnpm run e2e:event` | The rehearsal: a three-round match with the private event pack, then Yellow/Green, Black/White and White/Black (skips itself if `private/event-pack.json` is missing; `VIEW=1366x768` for the small size) |
+| `python scripts/workbook_to_pack.py <workbook.xlsx>` | Converts the events team's workbook into `private/event-pack.json` and checks all 73 rows against their source cells |
 | `pnpm run e2e:phones` | Phone buzzers: two phones, pairing, a full face-off, an impostor, stale and duplicate presses, a drop |
 | `pnpm run e2e:faceoff` | Face-off rules: taps, corrections, misses, the hosts' call, play or pass, skipping |
 | `pnpm run e2e:failures` | Relay down, storage failing, rejected import, answer editor, preview, projector sound, odd URLs |
@@ -71,7 +74,7 @@ During a round the console shows:
 
 Keys: `1`–`9` and `0` reveal answers 1–10, `X` wrong answer, `U` undo. Keys do nothing while you are typing in a box.
 
-1. **Live**: type the two team names and press **Start** on a question (Question 1 to 16; a question without results says *No results yet* and can only be previewed).
+1. **Live**: choose the two teams under **Teams** (**First team**, **Second team**: six colours each; a colour one team has is greyed out for the other) and press **Start** on a question. With the event pack that is Question 1 to 14. A browser with no event pack shows *No event questions on this laptop yet* instead of a question list.
 2. **Show the board** once the presenters have read the question.
 3. **Start the face-off.**
    - Tap **Team X buzzed first** for whichever buzzer the presenters name. A buzz only decides who answers first.
@@ -81,8 +84,8 @@ Keys: `1`–`9` and `0` reveal answers 1–10, `X` wrong answer, `U` undo. Keys 
 4. Choose **Team X plays** or **Team X passes**.
 5. The team answers out loud, one by one. Press **Reveal** for a match (the tile flips over on the projector, with a bell). Press **Wrong answer** for a miss (a big red X and a buzzer).
 6. The third wrong answer opens the **steal**: the other team gets one guess. **Reveal** if it is right (they take the round), **Wrong answer** if not.
-7. **Give N points to Team X** (once), then **Next question**. Reveal the rest for fun afterwards; it never changes a score.
-8. After the last round the projector shows the winner. **Set up the next two teams** clears the names and scores and keeps the answers. Questions already played are tagged *Used in an earlier game* so the next pair gets fresh ones.
+7. **Give N points to Team X** (once; a fast double-click awards once, never twice, but its second click also lands on **Next question**), then **Next question**. Reveal the rest for fun afterwards; it never changes a score.
+8. After the last round the projector shows the winner. Under **Next teams**, choose the next two colours and confirm: the scores and the round reset, the answers stay, and questions already played are tagged *Used in an earlier game* so the next pair gets fresh ones. **Setup → Game → Correct a team's colour** fixes a wrongly chosen colour without touching scores, the round or the buzzers.
 
 Also available:
 - **Skip the face-off**, then pick who plays first.
@@ -112,8 +115,8 @@ Every state is one centred composition on the ice, with the club's four colours 
 
 **GDG colours** follow the club's own rules:
 - The official mark (yellow, red, blue, and black, drawn in frost on blue so it stays visible) and FAMILY FEUD's code brackets, drawn as the mark's coloured chevrons, sit straight on the ice with no white plates. The *hello, world!* guide keeps the Google colours off the ice, so this is a deliberate exception chosen for the game.
-- Each team keeps one fixed club colour everywhere, on the projector and the console: Team A yellow, Team B green.
-- Red means a wrong answer and nothing else.
+- **Team colours** (Rayyan, 5 Oct): the two teams are Team Red, Blue, Yellow, Green, Black or White. The colour is explicit metadata on each team, shown as a badge, a top tab and a card border on the projector, the console and a buzzer phone, always beside the written name. Black gets a light outline on the cobalt, White a dark one on frost, and Blue a frost one against the cobalt. **PLAYING** and **STEALING** labels mark control, so colour is never the only signal. A game saved before colours existed keeps its names and scores, shows a neutral accent, and can be given colours in Setup.
+- Red as a team colour is a badge, never a full screen. A wrong answer is still the big red X square with its white border and harsh buzzer.
 
 Effects:
 - Answers flip over with a bell.
@@ -138,7 +141,7 @@ Rayyan has not yet decided between physical and phone buzzers, so this mode is b
 2. Each phone holder types their team's **4-digit code**. The codes are shown only on the console, so read each code to its own team only.
 3. During the face-off press **Open phone buzzers**. The first press counts and becomes the same "Team X buzzed first" a tap makes. The other phone shows *Locked out*.
 
-**Reset and reopen** handles a dispute, and the tap buttons still work as the presenters' override. **New code / Unpair** forgets a phone. **Set up the next two teams** always makes new codes, so the last pair's phones control nothing. Switching back to physical buzzers keeps the game and discards any press still in flight.
+**Reset and reopen** handles a dispute, and the tap buttons still work as the presenters' override. **New code / Unpair** forgets a phone. Starting the **next teams** always makes new codes, so the last pair's phones control nothing. Choosing a colour never pairs a phone. Switching back to physical buzzers keeps the game and discards any press still in flight.
 
 Honest limits:
 - **Timing:** the projector says *RECEIVED 0.84 S AFTER THE BUZZERS OPENED*. That is when the press reached the laptop, including network delay. It is arrival order, not proof of who physically pressed first. Times from different phones are never compared.
@@ -152,29 +155,44 @@ Honest limits:
 
 ## Survey data
 
-The 16 supplied questions are fixed (`data/templates/event_questions.pending.json`). Real answers are never committed or bundled; they live in the moderator's browser storage only.
+The events team's answers came as a workbook, `family_feud_board.xlsx`: one sheet, **14 questions, 73 answers, 32 respondents**. They are the event data. They are never committed, bundled or served: they live in a private pack file and in the moderator's browser storage.
 
-Ask the events team for one row per answer: **question number, answer, number of students who said it**, plus an optional column of other wordings to accept. Then use **Setup → Survey results**:
+**Points are not votes.** Each answer has **Votes** (how many of the 32 said it) and **Points** (`ROUND(votes / 32 * 100)`, rounded half up, so 4 votes is 13). The game reveals, pots and awards **Points** only. Votes are shown to the moderator beside each answer and checked against the respondent count, never scored. Retained answers need not add up to 100, and nothing is normalised. Equal points keep their source order (question 8 has two 25-point answers). Column G ("what people wrote") is kept as moderator-only guidance under **Counted as** on each answer; it is not an accepted alias, and the hosts judge spoken answers.
 
-- **Paste results from a spreadsheet** (the fast way):
-  1. Paste the rows (or choose a CSV).
-  2. Click **Check these rows**. Errors are listed by line and nothing changes.
-  3. Read the preview.
-  4. Click **Load these results**.
+**The event pack has its own numbering.** The workbook's questions are `w01` to `w14` and read as Question 1 to 14. They are never matched to the old 16-question template by number (workbook Question 6 is the Dubai summer, not the old Question 6). The two template questions the workbook does not have are simply not in the picker. A pack is either the q01 to q16 template or its own set, never a mix.
 
-  Questions already loaded stay unless you paste them again, and the previous answers are kept as a recoverable copy.
-- **Type or correct one question's answers**: the answer editor.
-- **Advanced: import a pack file (JSON)**: the bundled structure.
+### Making and loading the private pack
+
+On the machine that has the workbook (needs Python with `openpyxl`):
+
+```bash
+python scripts/workbook_to_pack.py "C:/path/to/family_feud_board.xlsx"
+```
+
+This writes `private/event-pack.json` (the `private/` folder is git-ignored) and checks all 73 rows against their source cells, plus the 14 answer counts and points totals. The workbook is only read.
+
+**On the event laptop, once, in the browser and at the address that will run the event** (the Render address or `localhost:5173`; storage is per address, so loading it in another browser, profile or address does not load it here):
+1. Open `/host`. It says *No event questions on this laptop yet*. Click **Load the event pack in Setup**.
+2. Under **Survey results**, **Import the event pack**: choose `event-pack.json`.
+3. The console reports *Event pack checked: 14 questions, 73 answers*. Nothing has changed yet. Click **Load this pack**, then **Confirm**.
+4. The pack line reads *Event pack · 14 questions, 73 answers*, and **Live** lists Question 1 to 14 with no DEMO label.
+5. Click **Export pack** if you want a second private copy. Keep every copy off the public repository.
+
+Loading replaces the question set in that browser. The one before it is kept as a recoverable copy (**Restore previous pack**); a round in progress keeps its own answers; practice data never pushes the event pack out of that slot. **Load practice pack** shows **DEMO: INVENTED RESULTS** (console, projector, buzzer phones). The genuine event pack carries no demo label. Nothing loads by itself, and a browser without the pack never shows invented questions.
+
+### Other ways in
+
+The 16 template questions (`data/templates/event_questions.pending.json`) and the spreadsheet-paste and answer-editor tools in **Setup → Survey results** still work for a template pack. They are hidden while an event pack is loaded, because the event pack is read-only on screen: to change an answer, correct the workbook, convert it again and import the new file.
 
 The validator refuses bad data with specific errors and leaves the current game alone:
-- wording must match the supplied questions;
+- a template pack's wording must match the supplied questions; an event pack brings its own;
 - 1–10 answers per question;
-- counts must be positive whole numbers, never scaled to 100;
+- points and votes must be positive whole numbers; votes may not exceed the respondents, and in a single-response pack may not total more than them (points are never held to that);
 - duplicate labels and conflicting aliases are flagged.
 
 All text renders as plain text.
 
-`data/demo/demo_pack.json` holds invented practice answers for Questions 1, 3 and 10, ready for the rehearsal. **Load demo pack** shows **DEMO: INVENTED RESULTS** on the console and projector (and on buzzer phones), and the demo pack cannot be relabelled as real.
+`data/demo/demo_pack.json` holds invented practice answers for Questions 1, 3 and 10, ready for the rehearsal.
 
 ## Saving and recovery
 
@@ -213,19 +231,20 @@ Deployed by Hussain at `https://gdg-family-feud.onrender.com` (Render free plan,
 
 ## Verification
 
-Ran on 5 Oct 2026, Windows 11, headless Chrome via `playwright-core`, against `pnpm run dev`. Before the projector redesign, the same suites (197 checks) also passed against the deployed Render site. The redesign was pushed to `main` on 5 Oct (the version before it is tagged `pre-projector-redesign-2026-10-05`); re-run the suites against Render once it has redeployed.
+Ran on 5 to 6 Oct 2026, Windows 11, headless Chrome via `playwright-core`, against `pnpm run dev` on this laptop in fresh, isolated browser contexts (nothing touched any saved game). The team-colour and event-data release is a local commit on top of the pushed projector redesign (earlier state tagged `pre-final-release-2026-10-05`). The suites were last run against the deployed Render site before the projector redesign; that site has no private pack, so only the practice-pack suites can run there, and only after this release is pushed.
 
 **Run and passing:**
-- `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (111 unit tests) and `pnpm run build`.
+- `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (132 unit tests) and `pnpm run build`.
 - The browser suites (results below).
 
 | Suite | Checks | Covers |
 |---|---|---|
-| `e2e` | 46 | A complete physical-buzzer game with every realtime connection refused: face-off with the hosts' call, pass, reveals, three wrong answers (X, XX, XXX, then the steal banner), a missed steal, points, penalty and Undo, a projector reload, a console refresh and Resume, finishing, the next two teams. It also checks that nothing sent to the projector ever held an unrevealed answer, and that each effect fired once. |
+| `e2e:event` | 65 (at 1920×1080 and again at 1366×768) | **The rehearsal with the real pack**, through the console with the projector watching: the load-data state; the staged import (14 questions, 73 answers); three rounds (a cleared 7-answer board, a successful steal on the 6-answer board, a failed steal); face-off calls and a corrected call; Play and Pass; Undo of a strike and of a reveal; a manual correction and its Undo; a double click on Award; refreshes of console and projector mid-round and mid-steal; expected awards worked out from the Points column (round 1: 87 to Red; round 2: 54 to Blue; round 3: 67 to Blue; −10 correction to Red; final Red 77, Blue 121, Team Blue wins) against the actual scores; the projector never sent an unrevealed answer, a note or a vote; Next teams in Yellow/Green, Black/White and White/Black with the pack and the used-question tags intact. |
+| `e2e` | 48 | A complete physical-buzzer game with every realtime connection refused: face-off with the hosts' call, pass, reveals, three wrong answers (X, XX, XXX, then the steal banner), a missed steal, points, penalty and Undo, a projector reload, a console refresh and Resume, finishing, the next two teams. It also checks that nothing sent to the projector ever held an unrevealed answer, and that each effect fired once. |
 | `e2e:guide` | 28 | First-visit offer, Skip remembered, Done, replay, Escape, Tab kept inside, focus returned, popovers inside 1366×768. Mid-round, keys and clicks change nothing and the projector's revision never moves; no offer during a resumed game. An empty autosave still gets the offer. |
 | `e2e:phones` | 40 | Two phone pages pair with codes, the first press locks, the other phone is locked out, honest timing labels, reset, a double tap counted once. An impostor takes a seat but is refused, as are host-channel spoofs, stale, duplicate and unpaired presses. Also: a drop shown in 8 s, switching to physical, next teams. |
 | `e2e:faceoff` | 27 | Taps, corrections, misses, both missing, the hosts overruling the survey, play or pass, skipping |
-| `e2e:failures` | 37 | Relay down, storage failing, rejected import, editor, preview, projector sound status. The projector settings panel: it hides when idle, hidden controls catch no clicks, a key brings it back, and it stays while keyboard focus is inside. Odd URLs. |
+| `e2e:failures` | 38 | Relay down, storage failing, rejected import, editor, preview, projector sound status. The projector settings panel: it hides when idle, hidden controls catch no clicks, a key brings it back, and it stays while keyboard focus is inside. Odd URLs. |
 | `e2e:extras` | 16 | Tie-break, timer |
 | `e2e:paste` | 8 | Spreadsheet paste |
 
@@ -240,7 +259,7 @@ Ran on 5 Oct 2026, Windows 11, headless Chrome via `playwright-core`, against `p
   - **Flip:** 0°, 88°, 156°, 175°, then 180° over about 450 ms.
 - **Not provable headlessly:** a fullscreen resize. Headless Chrome reports fullscreen but keeps the window size. The stage re-fits on any resize, as checked at five sizes, but confirm it on the venue projector.
 
-Screenshots are in `docs/screenshots/`: `before-*` for the old console, `after-*`, `physical-*`, `guide-*` and `phone-*` for the new one.
+Screenshots are in `docs/screenshots/`: `before-*` for the old console, `after-*`, `physical-*`, `guide-*` and `phone-*` for the new one, and `colours-*` for the four team-colour pairs (Red/Blue, Yellow/Green, Black/White, White/Black), taken from the invented practice pack. Screenshots made with the real pack go to `private/rehearsal/` and are never committed.
 
 **Not run** (needs people, devices or the venue):
 - real phones on venue Wi-Fi (phone mode was tested with emulated phones and raw sockets on this laptop);

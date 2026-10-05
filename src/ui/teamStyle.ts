@@ -11,8 +11,3 @@ export function teamStyle(color: string | null | undefined): CSSProperties {
   const p = TEAM_PRESETS[color];
   return { "--tab": p.fill, "--tab-ink": p.ink, "--tab-edge-dark": p.edgeOnDark ?? "transparent", "--tab-edge-light": p.edgeOnLight ?? "transparent" } as CSSProperties;
 }
-
-/** A small colour badge. Always sits beside the written team name: colour is never the only signal. */
-export function Swatch({ color }: { color: string | null | undefined }) {
-  return <i className="swatch" style={teamStyle(color)} aria-hidden="true" />;
-}

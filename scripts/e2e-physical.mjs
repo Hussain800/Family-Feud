@@ -66,22 +66,18 @@ check("physical mode: the projector lobby has no QR code or room code", (await s
 await snap(host, "physical-1-console-empty-1920x1080");
 
 await host.click("role=tab[name='Setup']");
-await host.click('button:has-text("Load demo pack")');
+await host.click('button:has-text("Load practice pack")');
 await host.click("button:has-text('Confirm')");
 check("demo results stay labelled on the console", /DEMO: INVENTED RESULTS/.test(await text(host, ".alerts")));
 await host.click("role=tab[name='Live']");
-// typed the way a person does: one box, then click straight into the other
-await host.locator(".names input").nth(0).click();
-await host.keyboard.press("Control+A");
-await host.keyboard.type("Foxes");
-await host.locator(".names input").nth(1).click();
-check("clicking from one team-name box to the other keeps the cursor there", await host.evaluate(() => document.activeElement === document.querySelectorAll(".names input")[1]));
-await host.keyboard.press("Control+A");
-await host.keyboard.type("Owls");
-await host.keyboard.press("Tab");
+// team identity is a colour choice: two labelled pickers, Team Red and Team Blue
+check("both teams start unchosen, with a plain prompt to choose", /not chosen yet/.test(await text(host, "[aria-label='Teams']")) && /Choose both teams/.test(await text(host, "[aria-label='Teams']")));
+await host.locator('input[name="live-A"][value="red"]').check({ force: true });
+check("a colour one team has is greyed out for the other, with the reason on screen", await host.locator('input[name="live-B"][value="red"]').isDisabled() && /needs its own colour/.test(await text(host, "[aria-label='Teams']")));
+await host.locator('input[name="live-B"][value="blue"]').check({ force: true });
 await sleep(200);
-check("both names are saved", JSON.stringify(await host.locator(".score__name").allInnerTexts()) === '["Foxes","Owls"]', JSON.stringify(await host.locator(".score__name").allInnerTexts()));
-check("the projector shows the team names and the demo label", /FOXES/i.test(await text(screen, ".lobby__teams")) && /DEMO: INVENTED RESULTS/.test(await text(screen, ".demo-banner")), `${await text(screen, ".lobby__teams")} / ${await text(screen, ".demo-banner").catch(() => "no banner")}`);
+check("both identities are saved as Team Red and Team Blue", JSON.stringify(await host.locator(".score__name").allInnerTexts()) === '["Team Red","Team Blue"]', JSON.stringify(await host.locator(".score__name").allInnerTexts()));
+check("the projector shows the team names, their colour badges and the demo label", /TEAM RED/i.test(await text(screen, ".lobby__teams")) && (await screen.locator(".lobby__teams .swatch").count()) === 2 && /DEMO: INVENTED RESULTS/.test(await text(screen, ".demo-banner")), `${await text(screen, ".lobby__teams")} / ${await text(screen, ".demo-banner").catch(() => "no banner")}`);
 check("questions read as Question N, with no category labels", /Question 1\b/.test(await text(host, ".qlist")) && !/\bq\d\d\b|STUDENT LIFE|EVERYDAY LIFE|PHONES & TECH|Student Life|Everyday Life/.test(await text(host, ".live__main")));
 await spy();
 
@@ -95,26 +91,26 @@ check("the console lists every private answer with its points before any reveal"
 check("hidden answers are not on the projector", !/Talking to friends|Scrolling|Eating/.test(await text(screen, ".board")));
 await host.click("button:has-text('Start the face-off')");
 await screen.waitForSelector(".fo");
-await host.click("button:has-text('Owls buzzed first')");
+await host.click("button:has-text('Team Blue buzzed first')");
 await sleep(250);
-check("a tap records the hosts' call on who buzzed first", /OWLS BUZZED FIRST/.test(await text(screen, ".fo__text")));
+check("a tap records the hosts' call on who buzzed first", /TEAM BLUE BUZZED FIRST/.test(await text(screen, ".fo__text")));
 await host.keyboard.press("2"); // Sleeping 16: on the board but not the top answer
 await sleep(300);
-check("a lower face-off answer does not end the face-off: the other player answers", /Foxes/.test(await text(host, ".step__text")) && /answers next/.test(await text(host, ".step__text")) && /FOXES: YOUR ANSWER/.test(await text(screen, ".fo__text")));
+check("a lower face-off answer does not end the face-off: the other player answers", /Team Red/.test(await text(host, ".step__text")) && /answers next/.test(await text(host, ".step__text")) && /TEAM RED: YOUR ANSWER/.test(await text(screen, ".fo__text")));
 let c0 = await cues();
 await host.keyboard.press("x");
 await sleep(300);
 check("a face-off miss shows one red X and costs no strike", (await flashes()).some((f) => /flash--x\|X$/.test(f)) && (await screen.locator(".strike--on").count()) === 0);
 check("the face-off miss sounded once", (await cues()) === c0 + 1 && (await lastCue()) === "faceoffMiss");
-check("the console asks for the hosts' call and shows the survey's suggestion", /Over to the hosts/.test(await text(host, ".step")) && /By the survey, Owls wins/.test(await text(host, ".step")));
+check("the console asks for the hosts' call and shows the survey's suggestion", /Over to the hosts/.test(await text(host, ".step")) && /By the survey, Team Blue wins/.test(await text(host, ".step")));
 check("the projector waits for the hosts, without naming the survey's pick", /OVER TO THE HOSTS/.test(await text(screen, ".fo__text")));
 await snap(host, "physical-2-console-hosts-call-1920x1080");
-await host.click("button:has-text('Owls wins the face-off')");
+await host.click("button:has-text('Team Blue wins the face-off')");
 await sleep(300);
 check("the hosts' call starts play or pass", /PLAY OR PASS/.test(await text(screen, ".fo__text")));
-await host.click("button:has-text('Owls passes')");
+await host.click("button:has-text('Team Blue passes')");
 await sleep(300);
-check("pass: Foxes play, and the projector shows the banner", /Foxes/.test(await text(host, ".score__team.is-on")) && (await flashes()).some((f) => /OWLS PASSES/.test(f)));
+check("pass: Team Red play, and the projector shows the banner", /Team Red/.test(await text(host, ".score__team.is-on")) && (await flashes()).some((f) => /TEAM BLUE PASSES/.test(f)));
 check("the face-off answer sits in the pot once", (await pot()) === "16");
 
 c0 = await cues();
@@ -135,24 +131,24 @@ await sleep(1300);
 const fl = await flashes();
 check("three wrong answers drew X, XX, XXX and then the steal banner", fl.filter((f) => /flash--x/.test(f)).map((f) => f.split("|")[1]).slice(-3).join(",") === "X,XX,XXX" && fl.some((f) => /STEAL!/.test(f)), JSON.stringify(fl));
 check("the third X and the steal sounded once each", (await cues()) === c0 + 2 && (await lastCue()) === "steal");
-check("the console says Owls can steal", /Owls/.test(await text(host, ".step__text")) && /steal/.test(await text(host, ".step__text")));
+check("the console says Team Blue can steal", /Team Blue/.test(await text(host, ".step__text")) && /steal/.test(await text(host, ".step__text")));
 await snap(screen, "physical-4-projector-steal-1920x1080");
 await host.click("button:has-text('Wrong answer')");
 await sleep(400);
-check("a missed steal shows the X and Foxes keep the points", /Foxes/.test(await text(host, ".step__text")) && /keeps the points/.test(await text(host, ".step__text")) && (await lastCue()) === "stealMiss");
-await host.click("button:has-text('Give 39 points to Foxes')");
+check("a missed steal shows the X and Team Red keep the points", /Team Red/.test(await text(host, ".step__text")) && /keeps the points/.test(await text(host, ".step__text")) && (await lastCue()) === "stealMiss");
+await host.click("button:has-text('Give 39 points to Team Red')");
 await sleep(400);
-check("points go to Foxes once, with a banner", JSON.stringify(await scores()) === "[39,0]" && (await flashes()).some((f) => /FOXES \+39/.test(f)));
+check("points go to Team Red once, with a banner", JSON.stringify(await scores()) === "[39,0]" && (await flashes()).some((f) => /TEAM RED \+39/.test(f)));
 await host.click("button:has-text('Give 39 points')").catch(() => {});
 check("there is no second award to give", JSON.stringify(await scores()) === "[39,0]" && (await host.locator("button:has-text('Give 39 points')").count()) === 0);
 
 // corrections and Undo
 c0 = await cues();
 await host.click("button:has-text('Adjust score')");
-await host.click(".adjust__team:has-text('Owls')");
+await host.click(".adjust__team:has-text('Team Blue')");
 await host.click(".adjust__amounts button:has-text('5') >> nth=0"); // -5
 await sleep(300);
-check("Adjust score takes 5 off Owls as a penalty", JSON.stringify(await scores()) === "[39,-5]");
+check("Adjust score takes 5 off Team Blue as a penalty", JSON.stringify(await scores()) === "[39,-5]");
 await host.click("button:has-text('Undo')");
 await sleep(300);
 check("Undo reverses the penalty, and the projector stays quiet", JSON.stringify(await scores()) === "[39,0]" && (await cues()) === c0);
@@ -173,15 +169,15 @@ await spy();
 
 await host.click("button:has-text('Next question')");
 await screen.waitForSelector(".final");
-check("between rounds the projector shows the scores", /Foxes leads/.test(await text(screen, ".final")));
+check("between rounds the projector shows the scores", /Team Red leads/.test(await text(screen, ".final")));
 
 // ---------- round 2: skip the face-off, end early, then a host refresh and resume ----------
 await q("Question 3").locator("button:has-text('Start')").click();
 await host.click("button:has-text('Show the board')");
 await host.click("button:has-text('Skip the face-off')");
-await host.click("button:has-text('Owls plays first')");
+await host.click("button:has-text('Team Blue plays first')");
 await sleep(200);
-check("skipping the face-off lets the host pick who plays", /Owls/.test(await text(host, ".score__team.is-on")));
+check("skipping the face-off lets the host pick who plays", /Team Blue/.test(await text(host, ".score__team.is-on")));
 await host.keyboard.press("1"); // Traffic 26
 await sleep(300);
 await host.reload();
@@ -193,21 +189,24 @@ await sleep(500);
 check("resume restores the revealed answer, pot and scores", /Traffic/.test(await text(screen, ".tile--shown")) && (await pot()) === "26" && JSON.stringify(await scores()) === "[39,0]");
 await host.click("button:has-text('End round early')");
 await host.click("button:has-text('Confirm')");
-await host.click("button:has-text('Give 26 points to Owls')");
+await host.click("button:has-text('Give 26 points to Team Blue')");
 await sleep(300);
-check("Owls get 26", JSON.stringify(await scores()) === "[39,26]");
+check("Team Blue get 26", JSON.stringify(await scores()) === "[39,26]");
 await host.click("button:has-text('Next question')");
 await host.click("button:has-text('Finish the game now')");
 await host.click("button:has-text('Confirm')");
 await screen.waitForSelector(".final");
-check("finishing early shows the winner on both screens", /Foxes wins/.test(await text(host, ".over")) && /Foxes wins/.test(await text(screen, ".final")));
+check("finishing early shows the winner on both screens", /Team Red wins/.test(await text(host, ".over")) && /Team Red wins/.test(await text(screen, ".final")));
 await snap(screen, "physical-6-projector-final-1920x1080");
 
 // ---------- the next pair of teams ----------
-await host.click("button:has-text('Set up the next two teams')");
+check("next teams cannot start until both colours are chosen", await host.locator(".over .next-teams .bi-button--lg, .over .next-teams button:has-text('Choose both')").first().isDisabled());
+await host.locator('input[name="over-A"][value="black"]').check({ force: true });
+await host.locator('input[name="over-B"][value="white"]').check({ force: true });
+await host.click("button:has-text('Start the next game: Team Black vs Team White')");
 await host.click("button:has-text('Confirm')");
 await sleep(300);
-check("next teams: fresh names, scores back to 0", JSON.stringify(await host.locator(".names input").evaluateAll((els) => els.map((e) => e.value))) === '["Team A","Team B"]' && /TEAM A/i.test(await text(screen, ".lobby__teams")) && /^0$/.test(await text(host, ".score__num")));
+check("next teams: Team Black and Team White, scores back to 0", JSON.stringify(await host.locator(".score__name").allInnerTexts()) === '["Team Black","Team White"]' && /TEAM BLACK/i.test(await text(screen, ".lobby__teams")) && /^0$/.test(await text(host, ".score__num")));
 check("next teams keep the answers: 3 questions still ready", (await host.locator(".q button:has-text('Start')").count()) === 3);
 check("questions the last teams played are marked, and still playable", (await q("Question 1").locator(".tag").innerText()) === "Used in an earlier game" && (await q("Question 1").locator("button:has-text('Start')").isEnabled()));
 await snap(host, "physical-7-console-next-teams-1920x1080");

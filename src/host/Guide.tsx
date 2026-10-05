@@ -132,11 +132,11 @@ function guideSteps(phoneMode: boolean): GuideStep[] {
       body: <p>This console is private: only you see the answers. <b>Open projector</b> opens the audience screen. Move it to the projector display, make it fullscreen, and click <b>Enable sound</b> there.</p>,
     },
     {
-      targets: ["questions", "setup-tab"],
+      targets: ["teams", "questions", "setup-tab"],
       title: "Prepare the game",
       body: (
         <p>
-          Type the team names, then press <b>Start</b> on a question. <b>Setup</b> holds the survey results, backups and buzzer choice.{" "}
+          Load the event pack once in <b>Setup</b>, under Survey results. Then choose each team&apos;s colour (Team Red, Team Blue, and so on) and press <b>Start</b> on a question. Setup also holds backups and the buzzer choice.{" "}
           {phoneMode ? "Phone buzzers are on: pair one phone per team in Setup, under Buzzers." : "Physical buzzers need no phones."}
         </p>
       ),
@@ -168,7 +168,7 @@ function guideSteps(phoneMode: boolean): GuideStep[] {
     {
       targets: ["next", "adjust"],
       title: "Finish the round",
-      body: <p>The box under the question always says what comes next: the steal, <b>Give points</b>, then <b>Next question</b>. After a game, <b>Set up the next two teams</b>. Use <b>Adjust score</b> for penalties and corrections.</p>,
+      body: <p>The box under the question always says what comes next: the steal, <b>Give points</b>, then <b>Next question</b>. After a game, choose the next two colours under <b>Next teams</b>. Use <b>Adjust score</b> for penalties and corrections.</p>,
     },
   ];
 }

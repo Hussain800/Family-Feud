@@ -100,7 +100,7 @@ const inView = async (host) => {
   await screen.click("button:has-text('Continue muted')");
   await host.click(".offer button:has-text('Skip')");
   await host.click("role=tab[name='Setup']");
-  await host.click('button:has-text("Load demo pack")');
+  await host.click('button:has-text("Load practice pack")');
   await host.click("button:has-text('Confirm')");
   await host.click("role=tab[name='Live']");
   await host.locator(".q button:has-text('Start')").first().click();
@@ -152,8 +152,11 @@ const inView = async (host) => {
 // ---------- an empty autosave is not a match ----------
 {
   const { ctx, host } = await fresh();
-  await host.locator(".names input").first().fill("Foxes");
-  await host.locator(".names input").first().press("Enter");
+  await host.click("role=tab[name='Setup']");
+  await host.click('button:has-text("Load practice pack")');
+  await host.click("button:has-text('Confirm')");
+  await host.click("role=tab[name='Live']");
+  await host.locator('input[name="live-A"][value="red"]').check({ force: true });
   await host.evaluate(() => localStorage.removeItem("ff.guide.v1"));
   await host.reload();
   await sleep(800);

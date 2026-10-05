@@ -1,7 +1,8 @@
 import { useState } from "react";
 import type { TeamId } from "../engine/types";
 import { TEAM_COLORS, TEAM_PRESETS, teamLabel, type TeamColor } from "../teams";
-import { Swatch, teamStyle } from "../ui/teamStyle";
+import { Swatch } from "../ui/Swatch";
+import { teamStyle } from "../ui/teamStyle";
 import { ConfirmButton } from "./ConfirmButton";
 import type { HostGame } from "./useHostGame";
 

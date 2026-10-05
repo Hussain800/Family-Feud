@@ -20,7 +20,7 @@ const open = async (page) => {
 };
 const loadDemo = async (page) => {
   await page.click("role=tab[name='Setup']");
-  await page.click("button:has-text('Load demo pack')");
+  await page.click("button:has-text('Load practice pack')");
   await page.click("button:has-text('Confirm')");
   await page.click("role=tab[name='Live']");
 };
@@ -96,17 +96,22 @@ await s3.goto(BASE + "/screen/local");
 await h3.click("role=tab[name='Setup']");
 const status = () => text(h3, "#results-h + .sub");
 const before = await status();
-await h3.click("summary:has-text('Advanced: import a pack file')");
+await h3.locator("details.more:has(summary:has-text('Import the event pack'))").evaluate((d) => { d.open = true; });
 await h3.fill('[aria-label="Pack JSON"]', JSON.stringify({ schemaVersion: 1, packId: "x", title: "Rewritten", purpose: "event", questions: [{ id: "q01", category: "Student Life", prompt: "CHANGED WORDING", status: "ready", survey: { source: "s", respondents: null, responseMode: "unconfirmed", collectedAt: null, note: "" }, answers: [{ id: "a", rank: 1, text: "A", count: 0, aliases: [] }] }] }));
-await h3.click("button:has-text('Validate and load')");
+await h3.click("button:has-text('Check pasted text')");
 const rejected = await text(h3, ".alert:has-text('Import rejected')");
 check("IMPORT: invalid data is rejected with specific errors", /prompt differs/.test(rejected) && /count must be a positive integer/.test(rejected), rejected.slice(0, 200));
 check("IMPORT: the answers are unchanged after a rejected import", (await status()) === before && !(await text(h3)).includes("Rewritten"));
 await h3.fill('[aria-label="Pack JSON"]', "{ not json");
-await h3.click("button:has-text('Validate and load')");
+await h3.click("button:has-text('Check pasted text')");
 check("IMPORT: broken JSON is reported, not thrown", /not valid JSON/i.test(await text(h3, ".alert:has-text('Import rejected')")));
 
-// a question with no results previews with six empty lines and cannot start
+// a question with no results previews with six empty lines and cannot start (it needs some loaded results to list questions at all)
+check("EMPTY: a browser with no results lists no questions and says to load the event pack", await (async () => { await h3.click("role=tab[name='Live']"); return /No event questions on this laptop yet/.test(await text(h3, ".live__main")) && (await h3.locator(".qlist").count()) === 0; })());
+await h3.click("role=tab[name='Setup']");
+await h3.fill("textarea[aria-label='Spreadsheet rows']", ["1\tScrolling\t12", "1\tSleeping\t8"].join("\n"));
+await h3.click("button:has-text('Check these rows')");
+await h3.click("button:has-text('Load these results')");
 await h3.click("role=tab[name='Live']");
 await row(h3, 8).locator("button:has-text('Preview')").click();
 await sleep(500);
@@ -177,7 +182,7 @@ await playSkippingFaceOff(h3, 5);
 check("EDITOR: the new question plays, and the projector shows two hidden tiles", (await s3.locator(".tile").count()) === 2 && !/Cram|Panic/.test(await text(s3, ".board")));
 check("EDITOR: points keep their supplied values (not scaled to 100)", /40/.test(await text(h3, ".answers")) && /30/.test(await text(h3, ".answers")));
 await h3.click("role=tab[name='Setup']");
-await h3.click("button:has-text('Load demo pack')");
+await h3.click("button:has-text('Load practice pack')");
 await h3.click("button:has-text('Confirm')");
 await h3.click("summary:has-text('Type or correct one question')"); // the Setup tab was re-opened, so the section is closed again
 check("EDITOR: the demo pack is read-only so it cannot be relabelled as real", /read-only/.test(await text(h3)) && (await h3.locator("fieldset.editor[disabled]").count()) === 1);

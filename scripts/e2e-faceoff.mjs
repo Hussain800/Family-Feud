@@ -32,7 +32,7 @@ await screen.goto(`${BASE}/screen/local`);
 await screen.click("button:has-text('Continue muted')");
 await screen.waitForSelector(".lobby", { timeout: 10000 });
 await host.click("role=tab[name='Setup']");
-await host.click('button:has-text("Load demo pack")');
+await host.click('button:has-text("Load practice pack")');
 await host.click("button:has-text('Confirm')");
 await host.click("role=tab[name='Live']");
 
@@ -88,7 +88,7 @@ await snap(screen, "faceoff-3-play-or-pass");
 
 await host.click("button:has-text('Team B passes')");
 await sleep(300);
-check("pass: control goes to Team A and the room is told", /TEAM B PASSES/.test(await text(screen, ".mid__note")) && (await tags())[0] === "ON THE BOARD", `${await text(screen, ".mid__note")} ${JSON.stringify(await tags())}`);
+check("pass: control goes to Team A and the room is told", /TEAM B PASSES/.test(await text(screen, ".mid__note")) && (await tags())[0] === "PLAYING", `${await text(screen, ".mid__note")} ${JSON.stringify(await tags())}`);
 check("the face-off bar is gone once play starts", (await screen.locator(".fo").count()) === 0);
 
 await host.keyboard.press("2"); // Shawarma 19
@@ -131,7 +131,7 @@ await sleep(250);
 check("and correct their call before play or pass", /TEAM A WINS THE FACE-OFF/.test(await foText()));
 await host.click("button:has-text('Team A plays')");
 await sleep(250);
-check("play keeps control with the winner", /TEAM A PLAYS/.test(await text(screen, ".mid__note")) && (await tags())[0] === "ON THE BOARD");
+check("play keeps control with the winner", /TEAM A PLAYS/.test(await text(screen, ".mid__note")) && (await tags())[0] === "PLAYING");
 await host.click("button:has-text('End round early')");
 await host.click("button:has-text('Confirm')");
 await host.click("button:has-text('Give 39 points to Team A')");
@@ -143,7 +143,7 @@ await host.click("button:has-text('Show the board')");
 await host.click("button:has-text('Skip the face-off')");
 await host.click("button:has-text('Team B plays first')");
 await sleep(250);
-check("skip: the chosen team is on the board and play starts", (await tags())[1] === "ON THE BOARD" && (await screen.locator(".fo").count()) === 0, JSON.stringify(await tags()));
+check("skip: the chosen team is on the board and play starts", (await tags())[1] === "PLAYING" && (await screen.locator(".fo").count()) === 0, JSON.stringify(await tags()));
 await snap(host, "faceoff-4-host-console");
 
 await browser.close();

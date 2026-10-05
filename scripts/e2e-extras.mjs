@@ -27,7 +27,7 @@ await screen.goto(`${BASE}/screen/local`);
 await screen.click("button:has-text('Continue muted')");
 await screen.waitForSelector(".lobby");
 await host.click("role=tab[name='Setup']");
-await host.click('button:has-text("Load demo pack")');
+await host.click('button:has-text("Load practice pack")');
 await host.click("button:has-text('Confirm')");
 
 const startRound = async (n) => {

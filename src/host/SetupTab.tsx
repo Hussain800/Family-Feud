@@ -15,11 +15,15 @@ function GameSetup({ g }: { g: HostGame }) {
         <input className="input input--num" type="number" min={1} max={16} value={s.totalRounds} disabled={s.roundsPlayed > 0 || s.round !== null} onChange={(e) => g.act({ type: "NEW_MATCH", totalRounds: Math.max(1, Math.min(16, Number(e.target.value) || 3)) })} />
         {s.roundsPlayed > 0 && <span className="muted small">Fixed once a game has started.</span>}
       </label>
-      <h3 className="sub__h">Correct a team's colour</h3>
-      <TeamIdentity g={g} scope="setup" />
-      <p className="muted small">A correction only changes who is shown on the screens. Scores, the round and the buzzers are left exactly as they are.</p>
-      <h3 className="sub__h">Next two teams</h3>
-      <NextTeams g={g} scope="setup" />
+      <details className="more">
+        <summary>Correct a team&apos;s colour</summary>
+        <TeamIdentity g={g} scope="fix" />
+        <p className="muted small">A correction only changes who is shown on the screens. Scores, the round and the buzzers are left exactly as they are.</p>
+      </details>
+      <details className="more">
+        <summary>Next two teams</summary>
+        <NextTeams g={g} scope="next" />
+      </details>
       <div className="row">
         <ConfirmButton label="Restart with the same teams" confirmLabel="scores to 0" onConfirm={() => g.act({ type: "NEW_MATCH" })} className="bi-button host__btn host__btn--quiet" />
       </div>

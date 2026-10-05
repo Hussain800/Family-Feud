@@ -3,7 +3,8 @@ import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { TeamId } from "../engine/types";
 import { useFeudStore } from "../game/store";
-import { Swatch, teamStyle } from "../ui/teamStyle";
+import { Swatch } from "../ui/Swatch";
+import { teamStyle } from "../ui/teamStyle";
 
 /** This phone's pairing, held in memory only: a refreshed phone pairs again with a new code from the moderator. */
 type Me = { team: TeamId; token: string; gen: number };
