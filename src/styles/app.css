@@ -26,22 +26,17 @@ a { color: inherit; }
 .screen {
   --team-a: #FBBC04; --team-b: #34A853;
   --frame: rgba(243, 248, 255, 0.34); --well: rgba(10, 27, 102, 0.42);
-  position: absolute; inset: 0; padding: 92px 96px 60px; display: flex; flex-direction: column; overflow: hidden;
+  position: absolute; inset: 0; padding: 92px 96px 64px; display: flex; flex-direction: column; overflow: hidden;
   background-color: var(--cobalt);
   background-image:
     radial-gradient(ellipse 62% 54% at 50% 44%, rgba(127, 178, 255, 0.22), rgba(127, 178, 255, 0) 72%),
     radial-gradient(ellipse 115% 95% at 50% 50%, rgba(10, 27, 102, 0) 58%, rgba(10, 27, 102, 0.62) 100%);
 }
-/* a crisp frost frame inside the edge, with square corner marks */
-.screen::before { content: ""; position: absolute; inset: 26px; border: 1px solid rgba(243, 248, 255, 0.2); pointer-events: none; }
+/* no frame or corner marks: the stage is lit from inside, and its only edge detail is the club's four colours as a
+   flush rule on the bottom edge, in the order the mark reads left to right */
 .screen::after {
-  content: ""; position: absolute; inset: 20px; pointer-events: none;
-  background:
-    linear-gradient(var(--frost), var(--frost)) top left / 34px 3px no-repeat, linear-gradient(var(--frost), var(--frost)) top left / 3px 34px no-repeat,
-    linear-gradient(var(--frost), var(--frost)) top right / 34px 3px no-repeat, linear-gradient(var(--frost), var(--frost)) top right / 3px 34px no-repeat,
-    linear-gradient(var(--frost), var(--frost)) bottom left / 34px 3px no-repeat, linear-gradient(var(--frost), var(--frost)) bottom left / 3px 34px no-repeat,
-    linear-gradient(var(--frost), var(--frost)) bottom right / 34px 3px no-repeat, linear-gradient(var(--frost), var(--frost)) bottom right / 3px 34px no-repeat;
-  opacity: 0.7;
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; pointer-events: none;
+  background: linear-gradient(90deg, #FBBC04 0 25%, #EA4335 25% 50%, #4285F4 50% 75%, var(--frost) 75% 100%);
 }
 .demo-banner { position: absolute; left: 0; right: 0; top: 0; height: 34px; z-index: 6; display: grid; place-items: center; background: var(--frost); color: var(--cobalt-deep); font-family: var(--font-mono); font-size: 18px; letter-spacing: 0.22em; font-weight: 400; }
 .demo-banner--phone { position: static; height: auto; padding: 8px 12px; margin: 0 -16px 8px; font-size: 13px; }

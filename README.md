@@ -101,7 +101,7 @@ House rules (proposed, not set by the organisers):
 
 The projector uses a fixed 1920×1080 stage. It scales to any screen, centred, with even bars on other aspect ratios, so the layout never reflows or crops.
 
-Every state is one centred composition inside a frost frame:
+Every state is one centred composition on the ice, with the club's four colours as a thin rule on the bottom edge:
 - **Title card:** the club line, the cracked *hello, world!* wordmark (its fracture fades out before the text), a large FAMILY FEUD title plate, and the two teams with equal weight.
 - **Question introduction.**
 - **The framed answer board:**
