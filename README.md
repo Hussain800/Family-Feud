@@ -213,7 +213,7 @@ Deployed by Hussain at `https://gdg-family-feud.onrender.com` (Render free plan,
 
 ## Verification
 
-Ran on 5 Oct 2026, Windows 11, headless Chrome via `playwright-core`, against `pnpm run dev`. Before the projector redesign, the same suites (197 checks) also passed against the deployed Render site; the redesign itself has not been deployed.
+Ran on 5 Oct 2026, Windows 11, headless Chrome via `playwright-core`, against `pnpm run dev`. Before the projector redesign, the same suites (197 checks) also passed against the deployed Render site. The redesign was pushed to `main` on 5 Oct (the version before it is tagged `pre-projector-redesign-2026-10-05`); re-run the suites against Render once it has redeployed.
 
 **Run and passing:**
 - `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (111 unit tests) and `pnpm run build`.
