@@ -62,7 +62,7 @@ export function Scoreboard({ g }: { g: HostGame }) {
     <section className="card score" aria-label="Scores">
       <div className="score__teams">
         {TEAMS.map((t) => (
-          <div key={t} className={`score__team ${on?.team === t ? "is-on" : ""}`}>
+          <div key={t} className={`score__team score__team--${t.toLowerCase()} ${on?.team === t ? "is-on" : ""}`}>
             <span className="score__name" title={name(s, t)}>{name(s, t)}</span>
             <span className="score__num">{s.teams[t].score}</span>
             <span className="score__tag">{on?.team === t ? on.label : " "}</span>
@@ -137,7 +137,7 @@ function TeamNames({ g }: { g: HostGame }) {
         <div className="names">
           {TEAMS.map((t) => (
             <label key={t} className="field">
-              <span className="field__label">Team {t}</span>
+              <span className="field__label"><i className={`team-dot team-dot--${t.toLowerCase()}`} aria-hidden="true" />Team {t}</span>
               <input
                 className="input"
                 value={draft?.team === t ? draft.value : s.teams[t].name}

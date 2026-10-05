@@ -41,6 +41,8 @@ export function ScreenPage() {
   const [quiet, setQuiet] = useState(false);
   const [fs, setFs] = useState(false);
   const [awake, setAwake] = useState(true);
+  const [settings, setSettings] = useState(false);
+  const ui = useRef<HTMLDivElement>(null);
   const [flash, setFlash] = useState<Flash | null>(null);
   const [played, setPlayed] = useState<{ n: number; last: Cue | null }>({ n: 0, last: null });
   const prev = useRef<PublicSnapshot | null>(null);
@@ -137,20 +139,35 @@ export function ScreenPage() {
     };
   }, [timerEnd, sfx]);
 
-  // The control bar steps aside once sound is on or the screen is fullscreen; any pointer or key brings it back.
+  // The settings entry shows on pointer or key activity and fades after 4 s of quiet. The panel itself stays while it is
+  // being used (pointer over it or focus inside) and closes itself after 12 s untouched, so the audience sees the show.
   useEffect(() => {
     let t = 0;
+    let idle = 0;
+    // In use: the pointer is over it, or keyboard focus (not a leftover mouse focus) is inside it.
+    const busy = () => !!ui.current && (ui.current.matches(":hover") || !!ui.current.querySelector(":focus-visible"));
     const wake = () => {
       setAwake(true);
       window.clearTimeout(t);
-      t = window.setTimeout(() => setAwake(false), 4000);
+      window.clearTimeout(idle);
+      t = window.setTimeout(function rest() {
+        if (busy()) t = window.setTimeout(rest, 2000);
+        else setAwake(false);
+      }, 4000);
+      idle = window.setTimeout(function close() {
+        if (busy()) idle = window.setTimeout(close, 2000);
+        else setSettings(false);
+      }, 12000);
     };
     wake();
     window.addEventListener("pointermove", wake);
+    window.addEventListener("pointerdown", wake);
     window.addEventListener("keydown", wake);
     return () => {
       window.clearTimeout(t);
+      window.clearTimeout(idle);
       window.removeEventListener("pointermove", wake);
+      window.removeEventListener("pointerdown", wake);
       window.removeEventListener("keydown", wake);
     };
   }, []);
@@ -193,27 +210,42 @@ export function ScreenPage() {
       )}
       {mismatch && <div className="screen-mismatch" role="status">URL says room {roomCode.toUpperCase()}, host is on {snap!.room.code}</div>}
       {!audio.unlocked && !gateClosed && (
-        <div className="sound-gate" data-theme="ice">
+        <div className="sound-gate" data-theme="ice" role="dialog" aria-labelledby="gate-h">
           <div className="sound-gate__card">
-            <p className="bi-label">BEFORE THE SHOW</p>
-            <p className="sound-gate__h">Sound is off until you click here</p>
-            <p>Browsers only play sound after a click on this window.</p>
+            <p className="sound-gate__h" id="gate-h">Turn on sound for the show?</p>
+            <p>Browsers only play sound after a click in this window. You can change it later under Projector settings.</p>
             <div className="sound-gate__row">
               <button type="button" className="bi-button" onClick={unlock}>Enable sound</button>
-              <button type="button" className="bi-button bi-button--outline" onClick={() => setGateClosed(true)}>Continue without sound</button>
+              <button type="button" className="bi-button bi-button--outline" onClick={() => setGateClosed(true)}>Continue muted</button>
             </div>
           </div>
         </div>
       )}
-      <div className={`screen-bar ${!awake && (fs || audio.unlocked) ? "screen-bar--idle" : ""}`} data-theme="ice">
-        <button type="button" className="bar-btn" onClick={audio.unlocked ? () => sfx.play("test") : unlock} aria-pressed={audio.unlocked}>{audio.unlocked ? "TEST SOUND" : "ENABLE SOUND"}</button>
-        <button type="button" className="bar-btn" onClick={() => setMuted(!audio.muted)} aria-pressed={audio.muted}>{audio.muted ? "UNMUTE" : "MUTE"}</button>
-        <label className="bar-vol">VOL
-          <input type="range" min={0} max={1} step={0.05} value={audio.volume} onChange={(e) => setVolume(Number(e.target.value))} aria-label="Volume" />
-        </label>
-        <button type="button" className="bar-btn" onClick={() => setAudio((a) => ({ ...a, music: !a.music }))} aria-pressed={!audio.music}>{audio.music ? "MUSIC ON" : "MUSIC OFF"}</button>
-        <button type="button" className="bar-btn" onClick={() => setQuiet(!quiet)} aria-pressed={quiet}>QUIET {quiet ? "ON" : "OFF"}</button>
-        <button type="button" className="bar-btn" onClick={toggleFs}>{fs ? "EXIT FULLSCREEN" : "FULLSCREEN"}</button>
+      <div ref={ui} className={`proj-ui ${awake || settings ? "" : "proj-ui--idle"}`} data-theme="ice">
+        <button type="button" className="proj-ui__toggle" aria-expanded={settings} aria-controls="proj-settings" onClick={() => setSettings(!settings)}>
+          PROJECTOR SETTINGS
+        </button>
+        {settings && (
+          <div className="proj-ui__panel" id="proj-settings" role="group" aria-label="Projector settings">
+            <p className="proj-ui__status" role="status">{!audio.unlocked ? "SOUND OFF: NOT ENABLED YET" : sound === "muted" ? "SOUND MUTED" : "SOUND ON"}</p>
+            {audio.unlocked ? (
+              <button type="button" className="proj-btn" onClick={() => sfx.play("test")}>Test sound</button>
+            ) : (
+              <button type="button" className="proj-btn proj-btn--primary" onClick={unlock}>Enable sound</button>
+            )}
+            <div className="proj-ui__row">
+              <button type="button" className="proj-btn" aria-pressed={audio.muted} onClick={() => setMuted(!audio.muted)}>{audio.muted ? "Unmute" : "Mute"}</button>
+              <button type="button" className="proj-btn" aria-pressed={!audio.music} onClick={() => setAudio((a) => ({ ...a, music: !a.music }))}>{audio.music ? "Music on" : "Music off"}</button>
+            </div>
+            <label className="proj-ui__vol">Volume
+              <input type="range" min={0} max={1} step={0.05} value={audio.volume} onChange={(e) => setVolume(Number(e.target.value))} aria-label="Volume" />
+            </label>
+            <div className="proj-ui__row">
+              <button type="button" className="proj-btn" aria-pressed={quiet} onClick={() => setQuiet(!quiet)}>{quiet ? "Quiet mode on" : "Quiet mode"}</button>
+              <button type="button" className="proj-btn" onClick={toggleFs}>{fs ? "Exit fullscreen" : "Fullscreen"}</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

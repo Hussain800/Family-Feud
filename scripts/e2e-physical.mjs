@@ -54,7 +54,7 @@ const wrong = async () => {
 // ---------- setup ----------
 await host.goto(`${BASE}/host`);
 await screen.goto(`${BASE}/screen/local`);
-await screen.click("button:has-text('Continue without sound')");
+await screen.click("button:has-text('Continue muted')");
 await host.waitForSelector(".host__head");
 await sleep(1500);
 check("relay unreachable: realtime connections were attempted and refused", refused > 0, String(refused));
@@ -165,7 +165,7 @@ check("nothing the projector was sent ever held an answer before it was revealed
 
 // projector reload: no replayed effects
 await screen.reload();
-await screen.click("button:has-text('Continue without sound')");
+await screen.click("button:has-text('Continue muted')");
 await screen.waitForSelector(".board");
 await sleep(1500);
 check("a reloaded projector shows the board and replays no sound or effect", /Scrolling social media/.test(await text(screen, ".board")) && (await cues()) === 0 && (await screen.locator(".flash").count()) === 0);

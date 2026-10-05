@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { isLocalOnly } from "../public/url";
+import { GdgMark } from "../ui/GdgMark";
 import { Guide } from "./Guide";
 import { LiveTab } from "./PlayTab";
 import { SetupTab } from "./SetupTab";
@@ -62,7 +63,7 @@ export function HostConsole() {
   return (
     <div className="host" data-theme="frost">
       <header className="host__head">
-        <p className="host__title">Family Feud <span>Moderator</span></p>
+        <p className="host__title"><GdgMark size={28} /> Family Feud <span>Moderator</span></p>
         <nav className="switch" role="tablist" aria-label="Console">
           <button type="button" role="tab" aria-selected={tab === "live"} className="switch__opt" onClick={() => setTab("live")}>Live</button>
           <button type="button" role="tab" aria-selected={tab === "setup"} className="switch__opt" data-tour="setup-tab" onClick={() => setTab("setup")}>Setup</button>

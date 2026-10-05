@@ -97,7 +97,7 @@ const inView = async (host) => {
   const { ctx, host } = await fresh();
   const screen = await ctx.newPage();
   await screen.goto(`${BASE}/screen/local`);
-  await screen.click("button:has-text('Continue without sound')");
+  await screen.click("button:has-text('Continue muted')");
   await host.click(".offer button:has-text('Skip')");
   await host.click("role=tab[name='Setup']");
   await host.click('button:has-text("Load demo pack")');

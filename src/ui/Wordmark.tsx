@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import "../styles/blue-ice-club.js";
 
 interface BlueIceGlobal {
-  Wordmark: (o: { width: number; lines?: string[]; stretch?: number; seed?: number }) => SVGSVGElement;
+  Wordmark: (o: { width: number; lines?: string[]; stretch?: number; seed?: number; bleed?: boolean }) => SVGSVGElement;
 }
 declare global {
   interface Window {
@@ -12,7 +12,8 @@ declare global {
   }
 }
 
-export function Wordmark({ width = 900, lines }: { width?: number; lines?: string[] }) {
+/** `bleed` lets the fracture run past the word's box (the club script's own option) instead of stopping at a hard edge. */
+export function Wordmark({ width = 900, lines, bleed = false }: { width?: number; lines?: string[]; bleed?: boolean }) {
   const host = useRef<HTMLDivElement>(null);
   useEffect(() => {
     let cancelled = false;
@@ -20,7 +21,7 @@ export function Wordmark({ width = 900, lines }: { width?: number; lines?: strin
     // The wordmark measures real glyphs, so wait for Archivo.
     void document.fonts.load("900 100px Archivo").then(() => {
       if (cancelled || !el || !window.BlueIce) return;
-      const svg = window.BlueIce.Wordmark({ width, ...(lines ? { lines } : {}) });
+      const svg = window.BlueIce.Wordmark({ width, bleed, ...(lines ? { lines } : {}) });
       const groups = svg.querySelectorAll(":scope > g");
       groups[groups.length - 1]?.classList.add("crack-in");
       el.replaceChildren(svg);
@@ -29,6 +30,6 @@ export function Wordmark({ width = 900, lines }: { width?: number; lines?: strin
       cancelled = true;
       el?.replaceChildren();
     };
-  }, [width, lines]);
+  }, [width, lines, bleed]);
   return <div ref={host} className="wordmark-host" style={{ width, minHeight: width * 0.5 }} role="presentation" />;
 }

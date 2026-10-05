@@ -26,8 +26,8 @@ pnpm run dev
 ```
 
 1. Open `http://localhost:5173/host` on the laptop.
-2. Click **Open projector**, drag that window to the projector and click **Fullscreen**.
-3. Click **Enable sound** on the projector.
+2. Click **Open projector**, drag that window to the projector, and answer its sound prompt (**Enable sound** or **Continue muted**).
+3. Move the mouse on the projector, open **Projector settings** (top right) and choose **Fullscreen**.
 
 The console's header shows whether the projector is open and whether its sound is on.
 
@@ -99,14 +99,36 @@ House rules (proposed, not set by the organisers):
 
 ### The projector
 
-- Answers flip over with a bell.
-- Every wrong answer shows a large red X with a harsh buzzer (red is used only for wrong answers and strikes).
-- Short banners mark play or pass, the steal and the points awarded; the final screen names the winner.
-- Each effect plays once per accepted action. Nothing replays when the projector reloads or reconnects, or when the console undoes something, and scores never wait for an animation.
-- With reduced motion the tiles turn over instantly; **QUIET** on the projector's control bar stops all sound and animation.
-- All sounds are original and synthesised in the browser: no samples, nothing taken from the TV show.
+The projector uses a fixed 1920×1080 stage. It scales to any screen, centred, with even bars on other aspect ratios, so the layout never reflows or crops.
 
-Browsers only allow sound after a click in that window. So the projector opens with *Sound is off until you click here*, and the console warns until it is on. The projector bar has Test sound, Mute, Volume, Music and Fullscreen, and Setup → Projector can play a test sound from the laptop.
+Every state is one centred composition inside a frost frame:
+- **Title card:** the club line, the cracked *hello, world!* wordmark (its fracture fades out before the text), a large FAMILY FEUD title plate, and the two teams with equal weight.
+- **Question introduction.**
+- **The framed answer board:**
+  - hidden tiles are raised ice panels with their number in the middle;
+  - revealed tiles are frost, with the answer on the left and the points in their own block;
+  - one to ten answers fit, and long answers step down a size instead of being cut off.
+- **Steal, points, between rounds and the winner**, all in the same style.
+
+**GDG colours** follow the club's own rules:
+- The *hello, world!* Blue Ice guide allows the four-colour bracket mark only small and on frost. So the official mark (yellow, red, blue, black) sits on frost plates, and FAMILY FEUD's code brackets are drawn as the mark's coloured chevrons on its frost title plate.
+- Each team keeps one fixed club colour everywhere, on the projector and the console: Team A yellow, Team B green.
+- Red means a wrong answer and nothing else.
+
+Effects:
+- Answers flip over with a bell.
+- Every wrong answer shows a large red X with a harsh buzzer.
+- Short banners mark play or pass, the steal and the points awarded.
+- Each effect plays once per accepted action. Nothing replays when the projector reloads or reconnects, or when the console undoes something, and scores never wait for an animation.
+- With reduced motion the tiles turn over instantly; **Quiet mode** stops all sound and animation.
+- All sounds are original and synthesised in the browser.
+
+**Operator controls stay off the audience's screen.**
+- Browsers only allow sound after a click in that window, so the projector first asks *Turn on sound for the show?* with **Enable sound** or **Continue muted**. The console warns until sound is on.
+- After that, a small **Projector settings** entry appears only when the mouse moves or a key is pressed, and fades after 4 seconds. It holds Enable/Test sound, Mute, Music, Volume, Quiet mode and Fullscreen.
+- The panel stays open while you are using it and closes itself after 12 seconds untouched. Hidden controls never catch clicks.
+- **Setup → Projector** can also play a test sound from the laptop.
+- The DEMO notice sits in its own slot at the top of the stage and never overlaps anything.
 
 ### Phone buzzers (optional, off by default)
 
@@ -191,7 +213,7 @@ Deployed by Hussain at `https://gdg-family-feud.onrender.com` (Render free plan,
 
 ## Verification
 
-Ran on 5 Oct 2026, Windows 11, headless Chrome via `playwright-core`, against `pnpm run dev`.
+Ran on 5 Oct 2026, Windows 11, headless Chrome via `playwright-core`, against `pnpm run dev`. Before the projector redesign, the same suites (197 checks) also passed against the deployed Render site; the redesign itself has not been deployed.
 
 **Run and passing:**
 - `pnpm run typecheck`, `pnpm run lint`, `pnpm test` (111 unit tests) and `pnpm run build`.
@@ -203,14 +225,20 @@ Ran on 5 Oct 2026, Windows 11, headless Chrome via `playwright-core`, against `p
 | `e2e:guide` | 28 | First-visit offer, Skip remembered, Done, replay, Escape, Tab kept inside, focus returned, popovers inside 1366×768. Mid-round, keys and clicks change nothing and the projector's revision never moves; no offer during a resumed game. An empty autosave still gets the offer. |
 | `e2e:phones` | 40 | Two phone pages pair with codes, the first press locks, the other phone is locked out, honest timing labels, reset, a double tap counted once. An impostor takes a seat but is refused, as are host-channel spoofs, stale, duplicate and unpaired presses. Also: a drop shown in 8 s, switching to physical, next teams. |
 | `e2e:faceoff` | 27 | Taps, corrections, misses, both missing, the hosts overruling the survey, play or pass, skipping |
-| `e2e:failures` | 32 | Relay down, storage failing, rejected import, editor, preview, projector sound status, odd URLs |
+| `e2e:failures` | 37 | Relay down, storage failing, rejected import, editor, preview, projector sound status. The projector settings panel: it hides when idle, hidden controls catch no clicks, a key brings it back, and it stays while keyboard focus is inside. Odd URLs. |
 | `e2e:extras` | 16 | Tie-break, timer |
 | `e2e:paste` | 8 | Spreadsheet paste |
 
 **Also checked by hand, through scripts:**
 - A layout scan of every tab and round state (including ten answers and the guide) at 1366×768 and 1920×1080, at 100% zoom: no overflow, and Wrong answer and Undo reachable without scrolling.
 - The tile flip measured in the running projector: 0°, 111°, 163°, 177°, then 180° over about 450 ms, and an instant swap with reduced motion.
-- The red X shows for about 1.1 s.
+- The red X shows for about 1.1 s, centred on the stage.
+- **The projector redesign was checked in the running app:**
+  - **Lobby balance:** equal left and right margins at 1920×1080, 1366×768 and 1440×900 (16:10, with even 45 px bars top and bottom).
+  - **Long names:** two 24-character team names wrap without clipping.
+  - **Ten answers:** a ten-answer board with long labels fits.
+  - **Flip:** 0°, 88°, 156°, 175°, then 180° over about 450 ms.
+- **Not provable headlessly:** a fullscreen resize. Headless Chrome reports fullscreen but keeps the window size. The stage re-fits on any resize, as checked at five sizes, but confirm it on the venue projector.
 
 Screenshots are in `docs/screenshots/`: `before-*` for the old console, `after-*`, `physical-*`, `guide-*` and `phone-*` for the new one.
 

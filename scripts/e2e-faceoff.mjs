@@ -29,7 +29,7 @@ await host.goto(`${BASE}/host`);
 await host.waitForSelector(".host__head");
 await host.click(".offer button:has-text('Skip')");
 await screen.goto(`${BASE}/screen/local`);
-await screen.click("button:has-text('Continue without sound')");
+await screen.click("button:has-text('Continue muted')");
 await screen.waitForSelector(".lobby", { timeout: 10000 });
 await host.click("role=tab[name='Setup']");
 await host.click('button:has-text("Load demo pack")');

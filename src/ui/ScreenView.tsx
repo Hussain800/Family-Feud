@@ -3,6 +3,7 @@ import type { TeamId } from "../engine/types";
 import type { PublicFaceOff, PublicSlot, PublicSnapshot } from "../public/types";
 import { faceOffTurn } from "../public/faceoff";
 import { hostOf, isLocalOnly } from "../public/url";
+import { Chevron, GdgMark } from "./GdgMark";
 import { useNow } from "./poll-bits";
 import { Stage } from "./Stage";
 import { Wordmark } from "./Wordmark";
@@ -14,7 +15,21 @@ const QR_BG = "#F3F8FF";
 export type FlashSpec = { kind: "x"; count: number } | { kind: "banner"; text: string; sub?: string };
 export type Flash = FlashSpec & { id: number };
 
-const GdgMark = () => <img className="gdg-mark" src="/brand/gdg-mark-frost.svg" alt="" width={64} height={32} />;
+const teamOf = (s: PublicSnapshot, id: TeamId) => s.teams.find((t) => t.id === id)!;
+const teamName = (s: PublicSnapshot, id: TeamId) => teamOf(s, id).name.toUpperCase();
+/** Long names and answers step down a size instead of being cut off. */
+const fit = (text: string, steps: [number, string][]) => steps.find(([n]) => text.length > n)?.[1] ?? "";
+
+/** The game title as a frost plate, its brackets drawn as the club mark's coloured chevrons. */
+function TitlePlate({ size }: { size: "lg" | "sm" }) {
+  return (
+    <span className={`title-plate title-plate--${size}`}>
+      <Chevron side="open" height={size === "lg" ? 118 : 40} />
+      <span className="title-plate__text">FAMILY FEUD</span>
+      <Chevron side="close" height={size === "lg" ? 118 : 40} />
+    </span>
+  );
+}
 
 function Timer({ t }: { t: NonNullable<PublicSnapshot["timer"]> }) {
   const left = Math.max(0, t.endsAt - useNow(true));
@@ -27,61 +42,65 @@ function Timer({ t }: { t: NonNullable<PublicSnapshot["timer"]> }) {
   );
 }
 
-function Header({ s, qr }: { s: PublicSnapshot; qr: boolean }) {
-  const canJoin = qr && s.room.status === "ready" && s.room.joinUrl && !isLocalOnly(s.room.joinUrl);
+/** Phone-buzzer mode only, while a team still needs its buzzer phone. Physical mode never shows a code. */
+const pairing = (s: PublicSnapshot) => !!s.room.joinUrl && !isLocalOnly(s.room.joinUrl) && !!s.buzzers && !(s.buzzers.paired.A && s.buzzers.paired.B);
+
+function PairCard({ s }: { s: PublicSnapshot }) {
+  return (
+    <aside className="pair-card">
+      <div className="pair-card__text">
+        <p className="s-label">BUZZER PHONES</p>
+        <p className="pair-card__code">{s.room.code}</p>
+        <p className="pair-card__url">{hostOf(s.room.joinUrl)}/join</p>
+        <p className="pair-card__hint">One phone per team. The moderator gives each team its code.</p>
+      </div>
+      <RoomQrCode value={s.room.joinUrl!} size={196} padding={1} foregroundColor={QR_FG} backgroundColor={QR_BG} errorCorrectionLevel="M" alt="Buzzer phone QR code" />
+    </aside>
+  );
+}
+
+/** Every screen but the title card: the game's name left, the round in the middle, the event and club right. */
+function Header({ s }: { s: PublicSnapshot }) {
+  const round = s.round && s.round.number > 0 && s.phase !== "intro";
   return (
     <header className="s-head">
-      <div className="s-head__left">
-        <p className="bi-label">GDG ON CAMPUS · UOBD</p>
-        <p className="s-head__title">hello, world! <span>&lt;FAMILY FEUD&gt;</span></p>
-      </div>
+      <div className="s-head__left"><TitlePlate size="sm" /></div>
       <div className="s-head__mid">
-        {s.round && s.round.number > 0 && s.phase !== "intro" && (s.timer ? <Timer t={s.timer} /> : <p className="s-head__round">{s.progress.tieBreak ? "TIE-BREAK" : `ROUND ${s.round.number} OF ${s.round.total}`}</p>)}
+        {round && (s.timer ? <Timer t={s.timer} /> : <p className="s-head__round">{s.progress.tieBreak ? "TIE-BREAK" : `ROUND ${s.round!.number} OF ${s.round!.total}`}</p>)}
       </div>
       <div className="s-head__right">
-        {canJoin && (
-          <div className="s-join">
-            <div className="s-join__text">
-              <p className="bi-label">BUZZER PHONES: SCAN TO PAIR</p>
-              <p className="s-join__code">{s.room.code}</p>
-              <p className="s-join__url">{hostOf(s.room.joinUrl)}/join</p>
-            </div>
-            <RoomQrCode value={s.room.joinUrl!} size={124} padding={1} foregroundColor={QR_FG} backgroundColor={QR_BG} errorCorrectionLevel="M" alt="Join QR code" />
-          </div>
-        )}
-        <GdgMark />
+        <span className="s-head__event">hello, world!</span>
+        <GdgMark size={44} />
       </div>
     </header>
   );
 }
 
-function DemoBanner({ label }: { label: string | null }) {
-  return label ? <div className="demo-banner" role="status">{label}</div> : null;
+function TeamPlate({ s, id, lead }: { s: PublicSnapshot; id: TeamId; lead?: boolean }) {
+  const t = teamOf(s, id);
+  return (
+    <div className={`plate plate--${id.toLowerCase()} ${lead ? "plate--lead" : ""}`}>
+      <span className="plate__tab" aria-hidden="true" />
+      <p className={`plate__name ${fit(t.name, [[16, "plate__name--long"]])}`}>{t.name}</p>
+      <p className="plate__score">{t.score}</p>
+    </div>
+  );
 }
 
-/** Phone-buzzer mode only, while a team still needs its buzzer phone. Physical mode never shows a code. */
-const pairing = (s: PublicSnapshot) => !!s.room.joinUrl && !isLocalOnly(s.room.joinUrl) && !!s.buzzers && !(s.buzzers.paired.A && s.buzzers.paired.B);
-
+/** The opening title card: one centred composition, nothing reserved for phones unless pairing is needed. */
 function Lobby({ s }: { s: PublicSnapshot }) {
-  const r = s.room;
-  const pair = pairing(s);
+  const [a, b] = s.teams;
   return (
-    <div className={`lobby ${pair ? "" : "lobby--solo"}`}>
-      <div className="lobby__left">
-        <p className="bi-label">GDG ON CAMPUS · UNIVERSITY OF BIRMINGHAM DUBAI</p>
-        <Wordmark width={860} />
-        <p className="lobby__display">&lt;FAMILY FEUD&gt;</p>
-        <p className="lobby__teams">{s.teams[0].name} <i>vs</i> {s.teams[1].name}</p>
+    <div className="lobby">
+      <p className="lobby__id"><GdgMark size={40} /> <span>GDG ON CAMPUS · UNIVERSITY OF BIRMINGHAM DUBAI</span></p>
+      <div className="lobby__mark"><Wordmark width={560} bleed /></div>
+      <h1 className="lobby__title"><TitlePlate size="lg" /></h1>
+      <div className="lobby__teams">
+        <p className={`lobby__team lobby__team--a ${fit(a.name, [[14, "lobby__team--long"]])}`}><span className="lobby__dot" aria-hidden="true" />{a.name}</p>
+        <span className="lobby__vs">VS</span>
+        <p className={`lobby__team lobby__team--b ${fit(b.name, [[14, "lobby__team--long"]])}`}><span className="lobby__dot" aria-hidden="true" />{b.name}</p>
       </div>
-      {pair && (
-        <div className="lobby__right">
-          <RoomQrCode value={r.joinUrl!} size={360} padding={1} foregroundColor={QR_FG} backgroundColor={QR_BG} errorCorrectionLevel="M" alt="Buzzer phone QR code" />
-          <p className="bi-label">BUZZER PHONES · ROOM</p>
-          <p className="lobby__code">{r.code}</p>
-          <p className="lobby__url">{hostOf(r.joinUrl)}/join</p>
-          <p className="lobby__hint">One phone per team. The moderator assigns each phone to its team.</p>
-        </div>
-      )}
+      {pairing(s) && <PairCard s={s} />}
     </div>
   );
 }
@@ -91,17 +110,13 @@ function Interlude({ s }: { s: PublicSnapshot }) {
   const lead = a.score === b.score ? null : a.score > b.score ? a : b;
   return (
     <div className="final">
-      <p className="bi-label">AFTER ROUND {s.progress.played} OF {s.progress.total}</p>
+      <p className="s-pill">AFTER ROUND {s.progress.played} OF {s.progress.total}</p>
       <h1 className="final__head">{lead ? `${lead.name} leads` : "All square"}</h1>
       <div className="final__scores">
-        {s.teams.map((t) => (
-          <div key={t.id} className={`team ${lead?.id === t.id ? "team--active" : ""}`}>
-            <p className="team__name">{t.name}</p>
-            <p className="team__score">{t.score}</p>
-          </div>
-        ))}
+        <TeamPlate s={s} id="A" lead={lead?.id === "A"} />
+        <TeamPlate s={s} id="B" lead={lead?.id === "B"} />
       </div>
-      <p className="intro__sub">&lt;{s.progress.tieBreak ? "TIE-BREAK" : `ROUND ${Math.min(s.progress.played + 1, s.progress.total)}`} IS NEXT&gt;</p>
+      <p className="final__next">{s.progress.tieBreak ? "TIE-BREAK" : `ROUND ${Math.min(s.progress.played + 1, s.progress.total)}`} IS NEXT</p>
     </div>
   );
 }
@@ -110,34 +125,31 @@ function Intro({ s }: { s: PublicSnapshot }) {
   const q = s.round!;
   return (
     <div className="intro">
-      <p className="bi-label">{s.progress.tieBreak ? "TIE-BREAK" : `ROUND ${q.number} OF ${q.total}`}</p>
-      <h1 className="intro__q">{q.prompt}</h1>
-      <p className="intro__sub">&lt;FACE-OFF NEXT: WHO BUZZES FIRST?&gt;</p>
+      <p className="s-pill">{s.progress.tieBreak ? "TIE-BREAK" : `ROUND ${q.number} OF ${q.total}`}</p>
+      <h1 className={`intro__q ${fit(q.prompt, [[70, "intro__q--long"]])}`}>{q.prompt}</h1>
+      <p className="intro__sub">FACE-OFF NEXT: WHO BUZZES FIRST?</p>
     </div>
   );
 }
 
 // The flip is a CSS transition, so it plays when a tile turns over and never when a page loads with it already shown.
 function Tile({ slot }: { slot: PublicSlot }) {
+  const size = slot.revealed ? fit(slot.text, [[44, "tile__t--xl"], [26, "tile__t--long"]]) : "";
   return (
     <li className={`tile ${slot.revealed ? "tile--shown" : ""}`} aria-label={slot.revealed ? `${slot.index}: ${slot.text}, ${slot.count}` : `${slot.index}: hidden`}>
       <span className="tile__inner">
         <span className="tile__face tile__front" aria-hidden="true">
-          <span className="tile__n">{slot.index}</span>
-          <span className="tile__text" />
-          <span className="tile__pts" />
+          <span className="tile__badge">{slot.index}</span>
         </span>
         <span className="tile__face tile__back">
           <span className="tile__n">{slot.index}</span>
-          <span className="tile__text">{slot.revealed ? <span className="tile__t">{slot.text}</span> : null}</span>
+          <span className="tile__text">{slot.revealed ? <span className={`tile__t ${size}`}>{slot.text}</span> : null}</span>
           <span className="tile__pts">{slot.revealed ? slot.count : ""}</span>
         </span>
       </span>
     </li>
   );
 }
-
-const teamName = (s: PublicSnapshot, id: TeamId) => s.teams.find((t) => t.id === id)!.name.toUpperCase();
 
 function FaceOffBar({ s, f }: { s: PublicSnapshot; f: PublicFaceOff }) {
   const turn = faceOffTurn(f);
@@ -170,23 +182,25 @@ function Board({ s }: { s: PublicSnapshot }) {
   const cols: PublicSlot[][] = q.columns === 2 ? [q.slots.slice(0, half), q.slots.slice(half)] : [q.slots];
   const inFaceOff = (s.phase === "face_off" || s.phase === "play_or_pass") && s.faceOff;
   return (
-    <div className="board">
-      <p className="bi-label">{s.phase === "preview" ? `TEMPLATE PREVIEW · ${q.category.toUpperCase()} · NO RESULTS LOADED` : "SURVEY SAYS"}</p>
-      <h1 className="board__q">{q.prompt}</h1>
+    <div className={`board board--cols-${q.columns}`}>
+      {s.phase === "preview" && <p className="s-pill">TEMPLATE PREVIEW · {q.category.toUpperCase()} · NO RESULTS LOADED</p>}
+      <h1 className={`board__q ${fit(q.prompt, [[70, "board__q--long"]])}`}>{q.prompt}</h1>
       {inFaceOff && <FaceOffBar s={s} f={s.faceOff!} />}
-      <div className={`board__slots cols-${q.columns}`}>
-        {cols.map((c, i) => (
-          <ol key={i} className="slots" style={{ gridTemplateRows: `repeat(${q.columns === 2 ? half : q.slots.length}, 1fr)` }}>
-            {c.map((slot) => <Tile key={slot.index} slot={slot} />)}
-          </ol>
-        ))}
+      <div className={`board__frame cols-${q.columns}`}>
+        <div className={`board__slots cols-${q.columns}`}>
+          {cols.map((c, i) => (
+            <ol key={i} className="slots" style={{ gridTemplateRows: `repeat(${q.columns === 2 ? half : q.slots.length}, 1fr)` }}>
+              {c.map((slot) => <Tile key={slot.index} slot={slot} />)}
+            </ol>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
 function TeamCard({ s, id }: { s: PublicSnapshot; id: TeamId }) {
-  const t = s.teams.find((x) => x.id === id)!;
+  const t = teamOf(s, id);
   const live = s.phase === "team_turn" || s.phase === "steal";
   const onBoard = live && s.control === id && s.phase === "team_turn";
   const stealing = s.phase === "steal" && s.control !== id;
@@ -197,9 +211,10 @@ function TeamCard({ s, id }: { s: PublicSnapshot; id: TeamId }) {
   const faceActive = !!f && (f.winner === id || faceOffTurn(f) === id);
   const tag = faceTag || (onBoard ? "ON THE BOARD" : stealing ? "STEALING" : won ? `ROUND +${won.amount}` : "");
   return (
-    <div className={`team ${onBoard || stealing || faceActive ? "team--active" : ""}`}>
-      <p className="team__tag">{tag || " "}</p>
-      <p className="team__name">{t.name}</p>
+    <div className={`team team--${id.toLowerCase()} ${onBoard || stealing || faceActive ? "team--active" : ""}`}>
+      <span className="team__tab" aria-hidden="true" />
+      <p className="team__tag">{tag || " "}</p>
+      <p className={`team__name ${fit(t.name, [[14, "team__name--long"]])}`}>{t.name}</p>
       <p className="team__score">{t.score}</p>
     </div>
   );
@@ -209,7 +224,7 @@ function Middle({ s }: { s: PublicSnapshot }) {
   const stealing = s.phase === "steal";
   return (
     <div className="mid">
-      <p className="bi-label">ROUND POT</p>
+      <p className="s-label">ROUND POINTS</p>
       <p className="mid__pot">{s.pot}</p>
       <div className="strikes" aria-label={`${s.strikes} of 3 strikes`}>
         {[1, 2, 3].map((n) => (
@@ -217,7 +232,7 @@ function Middle({ s }: { s: PublicSnapshot }) {
         ))}
       </div>
       <p className="mid__note">
-        {s.note ?? (stealing ? "STEAL: ONE GUESS" : s.settlement ? `${s.teams.find((t) => t.id === s.settlement!.winner)!.name.toUpperCase()} TAKES THE POT` : s.strikes > 0 ? `STRIKE ${s.strikes} OF 3` : " ")}
+        {s.note ?? (stealing ? "STEAL: ONE GUESS" : s.settlement ? `${teamName(s, s.settlement.winner)} TAKES THE POINTS` : s.strikes > 0 ? `STRIKE ${s.strikes} OF 3` : " ")}
       </p>
     </div>
   );
@@ -229,17 +244,13 @@ function Final({ s }: { s: PublicSnapshot }) {
   const win = a.score > b.score ? a : b;
   return (
     <div className="final">
-      <p className="bi-label">FINAL SCORE</p>
+      <p className="s-pill">FINAL SCORE</p>
       <h1 className="final__head">{tie ? "It’s a tie" : `${win.name} wins`}</h1>
       <div className="final__scores">
-        {s.teams.map((t) => (
-          <div key={t.id} className={`team ${!tie && t.id === win.id ? "team--active" : ""}`}>
-            <p className="team__name">{t.name}</p>
-            <p className="team__score">{t.score}</p>
-          </div>
-        ))}
+        <TeamPlate s={s} id="A" lead={!tie && win.id === "A"} />
+        <TeamPlate s={s} id="B" lead={!tie && win.id === "B"} />
       </div>
-      <p className="intro__sub">&lt;THANKS FOR PLAYING&gt;</p>
+      <p className="final__next">THANKS FOR PLAYING</p>
     </div>
   );
 }
@@ -248,13 +259,14 @@ function Final({ s }: { s: PublicSnapshot }) {
 export function ScreenView({ snapshot: s, flash }: { snapshot: PublicSnapshot; flash?: Flash | null }) {
   const phase = s.phase;
   const showBoard = s.round && (phase === "preview" || phase === "board_ready" || phase === "face_off" || phase === "play_or_pass" || phase === "team_turn" || phase === "steal" || phase === "round_over");
+  const titleCard = phase === "lobby" && !s.round && s.progress.played === 0;
   return (
     <Stage>
       <div className="screen" data-theme="ice" data-phase={phase}>
-        <DemoBanner label={s.demoLabel} />
-        {phase !== "lobby" || s.round || s.progress.played > 0 ? <Header s={s} qr /> : null}
+        {s.demoLabel && <div className="demo-banner" role="status">{s.demoLabel}</div>}
+        {!titleCard && <Header s={s} />}
         <main className="s-main">
-          {phase === "lobby" && !s.round && s.progress.played === 0 && <Lobby s={s} />}
+          {titleCard && <Lobby s={s} />}
           {phase === "lobby" && !s.round && s.progress.played > 0 && <Interlude s={s} />}
           {phase === "intro" && s.round && <Intro s={s} />}
           {showBoard && <Board s={s} />}
@@ -274,8 +286,10 @@ export function ScreenView({ snapshot: s, flash }: { snapshot: PublicSnapshot; f
         )}
         {flash?.kind === "banner" && (
           <div key={flash.id} className="flash flash--banner" role="status">
-            <span className="flash__text">{flash.text}</span>
-            {flash.sub && <span className="flash__sub">{flash.sub}</span>}
+            <div className="flash__band">
+              <span className="flash__text">{flash.text}</span>
+              {flash.sub && <span className="flash__sub">{flash.sub}</span>}
+            </div>
           </div>
         )}
       </div>

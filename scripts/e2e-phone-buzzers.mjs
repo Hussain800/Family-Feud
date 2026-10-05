@@ -46,7 +46,7 @@ await host.goto(`${BASE}/host`);
 await host.waitForSelector(".host__head");
 await host.click(".offer button:has-text('Skip')");
 await screen.goto(`${BASE}/screen/local`);
-await screen.click("button:has-text('Continue without sound')");
+await screen.click("button:has-text('Continue muted')");
 // the projector's view of each snapshot, for the open armId
 await screen.evaluate(() => {
   window.__last = null;
