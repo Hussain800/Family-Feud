@@ -53,9 +53,15 @@ export function writeJson(key: string, value: unknown): WriteResult {
   }
 }
 
-/** Keep a recoverable copy of the current pack before it is replaced. */
+/** A pack with real event results in it. Practice and empty packs are not worth protecting. */
+const holdsResults = (p: Pack | null): boolean => !!p && p.purpose === "event" && p.questions.some((q) => q.status === "ready");
+
+/**
+ * Keep a recoverable copy of the current pack before it is replaced. A pack with real results is always kept; a practice
+ * or empty pack never pushes real results out of the one backup slot.
+ */
 export function savePack(next: Pack, previous: Pack | null): WriteResult {
-  if (previous) writeJson(KEYS.packBackup, previous);
+  if (previous && (holdsResults(previous) || !holdsResults(loadBackupPack()))) writeJson(KEYS.packBackup, previous);
   return writeJson(KEYS.pack, next);
 }
 

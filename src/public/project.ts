@@ -1,6 +1,7 @@
 import { DEMO_LABEL } from "../content/types";
 import { faceOffCall } from "../engine/reducer";
 import type { GameState, RoundState } from "../engine/types";
+import { isTeamColor } from "../teams";
 import type { PublicBuzzers, PublicFaceOff, PublicSlot, PublicSnapshot, RelayStatus } from "./types";
 
 export interface ProjectInput {
@@ -55,8 +56,8 @@ export function projectPublic(i: ProjectInput): PublicSnapshot {
     room: { ...i.room },
     phase: preview ? "preview" : game.phase,
     teams: [
-      { id: "A", name: game.teams.A.name, score: game.teams.A.score },
-      { id: "B", name: game.teams.B.name, score: game.teams.B.score },
+      { id: "A", name: game.teams.A.name, score: game.teams.A.score, color: isTeamColor(game.teams.A.color) ? game.teams.A.color : null },
+      { id: "B", name: game.teams.B.name, score: game.teams.B.score, color: isTeamColor(game.teams.B.color) ? game.teams.B.color : null },
     ],
     control: preview ? null : (r?.controllingTeam ?? null),
     pot: preview ? 0 : (r?.pot ?? 0),

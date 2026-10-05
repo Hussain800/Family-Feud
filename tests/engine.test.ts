@@ -191,18 +191,18 @@ describe("corrections", () => {
 });
 
 describe("new match", () => {
-  it("resets scores but keeps team names", () => {
-    let s = run(initialSession(), act("SET_TEAM_NAMES", { names: { A: "Foxes", B: "Owls" } }), act("ADJUST_SCORE", { team: "A", delta: 9 }));
+  it("resets scores but keeps team identities", () => {
+    let s = run(initialSession(), act("SET_TEAM", { team: "A", color: "red" }), act("SET_TEAM", { team: "B", color: "blue" }), act("ADJUST_SCORE", { team: "A", delta: 9 }));
     s = apply(s, act("NEW_MATCH"));
-    expect(s.state.teams).toEqual({ A: { name: "Foxes", score: 0 }, B: { name: "Owls", score: 0 } });
+    expect(s.state.teams).toEqual({ A: { name: "Team Red", score: 0, color: "red" }, B: { name: "Team Blue", score: 0, color: "blue" } });
     expect(s.history).toEqual([]);
   });
 
-  it("the next pair of teams gets fresh names and scores; questions already played stay marked", () => {
-    let s = run(initialSession(), act("SET_TEAM_NAMES", { names: { A: "Foxes", B: "Owls" } }), act("START_ROUND", { question: Q, team: "A" }), act("SHOW_BOARD"), act("BEGIN_PLAY"), act("REVEAL", { answerId: "a1" }), act("END_ROUND"), act("AWARD"), act("NEXT_ROUND"));
+  it("the next pair of teams gets fresh identities and scores; questions already played stay marked", () => {
+    let s = run(initialSession(), act("SET_TEAM", { team: "A", color: "red" }), act("SET_TEAM", { team: "B", color: "blue" }), act("START_ROUND", { question: Q, team: "A" }), act("SHOW_BOARD"), act("BEGIN_PLAY"), act("REVEAL", { answerId: "a1" }), act("END_ROUND"), act("AWARD"), act("NEXT_ROUND"));
     s = apply(s, act("NEW_MATCH", { nextTeams: true }));
     expect(s.state).toMatchObject({ phase: "lobby", roundsPlayed: 0, playedQuestionIds: [], usedEarlier: ["q01"] });
-    expect(s.state.teams).toEqual({ A: { name: "Team A", score: 0 }, B: { name: "Team B", score: 0 } });
+    expect(s.state.teams).toEqual({ A: { name: "Team A", score: 0 }, B: { name: "Team B", score: 0 } }); // no colour carried over
     s = run(s, act("START_ROUND", { question: Q, team: "A" }));
     expect(s.state.phase).toBe("intro"); // still playable if the host chooses it
     s = run(s, act("ABANDON_ROUND"), act("NEW_MATCH"));
@@ -406,3 +406,99 @@ describe("tie-break", () => {
   });
 });
 
+
+describe("team colours", () => {
+  const withRound = () => run(initialSession(), act("SET_TEAM", { team: "A", color: "yellow" }), act("SET_TEAM", { team: "B", color: "green" }), act("START_ROUND", { question: Q, team: "A" }), act("SHOW_BOARD"), act("BEGIN_PLAY"), act("REVEAL", { answerId: "a2" }), act("ADJUST_SCORE", { team: "B", delta: 7 }));
+
+  it("names the team by its colour and keeps the engine slots A and B", () => {
+    const s = run(initialSession(), act("SET_TEAM", { team: "B", color: "black" }), act("SET_TEAM", { team: "A", color: "white" }));
+    expect(s.state.teams.A).toEqual({ name: "Team White", score: 0, color: "white" });
+    expect(s.state.teams.B).toEqual({ name: "Team Black", score: 0, color: "black" });
+  });
+
+  it("refuses the same colour for both teams and says why", () => {
+    const s = run(initialSession(), act("SET_TEAM", { team: "A", color: "red" }), act("SET_TEAM", { team: "B", color: "red" }));
+    expect(s.state.teams.B.color).toBeUndefined();
+    expect(s.state.note).toMatch(/already the other team/);
+  });
+
+  it("an identity correction never moves scores, the round or the pot, even mid-round", () => {
+    const before = withRound();
+    const after = apply(before, act("SET_TEAM", { team: "A", color: "red" }));
+    expect(after.state.teams.A).toEqual({ name: "Team Red", score: 0, color: "red" });
+    expect(after.state.teams.B).toEqual(before.state.teams.B);
+    expect(after.state.round).toEqual(before.state.round);
+    expect(after.state.phase).toBe(before.state.phase);
+    expect(after.state.round!.pot).toBe(12);
+  });
+
+  it("an identity correction can be swapped between the teams without a clash, and is undoable", () => {
+    let s = run(initialSession(), act("SET_TEAM", { team: "A", color: "red" }), act("SET_TEAM", { team: "B", color: "blue" }));
+    s = run(s, act("SET_TEAM", { team: "A", color: "green" }), act("SET_TEAM", { team: "B", color: "red" }));
+    expect([s.state.teams.A.color, s.state.teams.B.color]).toEqual(["green", "red"]);
+    s = apply(s, { id: "u-col", type: "UNDO" });
+    expect(s.state.teams.B.color).toBe("blue");
+  });
+
+  it("ignores a colour that is not one of the six", () => {
+    const s = apply(initialSession(), act("SET_TEAM", { team: "A", color: "purple" as never }));
+    expect(s.state.teams.A).toEqual({ name: "Team A", score: 0 });
+  });
+
+  it("an old save without colours still plays, and a colour can be chosen later without touching its scores", () => {
+    const old = initialSession();
+    old.state.teams = { A: { name: "Foxes", score: 41 }, B: { name: "Owls", score: 13 } };
+    const s = apply(old, act("SET_TEAM", { team: "A", color: "black" }));
+    expect(s.state.teams).toEqual({ A: { name: "Team Black", score: 41, color: "black" }, B: { name: "Owls", score: 13 } });
+    expect(apply(old, act("ADJUST_SCORE", { team: "B", delta: 2 })).state.teams.B.score).toBe(15);
+  });
+
+  it("the next game can name both teams in the same step, and rejects a clashing pair", () => {
+    const s = withRound();
+    const next = apply(s, act("NEW_MATCH", { nextTeams: true, colors: { A: "black", B: "white" } }));
+    expect(next.state.teams).toEqual({ A: { name: "Team Black", score: 0, color: "black" }, B: { name: "Team White", score: 0, color: "white" } });
+    expect(next.state).toMatchObject({ phase: "lobby", round: null, roundsPlayed: 0 });
+    const clash = apply(s, act("NEW_MATCH", { nextTeams: true, colors: { A: "red", B: "red" } }));
+    expect(clash.state.teams).toEqual({ A: { name: "Team A", score: 0 }, B: { name: "Team B", score: 0 } });
+  });
+});
+
+describe("points, not votes", () => {
+  // Workbook-style answers: `count` is the points, `votes` the raw frequency. 13 of 32 is 41 points, 4 of 32 is 13.
+  const W: ReadyQuestionSnapshot = {
+    id: "w01",
+    category: "Event pack",
+    prompt: "Invented question",
+    demo: false,
+    answers: [
+      { id: "w1", rank: 1, text: "Top", count: 41, votes: 13, aliases: [] },
+      { id: "w2", rank: 2, text: "Second", count: 13, votes: 4, aliases: [] },
+      { id: "w3", rank: 3, text: "Third", count: 13, votes: 4, aliases: [] },
+    ],
+  };
+  const play = (...more: Action[]) => run(initialSession(), act("START_ROUND", { question: W, team: "A" }), act("SHOW_BOARD"), act("BEGIN_PLAY"), ...more);
+
+  it("reveals and the round pot add the points; votes never enter the sum", () => {
+    const s = play(act("REVEAL", { answerId: "w1" }), act("REVEAL", { answerId: "w2" }));
+    expect(s.state.round!.pot).toBe(54);
+  });
+
+  it("a cleared board awards the points total once, however often Award is pressed", () => {
+    let s = play(act("REVEAL", { answerId: "w1" }), act("REVEAL", { answerId: "w2" }), act("REVEAL", { answerId: "w3" }));
+    s = run(s, act("AWARD"), act("AWARD"), act("AWARD"));
+    expect(s.state.teams.A.score).toBe(67);
+  });
+
+  it("a steal takes the points pot, and a failed steal leaves it with the playing team", () => {
+    const strikes = (s: Session) => run(s, act("STRIKE"), act("STRIKE"), act("STRIKE"));
+    const ok = run(strikes(play(act("REVEAL", { answerId: "w2" }))), act("REVEAL", { answerId: "w1" }), act("AWARD"));
+    expect(ok.state.teams).toMatchObject({ A: { score: 0 }, B: { score: 54 } });
+    const fail = run(strikes(play(act("REVEAL", { answerId: "w2" }))), act("STRIKE"), act("AWARD"));
+    expect(fail.state.teams).toMatchObject({ A: { score: 13 }, B: { score: 0 } });
+  });
+
+  it("equal points compare as a tie in the face-off, so the first buzzer keeps it", () => {
+    const s = run(initialSession(), act("START_ROUND", { question: W, team: "A" }), act("SHOW_BOARD"), act("FACEOFF_START"), act("BUZZ", { team: "A" }), act("REVEAL", { answerId: "w2" }), act("REVEAL", { answerId: "w3" }));
+    expect(faceOffCall(s.state.round)).toBe("A");
+  });
+});

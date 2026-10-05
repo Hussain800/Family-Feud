@@ -19,12 +19,11 @@ a { color: inherit; }
 /* ---------- projector stage (1920 x 1080 design canvas) ----------
    A live game-show screen on the Blue Ice sheet: one centred composition per state, square frost framing, light from
    inside the ice. The club's four colours appear only where Blue Ice allows them (the mark on frost) and as fixed team
-   colours: Team A yellow, Team B green. Red means a wrong answer and nothing else. */
+   colours: the six team colours a game picks from. Red means a wrong answer and nothing else. */
 .stage-box { position: relative; width: 100%; height: 100%; overflow: hidden; background: #06123F; }
 .stage { position: absolute; left: 50%; top: 50%; transform-origin: center center; overflow: hidden; }
 .screen-page { position: fixed; inset: 0; background: #06123F; }
 .screen {
-  --team-a: #FBBC04; --team-b: #34A853;
   --frame: rgba(243, 248, 255, 0.34); --well: rgba(10, 27, 102, 0.42);
   position: absolute; inset: 0; padding: 92px 96px 64px; display: flex; flex-direction: column; overflow: hidden;
   background-color: var(--cobalt);
@@ -81,9 +80,7 @@ a { color: inherit; }
 .lobby__team { display: flex; align-items: center; justify-content: center; gap: 20px; min-height: 108px; padding: 18px 30px; border: 2px solid rgba(243, 248, 255, 0.5); background: var(--well); font-size: 54px; font-weight: 900; font-variation-settings: "wdth" 100; letter-spacing: -0.01em; line-height: 1.02; text-transform: uppercase; text-wrap: balance; overflow-wrap: anywhere; }
 .lobby__team--long { font-size: 40px; }
 .lobby__team { position: relative; }
-.lobby__dot { position: absolute; left: 0; right: 0; top: 0; height: 8px; }
-.lobby__team--a .lobby__dot { background: var(--team-a); }
-.lobby__team--b .lobby__dot { background: var(--team-b); }
+.lobby__dot { position: absolute; left: 0; right: 0; top: 0; height: 10px; }
 .lobby__vs { align-self: center; display: grid; place-items: center; width: 88px; height: 88px; border: 2px solid var(--frost); font-family: var(--font-mono); font-size: 26px; letter-spacing: 0.12em; padding-left: 0.12em; }
 .pair-card { position: absolute; top: -18px; right: -8px; display: flex; align-items: center; gap: 18px; padding: 16px; background: var(--cobalt-edge); border: 2px solid var(--frost); text-align: left; }
 .pair-card img, .pair-card svg { display: block; }
@@ -137,9 +134,7 @@ a { color: inherit; }
 /* scoreboard */
 .s-foot { flex: none; height: 150px; display: grid; grid-template-columns: minmax(0, 1fr) 400px minmax(0, 1fr); gap: 18px; margin-top: 18px; }
 .team { position: relative; overflow: hidden; border: 2px solid var(--frame); background: var(--well); padding: 18px 26px 14px; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "tag tag" "name score"; align-items: end; column-gap: 18px; }
-.team__tab { position: absolute; left: 0; right: 0; top: 0; height: 8px; background: var(--tab); }
-.team--a, .plate--a { --tab: var(--team-a); }
-.team--b, .plate--b { --tab: var(--team-b); }
+.team__tab { position: absolute; left: 0; right: 0; top: 0; height: 10px; }
 .team__tag { grid-area: tag; align-self: start; min-height: 24px; font-family: var(--font-mono); font-size: 17px; letter-spacing: 0.2em; }
 .team__name { grid-area: name; font-size: 38px; font-weight: 800; line-height: 1.04; text-wrap: balance; overflow-wrap: anywhere; }
 .team__name--long { font-size: 28px; }
@@ -158,11 +153,21 @@ a { color: inherit; }
 .final__scores { display: grid; grid-template-columns: repeat(2, 640px); gap: 28px; }
 .final__next { font-family: var(--font-mono); font-size: 24px; letter-spacing: 0.22em; color: var(--glacier); }
 .plate { position: relative; overflow: hidden; height: 176px; padding: 32px 32px 24px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: 18px; text-align: left; border: 2px solid var(--frame); background: var(--well); }
-.plate__tab { position: absolute; left: 0; right: 0; top: 0; height: 10px; background: var(--tab); }
+.plate__tab { position: absolute; left: 0; right: 0; top: 0; height: 12px; }
 .plate__name { font-size: 44px; font-weight: 900; font-variation-settings: "wdth" 100; line-height: 1.04; text-wrap: balance; overflow-wrap: anywhere; }
 .plate__name--long { font-size: 32px; }
 .plate__score { font-size: 104px; font-weight: 900; line-height: 0.9; font-variant-numeric: tabular-nums; }
 .plate--lead { background: var(--frost); color: var(--cobalt-deep); border-color: var(--frost); }
+
+/* team colour: set once per element as --tab (the fill) and two outlines, then read here. The projector is a dark surface;
+   frost cards (the playing team, the leader, banners) and the console's light cards use the other outline. */
+.swatch { display: inline-block; flex: none; width: 0.62em; height: 0.62em; min-width: 10px; min-height: 10px; margin-right: 0.42em; background: var(--tab); box-shadow: 0 0 0 2px var(--tab-edge-dark, transparent); vertical-align: 0.02em; }
+.team__tab, .plate__tab, .lobby__dot { background: var(--tab); border-bottom: 2px solid var(--tab-edge-dark, transparent); }
+.team--active .swatch, .plate--lead .swatch, .flash__band .swatch { box-shadow: 0 0 0 2px var(--tab-edge-light, transparent); }
+.team--active .team__tab, .plate--lead .plate__tab { border-bottom-color: var(--tab-edge-light, transparent); }
+.lobby__team .swatch, .plate__name .swatch { margin-right: 0.36em; }
+.team__name .swatch { margin-right: 0.32em; }
+.flash__text .swatch { margin-right: 0.3em; box-shadow: 0 0 0 5px var(--tab-edge-light, transparent); }
 
 /* one-off moments: the red X and short banners, on the stage, gone within two seconds */
 .flash { position: absolute; inset: 0; z-index: 7; display: flex; align-items: center; justify-content: center; pointer-events: none; }
@@ -170,7 +175,7 @@ a { color: inherit; }
 .flash__x { width: 300px; height: 300px; display: grid; place-items: center; font-weight: 900; font-size: 280px; line-height: 1; font-variation-settings: "wdth" 100; color: #FFFFFF; background: var(--strike); border: 10px solid #FFFFFF; }
 @keyframes flash-x { 0% { opacity: 0; transform: scale(1.4); } 12% { opacity: 1; transform: scale(1); } 78% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1); } }
 .flash--banner { flex-direction: column; }
-.flash__band { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 120px; background: var(--frost); color: var(--cobalt-deep); border-top: 8px solid var(--cobalt-deep); border-bottom: 8px solid var(--cobalt-deep); animation: flash-banner 1.8s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
+.flash__band { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 40px 120px; background: var(--frost); color: var(--cobalt-deep); border-top: 8px solid var(--tab, var(--cobalt-deep)); border-bottom: 8px solid var(--tab, var(--cobalt-deep)); animation: flash-banner 1.8s cubic-bezier(0.2, 0.9, 0.3, 1) both; }
 .flash__text { max-width: 1680px; font-size: 104px; font-weight: 900; line-height: 1; letter-spacing: -0.02em; font-variation-settings: "wdth" 100; text-align: center; text-wrap: balance; }
 .flash__sub { font-family: var(--font-mono); font-size: 32px; letter-spacing: 0.18em; }
 @keyframes flash-banner { 0% { clip-path: inset(0 50% 0 50%); } 16% { clip-path: inset(0 0 0 0); } 84% { opacity: 1; clip-path: inset(0 0 0 0); } 100% { opacity: 0; clip-path: inset(0 0 0 0); } }
@@ -308,7 +313,7 @@ a { color: inherit; }
 
 .answers { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
 .answers--two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.answer { display: grid; grid-template-columns: 30px minmax(0, 1fr) 48px 104px; gap: 12px; align-items: center; min-height: 52px; padding: 4px 6px 4px 10px; background: var(--surface); border: 1px solid var(--hair); border-radius: 2px; }
+.answer { display: grid; grid-template-columns: 30px minmax(0, 1fr) 64px 104px; gap: 12px; align-items: center; min-height: 52px; padding: 4px 6px 4px 10px; background: var(--surface); border: 1px solid var(--hair); border-radius: 2px; }
 .answer__key { font-family: var(--font-mono); font-size: 13px; text-align: center; color: var(--muted); border: 1px solid var(--hair-strong); border-radius: 2px; line-height: 22px; }
 .answer__main { display: flex; flex-direction: column; min-width: 0; }
 .answer__text { font-weight: 700; font-size: 17px; line-height: 1.25; overflow-wrap: anywhere; }
@@ -328,12 +333,7 @@ a { color: inherit; }
 .score__teams { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
 .score__team { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--hair); border-radius: 2px; min-width: 0; }
 .score__team { border-top: 5px solid var(--tab) !important; }
-.score__team--a { --tab: #FBBC04; }
-.score__team--b { --tab: #34A853; }
 .score__team.is-on { background: var(--cobalt); color: var(--frost); border-color: var(--cobalt); }
-.team-dot { display: inline-block; width: 10px; height: 10px; margin-right: 8px; vertical-align: 1px; }
-.team-dot--a { background: #FBBC04; }
-.team-dot--b { background: #34A853; }
 .score__name { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .score__num { font-size: 40px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
 .score__tag { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
@@ -447,3 +447,32 @@ input[type="file"]::file-selector-button:hover { background: var(--cobalt); colo
 .phones__warn { font-size: 14px; font-weight: 700; color: var(--strike-ink); }
 .phones__result { font-size: 15px; }
 .step > .link-btn { align-self: flex-start; }
+
+/* ---------- team colours in the console ---------- */
+.host .swatch { box-shadow: 0 0 0 1px var(--tab-edge-light, transparent); min-width: 12px; min-height: 12px; }
+.host .score__team.is-on .swatch, .host .adjust__team[aria-pressed="true"] .swatch { box-shadow: 0 0 0 1px var(--tab-edge-dark, transparent); }
+.host .score__team.is-on { border-top-color: var(--tab) !important; }
+.team-tag { display: inline-flex; align-items: center; gap: 0; min-width: 0; }
+.score__name .team-tag, .adjust__team .team-tag { gap: 0; }
+.picker { display: flex; flex-direction: column; gap: 10px; }
+.picker__team { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.picker__now { color: var(--cobalt-deep); }
+.picker__chips { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.chip { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 8px; border: 1px solid var(--hair-strong); border-radius: 2px; background: var(--surface); font-size: 15px; font-weight: 700; cursor: pointer; }
+.chip input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: inherit; }
+.chip .swatch { margin: 0; width: 16px; height: 16px; }
+.chip:hover { border-color: var(--cobalt); }
+.chip:has(input:focus-visible) { outline: 3px solid var(--cobalt); outline-offset: 2px; }
+.chip.is-on { border: 2px solid var(--cobalt-deep); background: var(--tint); }
+.chip.is-taken { opacity: 0.4; cursor: not-allowed; }
+.chip.is-taken:hover { border-color: var(--hair-strong); }
+.next-teams { display: flex; flex-direction: column; gap: 12px; }
+.empty { align-items: flex-start; }
+.packline { font-size: 16px; padding: 10px 12px; border-left: 4px solid var(--hair-strong); background: var(--tint); }
+.packline[data-pack="event"] { border-left-color: var(--cobalt); }
+.packline[data-pack="practice"] { border-left-color: #B26A00; }
+.answer__count small { display: block; font-size: 12px; font-weight: 600; color: var(--muted); }
+.answer__notes { font-size: 13px; color: var(--muted); }
+.answer__notes summary { cursor: pointer; width: max-content; }
+.answer__notes p { margin: 4px 0 0; overflow-wrap: anywhere; }
+@media (max-width: 1100px) { .picker__chips { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

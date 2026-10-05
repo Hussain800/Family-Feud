@@ -19,12 +19,12 @@ function flashFor(cue: Cue, s: PublicSnapshot): FlashSpec | null {
     case "stealMiss":
       return { kind: "x", count: 1 };
     case "steal":
-      return { kind: "banner", text: "STEAL!", sub: `${team(s.control === "A" ? "B" : "A")}: ONE GUESS` };
+      return { kind: "banner", text: "STEAL!", sub: `${team(s.control === "A" ? "B" : "A")}: ONE GUESS`, team: s.control === "A" ? "B" : "A" };
     case "play":
     case "pass":
-      return s.faceOff?.winner ? { kind: "banner", text: `${team(s.faceOff.winner)} ${cue === "play" ? "PLAYS" : "PASSES"}` } : null;
+      return s.faceOff?.winner ? { kind: "banner", text: `${team(s.faceOff.winner)} ${cue === "play" ? "PLAYS" : "PASSES"}`, team: s.faceOff.winner } : null;
     case "award":
-      return s.settlement ? { kind: "banner", text: `${team(s.settlement.winner)} +${s.settlement.amount}` } : null;
+      return s.settlement ? { kind: "banner", text: `${team(s.settlement.winner)} +${s.settlement.amount}`, team: s.settlement.winner } : null;
     default:
       return null;
   }

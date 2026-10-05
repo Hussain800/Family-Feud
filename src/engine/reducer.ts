@@ -9,6 +9,7 @@ import {
   type Settlement,
   type TeamId,
 } from "./types";
+import { isTeamColor, teamLabel } from "../teams";
 
 export const otherTeam = (t: TeamId): TeamId => (t === "A" ? "B" : "A");
 
@@ -89,20 +90,21 @@ export function step(prev: GameState, a: Action): GameState {
   switch (a.type) {
     case "NEW_MATCH": {
       const fresh = initialState(a.totalRounds ?? s.totalRounds);
-      // The next pair of teams: fresh names, and the questions this audience has already seen stay marked.
-      if (a.nextTeams) return { ...fresh, usedEarlier: [...new Set([...(s.usedEarlier ?? []), ...s.playedQuestionIds])], seen: s.seen };
-      return { ...fresh, teams: { A: { name: s.teams.A.name, score: 0 }, B: { name: s.teams.B.name, score: 0 } }, usedEarlier: s.usedEarlier ?? [], seen: s.seen };
+      // The next pair of teams: fresh identities (named now if both colours came with the request), and the
+      // questions this audience has already seen stay marked.
+      if (a.nextTeams) {
+        const c = a.colors;
+        const named = !!c && isTeamColor(c.A) && isTeamColor(c.B) && c.A !== c.B;
+        const teams = named ? { A: { name: teamLabel(c.A), score: 0, color: c.A }, B: { name: teamLabel(c.B), score: 0, color: c.B } } : fresh.teams;
+        return { ...fresh, teams, usedEarlier: [...new Set([...(s.usedEarlier ?? []), ...s.playedQuestionIds])], seen: s.seen };
+      }
+      return { ...fresh, teams: { A: { ...s.teams.A, score: 0 }, B: { ...s.teams.B, score: 0 } }, usedEarlier: s.usedEarlier ?? [], seen: s.seen };
     }
 
-    case "SET_TEAM_NAMES": {
-      const clean = (n: string, fb: string) => n.trim().slice(0, 24) || fb;
-      return {
-        ...s,
-        teams: {
-          A: { ...s.teams.A, name: clean(a.names.A, "Team A") },
-          B: { ...s.teams.B, name: clean(a.names.B, "Team B") },
-        },
-      };
+    case "SET_TEAM": {
+      if (!isTeamColor(a.color) || s.teams[a.team].color === a.color) return s;
+      if (s.teams[otherTeam(a.team)].color === a.color) return refuse(s, `${teamLabel(a.color)} is already the other team. Each team needs its own colour.`);
+      return { ...s, teams: { ...s.teams, [a.team]: { ...s.teams[a.team], name: teamLabel(a.color), color: a.color } } };
     }
 
     case "START_ROUND": {

@@ -1,6 +1,7 @@
 // The only shapes that ever leave the moderator window (BroadcastChannel to the projector,
 // Air Jam replicated store to buzzer phones). Built by an allowlist in project.ts, never by copying host state.
 import type { Phase, TeamId } from "../engine/types";
+import type { TeamColor } from "../teams";
 
 export type PublicSlot =
   | { index: number; revealed: false }
@@ -19,7 +20,8 @@ export interface PublicSnapshot {
     capacity: number;
   };
   phase: Phase | "preview";
-  teams: { id: TeamId; name: string; score: number }[];
+  /** `color` is the team's chosen identity, or null before one is chosen (and on old saves). Public by design. */
+  teams: { id: TeamId; name: string; score: number; color: TeamColor | null }[];
   control: TeamId | null;
   pot: number;
   strikes: number;
@@ -74,8 +76,8 @@ export const EMPTY_SNAPSHOT: PublicSnapshot = {
   room: { code: null, joinUrl: null, status: "connecting", connected: 0, capacity: 0 },
   phase: "lobby",
   teams: [
-    { id: "A", name: "Team A", score: 0 },
-    { id: "B", name: "Team B", score: 0 },
+    { id: "A", name: "Team A", score: 0, color: null },
+    { id: "B", name: "Team B", score: 0, color: null },
   ],
   control: null,
   pot: 0,

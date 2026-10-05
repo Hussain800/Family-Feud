@@ -1,6 +1,7 @@
 import { MAX_WRONG_CODES } from "../buzzers/buzzers";
 import type { TeamId } from "../engine/types";
 import { hostOf, isLocalOnly } from "../public/url";
+import { TeamTag } from "./TeamPicker";
 import type { HostGame } from "./useHostGame";
 
 const TEAMS: TeamId[] = ["A", "B"];
@@ -22,7 +23,7 @@ function PhonePairing({ g }: { g: HostGame }) {
           const paired = !!pub?.paired[t];
           return (
             <li key={t} className="pairs__row">
-              <span className="pairs__team">{s.teams[t].name}</span>
+              <span className="pairs__team"><TeamTag name={s.teams[t].name} color={s.teams[t].color} /></span>
               {paired ? (
                 <span className={`dot-status ${pub?.online[t] ? "" : "is-bad"}`}>{pub?.online[t] ? "Phone paired and connected" : "Phone paired, disconnected"}</span>
               ) : (

@@ -5,6 +5,7 @@ import { validatePack } from "../content/schema";
 import type { Pack, Question } from "../content/types";
 import { apply, initialSession } from "../engine/reducer";
 import type { Action, Session, TeamId } from "../engine/types";
+import type { TeamColor } from "../teams";
 import { clearArm, closeBuzzers, initialBuzzers, openBuzzers, pair, press, publicBuzzers, resetPairing, type Buzzers } from "../buzzers/buzzers";
 import { buzzerHandlers, publishSnapshot, useFeudStore } from "../game/store";
 import { HEARTBEAT_MS, STALE_AFTER_MS, openChannel, type ScreenSound } from "../public/channel";
@@ -219,8 +220,8 @@ export function useHostGame() {
     act,
     startRound,
     // The next pair of teams never inherits the last pair's buzzer phones: new codes, old tokens dead.
-    nextTeams: () => {
-      act({ type: "NEW_MATCH", nextTeams: true });
+    nextTeams: (colors?: Record<TeamId, TeamColor>) => {
+      act({ type: "NEW_MATCH", nextTeams: true, colors });
       commitBuzzers(resetPairing(buzzersRef.current, rand));
     },
     buzzers,

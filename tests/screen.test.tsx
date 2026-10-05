@@ -31,7 +31,7 @@ describe("plain-text rendering", () => {
   it("escapes revealed answers, team names and banner text", () => {
     const html = renderToString(
       <ScreenView
-        snapshot={{ ...base, teams: [{ id: "A", name: "<b>Foxes</b>", score: 0 }, { id: "B", name: "Owls", score: 0 }] }}
+        snapshot={{ ...base, teams: [{ id: "A", name: "<b>Foxes</b>", score: 0, color: null }, { id: "B", name: "Owls", score: 0, color: null }] }}
         flash={{ id: 1, kind: "banner", text: "<img src=x onerror=alert(1)>" }}
       />,
     );
@@ -62,7 +62,7 @@ describe("plain-text rendering", () => {
   });
 
   it("between rounds the projector shows the scoreboard, not the join page", () => {
-    const html = renderToString(<ScreenView snapshot={{ ...EMPTY_SNAPSHOT, progress: { played: 1, total: 3, tieBreak: false }, teams: [{ id: "A", name: "Foxes", score: 48 }, { id: "B", name: "Owls", score: 12 }] }} />).replace(/<!-- -->/g, ""); // drop React's text-node markers
+    const html = renderToString(<ScreenView snapshot={{ ...EMPTY_SNAPSHOT, progress: { played: 1, total: 3, tieBreak: false }, teams: [{ id: "A", name: "Foxes", score: 48, color: null }, { id: "B", name: "Owls", score: 12, color: null }] }} />).replace(/<!-- -->/g, ""); // drop React's text-node markers
     expect(html).toContain("AFTER ROUND 1 OF 3");
     expect(html).toContain("Foxes leads");
     expect(html).toContain("ROUND 2 IS NEXT");
@@ -123,7 +123,7 @@ describe("tie-break and countdown on the projector", () => {
     expect(board).toContain("TIE-BREAK");
     expect(board).not.toContain("ROUND 1 OF 3");
     expect(renderToString(<ScreenView snapshot={{ ...tb, phase: "intro" }} />).replace(/<!-- -->/g, "")).toContain("TIE-BREAK");
-    const between = renderToString(<ScreenView snapshot={{ ...EMPTY_SNAPSHOT, progress: tb.progress, teams: [{ id: "A", name: "Foxes", score: 40 }, { id: "B", name: "Owls", score: 40 }] }} />).replace(/<!-- -->/g, "");
+    const between = renderToString(<ScreenView snapshot={{ ...EMPTY_SNAPSHOT, progress: tb.progress, teams: [{ id: "A", name: "Foxes", score: 40, color: null }, { id: "B", name: "Owls", score: 40, color: null }] }} />).replace(/<!-- -->/g, "");
     expect(between).toContain("All square");
     expect(between).toContain("TIE-BREAK IS NEXT");
     expect(renderToString(<ScreenView snapshot={base} />)).not.toContain("TIE-BREAK");

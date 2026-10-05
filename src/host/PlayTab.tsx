@@ -1,38 +1,14 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { longLabels } from "../content/schema";
 import { questionLabel, type Question } from "../content/types";
 import { answering, faceOffCall, otherTeam } from "../engine/reducer";
 import type { GameState, RoundState, TeamId } from "../engine/types";
 import { ScreenView } from "../ui/ScreenView";
+import { teamStyle } from "../ui/teamStyle";
 import { PhoneFaceOff } from "./BuzzerPanel";
+import { ConfirmButton } from "./ConfirmButton";
+import { NextTeams, TeamIdentity, TeamTag } from "./TeamPicker";
 import type { HostGame } from "./useHostGame";
-
-/** Arm on the first click, act on the second. Wording, not colour, marks the dangerous ones. */
-export function ConfirmButton({ label, confirmLabel, onConfirm, className = "bi-button bi-button--outline host__btn", disabled }: { label: string; confirmLabel: string; onConfirm: () => void; className?: string; disabled?: boolean }) {
-  const [armed, setArmed] = useState(false);
-  const t = useRef<number>(0);
-  useEffect(() => () => window.clearTimeout(t.current), []);
-  return (
-    <button
-      type="button"
-      className={className}
-      disabled={disabled}
-      aria-live="polite"
-      onClick={() => {
-        if (armed) {
-          window.clearTimeout(t.current);
-          setArmed(false);
-          onConfirm();
-        } else {
-          setArmed(true);
-          t.current = window.setTimeout(() => setArmed(false), 4000);
-        }
-      }}
-    >
-      {armed ? `Confirm: ${confirmLabel}` : label}
-    </button>
-  );
-}
 
 const TEAMS: TeamId[] = ["A", "B"];
 const name = (s: GameState, t: TeamId) => s.teams[t].name;
@@ -62,8 +38,8 @@ export function Scoreboard({ g }: { g: HostGame }) {
     <section className="card score" aria-label="Scores">
       <div className="score__teams">
         {TEAMS.map((t) => (
-          <div key={t} className={`score__team score__team--${t.toLowerCase()} ${on?.team === t ? "is-on" : ""}`}>
-            <span className="score__name" title={name(s, t)}>{name(s, t)}</span>
+          <div key={t} className={`score__team ${on?.team === t ? "is-on" : ""}`} style={teamStyle(s.teams[t].color)}>
+            <span className="score__name" title={name(s, t)}><TeamTag name={name(s, t)} color={s.teams[t].color} /></span>
             <span className="score__num">{s.teams[t].score}</span>
             <span className="score__tag">{on?.team === t ? on.label : " "}</span>
           </div>
@@ -91,7 +67,7 @@ export function Scoreboard({ g }: { g: HostGame }) {
           <div className="adjust">
             <div className="adjust__teams" role="group" aria-label="Team to adjust">
               {TEAMS.map((t) => (
-                <button key={t} type="button" className="adjust__team" aria-pressed={team === t} onClick={() => setTeam(t)}>{name(s, t)}</button>
+                <button key={t} type="button" className="adjust__team" aria-pressed={team === t} onClick={() => setTeam(t)}><TeamTag name={name(s, t)} color={s.teams[t].color} /></button>
               ))}
             </div>
             <div className="adjust__amounts" role="group" aria-label={`Change ${name(s, team)} score`}>
@@ -121,38 +97,31 @@ export function AudiencePreview({ g }: { g: HostGame }) {
 
 // ---------- between rounds ---------------------------------------------------------------------
 
-function TeamNames({ g }: { g: HostGame }) {
+/** Before the first round: which two teams are playing. Later it is shown, not editable: corrections live in Setup. */
+function Teams({ g }: { g: HostGame }) {
   const s = g.state;
-  // A draft only while a box is being typed in; otherwise the boxes show the game's names (next teams, a restore).
-  const [draft, setDraft] = useState<{ team: TeamId; value: string } | null>(null);
-  const editable = s.roundsPlayed === 0;
-  const save = () => {
-    if (draft) g.act({ type: "SET_TEAM_NAMES", names: { A: s.teams.A.name, B: s.teams.B.name, [draft.team]: draft.value } });
-    setDraft(null);
-  };
+  const { A, B } = s.teams;
+  const pickable = s.roundsPlayed === 0;
   return (
-    <section className="card" aria-label="Teams">
+    <section className="card" aria-label="Teams" data-tour="teams">
       <h2 className="card__h">Teams</h2>
-      {editable ? (
-        <div className="names">
-          {TEAMS.map((t) => (
-            <label key={t} className="field">
-              <span className="field__label"><i className={`team-dot team-dot--${t.toLowerCase()}`} aria-hidden="true" />Team {t}</span>
-              <input
-                className="input"
-                value={draft?.team === t ? draft.value : s.teams[t].name}
-                maxLength={24}
-                onFocus={() => setDraft({ team: t, value: s.teams[t].name })}
-                onChange={(e) => setDraft({ team: t, value: e.target.value })}
-                onBlur={save}
-                onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
-              />
-            </label>
-          ))}
-        </div>
+      {pickable ? (
+        <TeamIdentity g={g} scope="live" />
       ) : (
-        <p className="names__fixed">{s.teams.A.name} <span className="muted">vs</span> {s.teams.B.name}</p>
+        <p className="names__fixed"><TeamTag name={A.name} color={A.color} /> <span className="muted">vs</span> <TeamTag name={B.name} color={B.color} /> <span className="muted small">Wrong colour? Correct it in Setup. Scores do not change.</span></p>
       )}
+      {pickable && !(A.color && B.color) && <p className="step__hint">Choose both teams&apos; colours before round 1 so the projector shows them.</p>}
+    </section>
+  );
+}
+
+/** A browser with no event questions: say so plainly instead of listing questions that cannot be played. */
+function NoQuestions({ onSetup }: { onSetup: () => void }) {
+  return (
+    <section className="card empty" aria-label="No questions loaded">
+      <h2 className="card__h">No event questions on this laptop yet</h2>
+      <p>The questions and answers are loaded from a file into this browser. Nothing is loaded automatically, and nothing has been invented.</p>
+      <div className="row"><button type="button" className="bi-button host__btn host__btn--lg" onClick={onSetup}>Load the event pack in Setup</button></div>
     </section>
   );
 }
@@ -190,12 +159,13 @@ function QuestionRow({ g, q }: { g: HostGame; q: Question }) {
   );
 }
 
-function Lobby({ g }: { g: HostGame }) {
+function Lobby({ g, onSetup }: { g: HostGame; onSetup: () => void }) {
   const s = g.state;
   const { A, B } = s.teams;
+  if (!g.pack.questions.some((q) => q.status === "ready")) return <NoQuestions onSetup={onSetup} />;
   return (
     <>
-      <TeamNames g={g} />
+      <Teams g={g} />
       <section className="card" data-tour="questions" aria-label="Questions">
         <div className="card__bar">
           <h2 className="card__h">{roundLabel(s)}: choose a question</h2>
@@ -232,8 +202,9 @@ function Answers({ g }: { g: HostGame }) {
             <span className="answer__main">
               <span className="answer__text">{a.text}</span>
               {a.aliases.length > 0 && <span className="answer__alias">Also: {a.aliases.join(", ")}</span>}
+              {a.notes && <details className="answer__notes"><summary>Counted as</summary><p>{a.notes}</p></details>}
             </span>
-            <span className="answer__count">{a.count}</span>
+            <span className="answer__count" aria-label={a.votes != null ? `${a.count} points, ${a.votes} votes` : `${a.count} points`}>{a.count}{a.votes != null && <small>{a.votes} {a.votes === 1 ? "vote" : "votes"}</small>}</span>
             {shown ? (
               <span className="answer__on">On board</span>
             ) : (
@@ -445,20 +416,21 @@ function Over({ g }: { g: HostGame }) {
       {tie && <p>Play one more round to settle it. It gets its own face-off, strikes and steal.</p>}
       <div className="row">
         {tie && <button type="button" className="bi-button host__btn host__btn--lg" onClick={() => g.act({ type: "TIEBREAK" })}>Play a tie-break round</button>}
-        <ConfirmButton label="Set up the next two teams" confirmLabel="new teams, scores to 0" onConfirm={g.nextTeams} className={`bi-button host__btn host__btn--lg ${tie ? "bi-button--outline" : ""}`} />
         {g.canUndo && <button type="button" className="bi-button bi-button--outline host__btn" onClick={() => g.act({ type: "UNDO" })}>Undo <kbd>U</kbd></button>}
       </div>
+      <h3 className="sub__h">Next teams</h3>
+      <NextTeams g={g} scope="over" outline={tie} />
       <p className="muted small">The next teams keep the same questions. Ones already played are marked so you can pick fresh ones.</p>
     </section>
   );
 }
 
-export function LiveTab({ g }: { g: HostGame }) {
+export function LiveTab({ g, onSetup }: { g: HostGame; onSetup: () => void }) {
   const s = g.state;
   return (
     <div className="live">
       <div className="live__main">
-        {s.phase === "lobby" && <Lobby g={g} />}
+        {s.phase === "lobby" && <Lobby g={g} onSetup={onSetup} />}
         {s.round && s.phase !== "lobby" && s.phase !== "match_over" && <Round g={g} />}
         {s.phase === "match_over" && <Over g={g} />}
       </div>

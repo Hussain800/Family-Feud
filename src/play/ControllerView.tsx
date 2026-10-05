@@ -3,19 +3,20 @@ import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { TeamId } from "../engine/types";
 import { useFeudStore } from "../game/store";
+import { Swatch, teamStyle } from "../ui/teamStyle";
 
 /** This phone's pairing, held in memory only: a refreshed phone pairs again with a new code from the moderator. */
 type Me = { team: TeamId; token: string; gen: number };
 type Mine = { armId: string; status: "sending" | "first" | "second" | "duplicate" | "error"; text?: string };
 type Reply = { ok: boolean; result?: Record<string, unknown>; reason?: string; message?: string };
 
-function Shell({ children, label, demo }: { children: ReactNode; label: string; demo: string | null }) {
+function Shell({ children, label, demo, color }: { children: ReactNode; label: string; demo: string | null; color?: string | null }) {
   return (
-    <div className="phone" data-theme="ice">
+    <div className="phone" data-theme="ice" style={teamStyle(color)}>
       {demo && <div className="demo-banner demo-banner--phone" role="status">{demo}</div>}
       <header className="phone__head">
         <p className="bi-label">GDG ON CAMPUS · UOBD</p>
-        <p className="bi-label phone__state" role="status">{label}</p>
+        <p className="bi-label phone__state" role="status">{color ? <Swatch color={color} /> : null}{label}</p>
       </header>
       <main className="phone__main">{children}</main>
     </div>
@@ -123,7 +124,8 @@ export function ControllerView() {
     );
   }
 
-  const team = snap.teams.find((t) => t.id === me.team)!.name;
+  const mine_ = snap.teams.find((t) => t.id === me.team)!;
+  const team = mine_.name;
   const other = snap.teams.find((t) => t.id !== me.team)!.name;
   const press = mine && mine.armId === b.armId ? mine : null;
   const firstIsMe = b.first?.team === me.team;
@@ -155,7 +157,7 @@ export function ControllerView() {
   else if (ready) [state, line] = ["READY", "Press when you know the answer."];
 
   return (
-    <Shell label={`${team.toUpperCase()} BUZZER · ${state}`} demo={demo}>
+    <Shell label={`${team.toUpperCase()} BUZZER · ${state}`} demo={demo} color={mine_.color}>
       <button
         type="button"
         className={`buzz ${ready ? "buzz--ready" : ""} ${firstIsMe ? "buzz--first" : ""} ${lockedOut ? "buzz--locked" : ""}`}

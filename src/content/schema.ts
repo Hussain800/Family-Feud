@@ -17,6 +17,11 @@ const LONG_LABEL = 30; // wider than the 1080p tile fits on one line; flagged, n
 const MAX_LABEL = 80;
 // eslint-disable-next-line no-control-regex
 const CONTROL = /[\u0000-\u001f\u007f]/;
+// eslint-disable-next-line no-control-regex
+const NOTE_CONTROL = /[\u0000-\u0008\u000b-\u001f\u007f]/; // notes may hold line breaks and tabs
+const MAX_NOTES = 1000;
+const MAX_PROMPT = 200;
+const CUSTOM_ID = /^(?!q\d)[a-z][a-z0-9]{0,15}$/i; // a distinct event pack: its own ids, never the q01-q16 template ids
 
 const isObj = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
@@ -50,6 +55,15 @@ export function validatePack(raw: unknown): ValidationResult {
   }
   const purpose = raw.purpose === "demo" ? "demo" : "event";
 
+  // The q01-q16 template, or a pack with its own question set and numbering (the event workbook). Never both:
+  // questions are never matched across the two by number.
+  const isLegacy = (q: unknown) => isObj(q) && CANONICAL.some((c) => c.id === q.id);
+  const legacyCount = raw.questions.filter(isLegacy).length;
+  const custom = raw.questions.length > 0 && legacyCount === 0;
+  if (legacyCount > 0 && legacyCount < raw.questions.length) {
+    errors.push("A pack is either the q01-q16 template or its own question set. Do not mix them: questions are never matched by number.");
+  }
+
   const byId = new Map<string, Question>();
   const answerIds = new Set<string>();
 
@@ -58,11 +72,22 @@ export function validatePack(raw: unknown): ValidationResult {
     if (!isObj(rq)) return void errors.push(`${where} must be an object.`);
     const id = typeof rq.id === "string" ? rq.id : "";
     const canon = CANONICAL.find((c) => c.id === id);
-    if (!canon) return void errors.push(`${where}: unknown question id "${id}". Only q01-q16 are allowed.`);
+    if (custom) {
+      if (!CUSTOM_ID.test(id)) return void errors.push(`${where}: unknown question id "${id}". Use q01-q16, or for a pack with its own questions plain letters and digits that do not look like q01-q16.`);
+    } else if (!canon) return void errors.push(`${where}: unknown question id "${id}". Only q01-q16 are allowed.`);
     if (byId.has(id)) return void errors.push(`${id}: appears more than once.`);
-    // Questions are fixed. Editing answers must never rewrite them.
-    if (rq.prompt !== canon.prompt) errors.push(`${id}: prompt differs from the supplied question text.`);
-    if (rq.category !== canon.category) errors.push(`${id}: category differs from "${canon.category}".`);
+    let prompt = canon?.prompt ?? "";
+    let category = canon?.category ?? "";
+    if (canon) {
+      // Template questions are fixed. Editing answers must never rewrite them.
+      if (rq.prompt !== canon.prompt) errors.push(`${id}: prompt differs from the supplied question text.`);
+      if (rq.category !== canon.category) errors.push(`${id}: category differs from "${canon.category}".`);
+    } else {
+      prompt = typeof rq.prompt === "string" ? rq.prompt.trim() : "";
+      category = typeof rq.category === "string" ? rq.category : "";
+      if (!prompt || prompt.length > MAX_PROMPT) errors.push(`${id}: prompt must be 1-${MAX_PROMPT} characters.`);
+      else if (CONTROL.test(prompt)) errors.push(`${id}: prompt contains control characters.`);
+    }
     if (rq.status !== "awaiting_survey" && rq.status !== "ready") {
       return void errors.push(`${id}: status must be "awaiting_survey" or "ready".`);
     }
@@ -102,6 +127,8 @@ export function validatePack(raw: unknown): ValidationResult {
       const aid = typeof ra.id === "string" ? ra.id.trim() : "";
       const text = typeof ra.text === "string" ? ra.text.trim() : "";
       const count = ra.count;
+      const votes = ra.votes;
+      const notes = typeof ra.notes === "string" ? ra.notes : undefined;
       const aliases = Array.isArray(ra.aliases) ? ra.aliases : [];
       if (!aid) errors.push(`${aw}: id is required.`);
       else if (answerIds.has(aid)) errors.push(`${aw}: duplicate answer id "${aid}".`);
@@ -110,6 +137,8 @@ export function validatePack(raw: unknown): ValidationResult {
       else if (text.length > MAX_LABEL) errors.push(`${aw}: text is longer than ${MAX_LABEL} characters.`);
       else if (CONTROL.test(text)) errors.push(`${aw}: text contains control characters.`);
       if (!(Number.isInteger(count) && (count as number) > 0)) errors.push(`${aw}: count must be a positive integer.`);
+      if (votes !== undefined && !(Number.isInteger(votes) && (votes as number) > 0)) errors.push(`${aw}: votes must be a positive integer.`);
+      if (ra.notes !== undefined && (notes === undefined || notes.length > MAX_NOTES || NOTE_CONTROL.test(notes))) errors.push(`${aw}: notes must be text of at most ${MAX_NOTES} characters.`);
       if (aliases.some((a) => typeof a !== "string" || !a.trim() || CONTROL.test(a))) {
         errors.push(`${aw}: aliases must be non-empty strings.`);
       }
@@ -118,6 +147,8 @@ export function validatePack(raw: unknown): ValidationResult {
         rank: Number.isInteger(ra.rank) ? (ra.rank as number) : ai + 1,
         text,
         count: count as number,
+        ...(votes !== undefined ? { votes: votes as number } : {}),
+        ...(notes !== undefined ? { notes } : {}),
         aliases: aliases.filter((a): a is string => typeof a === "string").map((a) => a.trim()),
       });
     });
@@ -154,16 +185,21 @@ export function validatePack(raw: unknown): ValidationResult {
           if (owner && owner !== a.text) errors.push(`${id}: alias "${alias}" on "${a.text}" collides with "${owner}".`);
         }
       }
-      const sum = answers.reduce((n, a) => n + a.count, 0);
+      // Respondent checks apply to raw votes. Points are percentage-scaled and are not bounded by the respondent count.
+      const hasVotes = answers.length > 0 && answers.every((a) => a.votes !== undefined);
+      const sum = answers.reduce((n, a) => n + (hasVotes ? a.votes! : a.count), 0);
+      if (hasVotes && survey.respondents !== null) {
+        for (const a of answers) if (a.votes! > survey.respondents) errors.push(`${id}: "${a.text}" has ${a.votes} votes, more than the ${survey.respondents} respondents.`);
+      }
       if (survey.responseMode === "single" && survey.respondents !== null && sum > survey.respondents) {
-        errors.push(`${id}: counts total ${sum}, more than the ${survey.respondents} single-response respondents.`);
+        errors.push(`${id}: ${hasVotes ? "votes" : "counts"} total ${sum}, more than the ${survey.respondents} single-response respondents.`);
       }
     }
 
     byId.set(id, {
       id,
-      category: canon.category,
-      prompt: canon.prompt,
+      category,
+      prompt,
       status,
       survey,
       answers,
@@ -175,6 +211,9 @@ export function validatePack(raw: unknown): ValidationResult {
 
   if (errors.length) return { ok: false, errors };
 
+  // A pack with its own question set plays exactly those questions: nothing is filled in from the template.
+  if (custom) return { ok: true, pack: { schemaVersion: 1, packId, title, purpose, questions: [...byId.values()] }, warnings };
+
   // Missing questions stay pending so one real result is enough to play.
   const questions = PENDING_PACK.questions.map((p) => {
     const got = byId.get(p.id);
@@ -185,5 +224,7 @@ export function validatePack(raw: unknown): ValidationResult {
 }
 
 export const isDemoPack = (pack: Pack): boolean => pack.purpose === "demo";
+/** A pack with its own question set (the event workbook), not the q01-q16 template. */
+export const isCustomPack = (pack: Pack): boolean => pack.questions.length > 0 && !pack.questions.some((q) => CANONICAL.some((c) => c.id === q.id));
 export const readyQuestions = (pack: Pack): Question[] => pack.questions.filter((q) => q.status === "ready");
 export const longLabels = (q: Question): string[] => q.answers.filter((a) => a.text.length > LONG_LABEL).map((a) => a.text);

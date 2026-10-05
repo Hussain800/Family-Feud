@@ -45,7 +45,6 @@ export function HostConsole() {
   const { room } = g;
   const phoneMode = g.buzzerMode === "phone";
   const screenHref = `/screen/${room.code ?? "local"}`;
-  const noResults = g.pack.purpose !== "demo" && !g.pack.questions.some((q) => q.status === "ready");
   // Offered once, to a console with nothing under way: an empty autosave is not a match.
   const showOffer = offer && !guide && !g.resumeOffer && !hasProgress(g.session);
 
@@ -86,9 +85,6 @@ export function HostConsole() {
         )}
         {g.duplicate && (
           <div className="alert alert--bad" role="alert"><b>Another moderator window is open.</b> Two consoles in one browser overwrite each other&apos;s saved game. Close one of them.</div>
-        )}
-        {noResults && g.state.phase === "lobby" && (
-          <div className="alert" role="status"><b>No survey results loaded yet.</b> Paste them in Setup, under Survey results. For a rehearsal, load the demo pack there.</div>
         )}
         {g.projector === "off" && (
           <div className="alert" role="status"><b>Projector sound is off.</b> Click Enable sound in the projector window.</div>
@@ -132,7 +128,7 @@ export function HostConsole() {
       )}
 
       <main className="host__body">
-        {tab === "live" ? <LiveTab g={g} /> : <SetupTab g={g} />}
+        {tab === "live" ? <LiveTab g={g} onSetup={() => setTab("setup")} /> : <SetupTab g={g} />}
       </main>
 
       {guide && <Guide phoneMode={phoneMode} onClose={endGuide} />}

@@ -1,4 +1,5 @@
 import type { Answer } from "../content/types";
+import type { TeamColor } from "../teams";
 
 export type TeamId = "A" | "B";
 export type Phase = "lobby" | "intro" | "board_ready" | "face_off" | "play_or_pass" | "team_turn" | "steal" | "round_over" | "match_over";
@@ -49,7 +50,8 @@ export interface RoundState {
 
 export interface GameState {
   phase: Phase;
-  teams: Record<TeamId, { name: string; score: number }>;
+  /** `color` is the team's chosen identity ("Team Red"). Unset on saves made before colours, and until one is picked. */
+  teams: Record<TeamId, { name: string; score: number; color?: TeamColor }>;
   roundsPlayed: number;
   totalRounds: number;
   playedQuestionIds: string[];
@@ -73,8 +75,9 @@ export interface ReadyQuestionSnapshot {
 }
 
 export type Action =
-  | { id: string; type: "NEW_MATCH"; totalRounds?: number; /** Reset the team names too, for the next pair of teams. */ nextTeams?: boolean }
-  | { id: string; type: "SET_TEAM_NAMES"; names: Record<TeamId, string> }
+  | { id: string; type: "NEW_MATCH"; totalRounds?: number; /** Fresh identities, for the next pair of teams. `colors` names them in the same step. */ nextTeams?: boolean; colors?: Record<TeamId, TeamColor> }
+  /** Name a team by colour. A correction of who is displayed: it never touches scores or the round. */
+  | { id: string; type: "SET_TEAM"; team: TeamId; color: TeamColor }
   | { id: string; type: "START_ROUND"; question: ReadyQuestionSnapshot; team: TeamId }
   | { id: string; type: "SET_CONTROL"; team: TeamId }
   | { id: string; type: "SHOW_BOARD" }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ConfirmButton } from "./PlayTab";
+import { ConfirmButton } from "./ConfirmButton";
 import { download, makeBackup, parseBackup } from "./persist";
 import type { HostGame } from "./useHostGame";
 
