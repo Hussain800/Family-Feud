@@ -82,8 +82,7 @@ function TeamPlate({ s, id, lead }: { s: PublicSnapshot; id: TeamId; lead?: bool
   const t = teamOf(s, id);
   return (
     <div className={`plate ${lead ? "plate--lead" : ""}`} style={teamStyle(t.color)}>
-      <span className="plate__tab" aria-hidden="true" />
-      <p className={`plate__name ${fit(t.name, [[16, "plate__name--long"]])}`}><Swatch color={t.color} />{t.name}</p>
+      <p className={`plate__name ${fit(t.name, [[16, "plate__name--long"]])}`}>{t.name}</p>
       <p className="plate__score">{t.score}</p>
     </div>
   );
@@ -98,9 +97,9 @@ function Lobby({ s }: { s: PublicSnapshot }) {
       <div className="lobby__mark"><Wordmark width={560} bleed /></div>
       <h1 className="lobby__title"><TitlePlate size="lg" /></h1>
       <div className="lobby__teams">
-        <p className={`lobby__team ${fit(a.name, [[14, "lobby__team--long"]])}`} style={teamStyle(a.color)}><span className="lobby__dot" aria-hidden="true" /><Swatch color={a.color} />{a.name}</p>
+        <p className={`lobby__team ${fit(a.name, [[14, "lobby__team--long"]])}`} style={teamStyle(a.color)}>{a.name}</p>
         <span className="lobby__vs">VS</span>
-        <p className={`lobby__team ${fit(b.name, [[14, "lobby__team--long"]])}`} style={teamStyle(b.color)}><span className="lobby__dot" aria-hidden="true" /><Swatch color={b.color} />{b.name}</p>
+        <p className={`lobby__team ${fit(b.name, [[14, "lobby__team--long"]])}`} style={teamStyle(b.color)}>{b.name}</p>
       </div>
       {pairing(s) && <PairCard s={s} />}
     </div>
@@ -214,9 +213,8 @@ function TeamCard({ s, id }: { s: PublicSnapshot; id: TeamId }) {
   const tag = faceTag || (onBoard ? "PLAYING" : stealing ? "STEALING" : won ? `ROUND +${won.amount}` : "");
   return (
     <div className={`team ${onBoard || stealing || faceActive ? "team--active" : ""}`} style={teamStyle(t.color)}>
-      <span className="team__tab" aria-hidden="true" />
-      <p className="team__tag">{tag || " "}</p>
-      <p className={`team__name ${fit(t.name, [[14, "team__name--long"]])}`}><Swatch color={t.color} />{t.name}</p>
+      <p className={`team__tag ${tag ? "team__tag--on" : ""}`}>{tag || " "}</p>
+      <p className={`team__name ${fit(t.name, [[14, "team__name--long"]])}`}>{t.name}</p>
       <p className="team__score">{t.score}</p>
     </div>
   );

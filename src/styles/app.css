@@ -77,10 +77,9 @@ a { color: inherit; }
 .lobby__mark .wordmark-host { margin: 0 auto; }
 .lobby__title { margin: 6px 0 62px; font-size: inherit; }
 .lobby__teams { width: 1460px; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: stretch; gap: 30px; }
-.lobby__team { display: flex; align-items: center; justify-content: center; gap: 20px; min-height: 108px; padding: 18px 30px; border: 2px solid rgba(243, 248, 255, 0.5); background: var(--well); font-size: 54px; font-weight: 900; font-variation-settings: "wdth" 100; letter-spacing: -0.01em; line-height: 1.02; text-transform: uppercase; text-wrap: balance; overflow-wrap: anywhere; }
+.lobby__team { display: flex; align-items: center; justify-content: center; gap: 20px; min-height: 108px; padding: 18px 30px; font-size: 54px; font-weight: 900; font-variation-settings: "wdth" 100; letter-spacing: -0.01em; line-height: 1.02; text-transform: uppercase; text-wrap: balance; overflow-wrap: anywhere; }
 .lobby__team--long { font-size: 40px; }
 .lobby__team { position: relative; }
-.lobby__dot { position: absolute; left: 0; right: 0; top: 0; height: 10px; }
 .lobby__vs { align-self: center; display: grid; place-items: center; width: 88px; height: 88px; border: 2px solid var(--frost); font-family: var(--font-mono); font-size: 26px; letter-spacing: 0.12em; padding-left: 0.12em; }
 .pair-card { position: absolute; top: -18px; right: -8px; display: flex; align-items: center; gap: 18px; padding: 16px; background: var(--cobalt-edge); border: 2px solid var(--frost); text-align: left; }
 .pair-card img, .pair-card svg { display: block; }
@@ -133,13 +132,12 @@ a { color: inherit; }
 
 /* scoreboard */
 .s-foot { flex: none; height: 150px; display: grid; grid-template-columns: minmax(0, 1fr) 400px minmax(0, 1fr); gap: 18px; margin-top: 18px; }
-.team { position: relative; overflow: hidden; border: 2px solid var(--frame); background: var(--well); padding: 18px 26px 14px; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "tag tag" "name score"; align-items: end; column-gap: 18px; }
-.team__tab { position: absolute; left: 0; right: 0; top: 0; height: 10px; }
-.team__tag { grid-area: tag; align-self: start; min-height: 24px; font-family: var(--font-mono); font-size: 17px; letter-spacing: 0.2em; }
+.team { position: relative; overflow: hidden; padding: 20px 28px 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "tag tag" "name score"; align-items: end; column-gap: 18px; }
+.team__tag { grid-area: tag; align-self: start; justify-self: start; min-height: 30px; padding: 3px 14px 2px; font-family: var(--font-mono); font-size: 17px; line-height: 1.6; letter-spacing: 0.2em; }
+.team__tag--on { background: var(--tab-ink); color: var(--tab); }
 .team__name { grid-area: name; font-size: 38px; font-weight: 800; line-height: 1.04; text-wrap: balance; overflow-wrap: anywhere; }
 .team__name--long { font-size: 28px; }
 .team__score { grid-area: score; font-size: 86px; font-weight: 900; line-height: 0.92; font-variant-numeric: tabular-nums; }
-.team--active { background: var(--frost); color: var(--cobalt-deep); border-color: var(--frost); }
 .mid { border: 2px solid var(--frame); background: var(--well); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
 .mid__pot { font-size: 58px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
 .mid__note { font-family: var(--font-mono); font-size: 15px; letter-spacing: 0.16em; min-height: 22px; text-align: center; }
@@ -152,21 +150,26 @@ a { color: inherit; }
 .final__head { max-width: 1600px; font-size: 128px; font-weight: 900; font-variation-settings: "wdth" 100; letter-spacing: -0.03em; line-height: 1; text-wrap: balance; }
 .final__scores { display: grid; grid-template-columns: repeat(2, 640px); gap: 28px; }
 .final__next { font-family: var(--font-mono); font-size: 24px; letter-spacing: 0.22em; color: var(--glacier); }
-.plate { position: relative; overflow: hidden; height: 176px; padding: 32px 32px 24px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: 18px; text-align: left; border: 2px solid var(--frame); background: var(--well); }
-.plate__tab { position: absolute; left: 0; right: 0; top: 0; height: 12px; }
+.plate { position: relative; overflow: hidden; height: 176px; padding: 32px 32px 24px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; column-gap: 18px; text-align: left; }
 .plate__name { font-size: 44px; font-weight: 900; font-variation-settings: "wdth" 100; line-height: 1.04; text-wrap: balance; overflow-wrap: anywhere; }
 .plate__name--long { font-size: 32px; }
 .plate__score { font-size: 104px; font-weight: 900; line-height: 0.9; font-variant-numeric: tabular-nums; }
-.plate--lead { background: var(--frost); color: var(--cobalt-deep); border-color: var(--frost); }
 
 /* team colour: set once per element as --tab (the fill) and two outlines, then read here. The projector is a dark surface;
    frost cards (the playing team, the leader, banners) and the console's light cards use the other outline. */
 .swatch { display: inline-block; flex: none; width: 0.62em; height: 0.62em; min-width: 10px; min-height: 10px; margin-right: 0.42em; background: var(--tab); box-shadow: 0 0 0 2px var(--tab-edge-dark, transparent); vertical-align: 0.02em; }
-.team__tab, .plate__tab, .lobby__dot { background: var(--tab); border-bottom: 2px solid var(--tab-edge-dark, transparent); }
-.team--active .swatch, .plate--lead .swatch, .flash__band .swatch { box-shadow: 0 0 0 2px var(--tab-edge-light, transparent); }
-.team--active .team__tab, .plate--lead .plate__tab { border-bottom-color: var(--tab-edge-light, transparent); }
-.lobby__team .swatch, .plate__name .swatch { margin-right: 0.36em; }
-.team__name .swatch { margin-right: 0.32em; }
+.flash__band .swatch { box-shadow: 0 0 0 2px var(--tab-edge-light, transparent); }
+/* A team's box is filled with its colour: a tonal gradient, a lit top edge, a fine inner keyline and its own readable ink.
+   The playing team (and the leader) gets a double ring and a glow in its colour, so it reads from the back of the room. */
+.team, .plate, .lobby__team, .score__team {
+  --fill-hi: color-mix(in srgb, var(--tab) 84%, #fff);
+  --fill-lo: color-mix(in srgb, var(--tab) 82%, #000);
+  position: relative; isolation: isolate; color: var(--tab-ink);
+  background: linear-gradient(162deg, var(--fill-hi) 0%, var(--tab) 46%, var(--fill-lo) 100%);
+}
+.team, .plate, .lobby__team { box-shadow: 0 0 0 2px var(--tab-edge-dark, transparent), inset 0 2px 0 rgba(255, 255, 255, 0.4), inset 0 -22px 34px -24px rgba(0, 0, 0, 0.4), 0 20px 36px -24px rgba(2, 8, 44, 0.8); }
+.team::after, .plate::after, .lobby__team::after { content: ""; position: absolute; inset: 9px; border: 1px solid color-mix(in srgb, var(--tab-ink) 26%, transparent); pointer-events: none; }
+.team--active, .plate--lead { box-shadow: 0 0 0 3px #06123F, 0 0 0 7px var(--frost), 0 0 52px 8px color-mix(in srgb, var(--tab) 55%, transparent), inset 0 2px 0 rgba(255, 255, 255, 0.4), inset 0 -22px 34px -24px rgba(0, 0, 0, 0.4); }
 .flash__text .swatch { margin-right: 0.3em; box-shadow: 0 0 0 5px var(--tab-edge-light, transparent); }
 
 /* one-off moments: the red X and short banners, on the stage, gone within two seconds */
@@ -331,9 +334,10 @@ a { color: inherit; }
 /* scores */
 .score { gap: 14px; }
 .score__teams { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
-.score__team { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--hair); border-radius: 2px; min-width: 0; }
-.score__team { border-top: 5px solid var(--tab) !important; }
-.score__team.is-on { background: var(--cobalt); color: var(--frost); border-color: var(--cobalt); }
+.score__team { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 2px; min-width: 0; box-shadow: 0 0 0 1px var(--tab-edge-light, rgba(10, 27, 102, 0.18)), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -14px 24px -18px rgba(0, 0, 0, 0.35); }
+.score__team .swatch { display: none; }
+.score__team.is-on { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--cobalt-deep), inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -14px 24px -18px rgba(0, 0, 0, 0.35); }
+.score__team.is-on .score__tag { align-self: flex-start; padding: 1px 8px; background: var(--tab-ink); color: var(--tab); }
 .score__name { font-weight: 700; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .score__num { font-size: 40px; font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; }
 .score__tag { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
@@ -450,8 +454,7 @@ input[type="file"]::file-selector-button:hover { background: var(--cobalt); colo
 
 /* ---------- team colours in the console ---------- */
 .host .swatch { box-shadow: 0 0 0 1px var(--tab-edge-light, transparent); min-width: 12px; min-height: 12px; }
-.host .score__team.is-on .swatch, .host .adjust__team[aria-pressed="true"] .swatch { box-shadow: 0 0 0 1px var(--tab-edge-dark, transparent); }
-.host .score__team.is-on { border-top-color: var(--tab) !important; }
+.host .adjust__team[aria-pressed="true"] .swatch { box-shadow: 0 0 0 1px var(--tab-edge-dark, transparent); }
 .team-tag { display: inline-flex; align-items: center; gap: 0; min-width: 0; }
 .score__name .team-tag, .adjust__team .team-tag { gap: 0; }
 .picker { display: flex; flex-direction: column; gap: 10px; }

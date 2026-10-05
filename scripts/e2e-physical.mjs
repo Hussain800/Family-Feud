@@ -16,6 +16,9 @@ const check = (name, ok, detail = "") => {
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const text = (page, sel = "body") => page.locator(sel).first().innerText();
+// a team's box is filled with its colour: its colour variable is set and the background is a gradient of it
+const fillOf = (page, sel) => page.locator(sel).first().evaluate((el) => { const cs = getComputedStyle(el); return { tab: cs.getPropertyValue("--tab").trim().toLowerCase(), filled: /linear-gradient/.test(cs.backgroundImage) }; });
+const isFilled = async (page, sel, hex) => { const f = await fillOf(page, sel); return f.tab === hex && f.filled; };
 
 const browser = await chromium.launch({ channel: "chrome", headless: true });
 const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
@@ -77,7 +80,7 @@ check("a colour one team has is greyed out for the other, with the reason on scr
 await host.locator('input[name="live-B"][value="blue"]').check({ force: true });
 await sleep(200);
 check("both identities are saved as Team Red and Team Blue", JSON.stringify(await host.locator(".score__name").allInnerTexts()) === '["Team Red","Team Blue"]', JSON.stringify(await host.locator(".score__name").allInnerTexts()));
-check("the projector shows the team names, their colour badges and the demo label", /TEAM RED/i.test(await text(screen, ".lobby__teams")) && (await screen.locator(".lobby__teams .swatch").count()) === 2 && /DEMO: INVENTED RESULTS/.test(await text(screen, ".demo-banner")), `${await text(screen, ".lobby__teams")} / ${await text(screen, ".demo-banner").catch(() => "no banner")}`);
+check("the projector shows the team names, their boxes filled with the team colours, and the demo label", /TEAM RED/i.test(await text(screen, ".lobby__teams")) && (await isFilled(screen, ".lobby__team:nth-of-type(1)", "#d93a2f")) && (await isFilled(screen, ".lobby__team:nth-of-type(2)", "#4ea1ff")) && /DEMO: INVENTED RESULTS/.test(await text(screen, ".demo-banner")), `${await text(screen, ".lobby__teams")} / ${await text(screen, ".demo-banner").catch(() => "no banner")}`);
 check("questions read as Question N, with no category labels", /Question 1\b/.test(await text(host, ".qlist")) && !/\bq\d\d\b|STUDENT LIFE|EVERYDAY LIFE|PHONES & TECH|Student Life|Everyday Life/.test(await text(host, ".live__main")));
 await spy();
 

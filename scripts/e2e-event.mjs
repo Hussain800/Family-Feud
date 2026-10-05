@@ -35,6 +35,9 @@ const check = (name, ok, detail = "") => {
 };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const text = (page, sel = "body") => page.locator(sel).first().innerText();
+// a team's box is filled with its colour: its colour variable is set and the background is a gradient of it
+const fillOf = (page, sel) => page.locator(sel).first().evaluate((el) => { const cs = getComputedStyle(el); return { tab: cs.getPropertyValue("--tab").trim().toLowerCase(), filled: /linear-gradient/.test(cs.backgroundImage) }; });
+const isFilled = async (page, sel, hex) => { const f = await fillOf(page, sel); return f.tab === hex && f.filled; };
 
 // ---------- expected values, worked out from the points column and the rules, not from the app ----------
 // The workbook rounds votes / 32 * 100 half up (12.5 -> 13). Recomputed here as a second, independent check of the pack.
@@ -130,7 +133,7 @@ check("genuine event data carries no demo banner on the console or the projector
 check("the long label in question 7 is flagged to the moderator, not shrunk", /Long answers may wrap/.test(await q("Question 7").innerText()));
 await pick("red", "blue");
 await sleep(300);
-check("Team Red and Team Blue are named on the console and the projector, with their colour badges", JSON.stringify(await host.locator(".score__name").allInnerTexts()) === '["Team Red","Team Blue"]' && /TEAM RED/.test(await text(screen, ".lobby__teams")) && /TEAM BLUE/.test(await text(screen, ".lobby__teams")) && (await screen.locator(".lobby__teams .swatch").count()) === 2);
+check("Team Red and Team Blue are named on the console and the projector, their boxes filled with the team colours", JSON.stringify(await host.locator(".score__name").allInnerTexts()) === '["Team Red","Team Blue"]' && /TEAM RED/.test(await text(screen, ".lobby__teams")) && /TEAM BLUE/.test(await text(screen, ".lobby__teams")) && (await isFilled(screen, ".lobby__team:nth-of-type(1)", "#d93a2f")) && (await isFilled(screen, ".lobby__team:nth-of-type(2)", "#4ea1ff")) && (await isFilled(host, ".score__team:nth-child(1)", "#d93a2f")));
 await shot(host, PRIVATE, "a1-console-lobby");
 await shot(screen, PRIVATE, "a2-projector-lobby");
 
@@ -169,7 +172,7 @@ check("clearing the board: the pot is the sum of the seven points, 87 for the wo
 // refresh the moderator and the projector in the middle of a settled round
 await resumeHost();
 await reloadScreen();
-check("after refreshing both, the board, the pot and both team identities are still there", (await screen.locator(".tile--shown").count()) === 7 && (await pot()) === String(pot1) && /Team Red/.test(await text(screen, ".s-foot .team:nth-child(1)")) && /Team Blue/.test(await text(screen, ".s-foot .team:nth-child(3)")) && (await screen.locator(".s-foot .swatch").count()) === 2);
+check("after refreshing both, the board, the pot and both team identities are still there", (await screen.locator(".tile--shown").count()) === 7 && (await pot()) === String(pot1) && /Team Red/.test(await text(screen, ".s-foot .team:nth-child(1)")) && /Team Blue/.test(await text(screen, ".s-foot .team:nth-child(3)")) && (await isFilled(screen, ".s-foot .team:nth-child(1)", "#d93a2f")) && (await isFilled(screen, ".s-foot .team:nth-child(3)", "#4ea1ff")));
 check("a reloaded projector replays no sound or effect", (await cues()) === 0 && (await flashes()).length === 0);
 const awardBtn = host.locator(`button:has-text('Give ${pot1} points to Team Red')`);
 await awardBtn.click({ clickCount: 2, delay: 0 });
@@ -180,7 +183,7 @@ console.log(`INFO  after the double click on Award, Next question was ${stillOff
 if (stillOffered) await host.click("button:has-text('Next question')");
 await sleep(300);
 check("Red's score reads 87 on the projector's between-rounds board", /87/.test(await text(screen, ".final")), await text(screen, ".final"));
-check("the interlude shows both team plates with their colour badges", (await screen.locator(".final .plate .swatch").count()) === 2);
+check("the interlude shows both team plates filled with their colours", (await isFilled(screen, ".final .plate:nth-child(1)", "#d93a2f")) && (await isFilled(screen, ".final .plate:nth-child(2)", "#4ea1ff")));
 
 // --- ROUND 2: six answers. Red plays, three strikes, Blue steals successfully. ---
 await q("Question 4").locator("button:has-text('Start')").click();
