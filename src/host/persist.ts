@@ -150,7 +150,9 @@ export function parseBackup(text: string): { ok: true; pack: Pack; session: Sess
   return { ok: true, pack: p.pack, session };
 }
 
-export const freshSession = initialSession;
+/** Games are four questions each: three team pairs use twelve of the fourteen event questions. */
+export const GAME_ROUNDS = 4;
+export const freshSession = () => initialSession(GAME_ROUNDS);
 
 export function download(filename: string, data: unknown): void {
   const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));

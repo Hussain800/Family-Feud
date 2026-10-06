@@ -50,14 +50,20 @@ describe("reading the answers workbook in the browser", () => {
     if (!r.ok) expect(r.errors[0]).toMatch(/does not look like an Excel workbook/);
   });
 
-  // Needs private/family_feud_board.xlsx and private/event-pack.json (both git-ignored); skipped anywhere they are missing.
-  const real = existsSync(join(PRIVATE, "family_feud_board.xlsx")) && existsSync(join(PRIVATE, "event-pack.json"));
-  it.skipIf(!real)("the real workbook gives exactly the pack the converter script verified against every source cell", async () => {
+  // Needs private/family_feud_board.xlsx (git-ignored); skipped anywhere it is missing. The built-in pack is the same data in
+  // play order, so the two are matched by question wording.
+  const real = existsSync(join(PRIVATE, "family_feud_board.xlsx"));
+  it.skipIf(!real)("the real workbook read in the browser holds exactly the answers of the built-in event pack", async () => {
     const r = await workbookToPack(open(join(PRIVATE, "family_feud_board.xlsx")));
     if (!r.ok) throw new Error(r.errors.join());
-    expect(r.raw).toEqual(JSON.parse(readFileSync(join(PRIVATE, "event-pack.json"), "utf8")));
-    const v = validatePack(r.raw);
-    expect(v.ok && v.pack.questions.length).toBe(14);
-    expect(v.ok && v.pack.questions.reduce((n, q) => n + q.answers.length, 0)).toBe(73);
+    type P = { questions: { prompt: string; answers: { text: string; count: number; votes: number; notes: string; rank: number }[] }[] };
+    const read = r.raw as P;
+    const built = JSON.parse(readFileSync(join(__dirname, "..", "data", "event", "event_pack.json"), "utf8")) as P;
+    expect(read.questions).toHaveLength(14);
+    expect(read.questions.reduce((n, q) => n + q.answers.length, 0)).toBe(73);
+    for (const q of read.questions) {
+      const b = built.questions.find((x) => x.prompt === q.prompt)!;
+      expect(b.answers.map(({ text, count, votes, notes, rank }) => ({ text, count, votes, notes, rank }))).toEqual(q.answers.map(({ text, count, votes, notes, rank }) => ({ text, count, votes, notes, rank })));
+    }
   });
 });

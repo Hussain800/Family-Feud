@@ -4,11 +4,8 @@ A list to work through, not a record of checks already done.
 
 ## The night before (Monday 5 Oct)
 
-- [ ] **Load the answers on the laptop that will run the event**, in the browser and at the address you will use on the day (storage is per browser and per address; loading it anywhere else does not load it here):
-  1. Open `/host`. It says *No event questions on this laptop yet*. Click **Load the answers in Setup**.
-  2. Under **Survey results**, **Load the event answers (Excel workbook)**: choose `family_feud_board.xlsx`, the Excel file itself.
-  3. It must say *Event pack checked: 14 questions, 73 answers*. Click **Load this pack**, then **Confirm**.
-  4. Setup reads *Event pack · 14 questions, 73 answers*; Live lists Question 1 to 14.
+- [ ] **Nothing to load.** The event questions and answers are built in: open the Render link's `/host` on any laptop and Live lists Question 1 to 14, grouped into Game 1, Game 2, Game 3 and Spare. If a browser shows practice questions (a DEMO label), use **Setup → Survey results → Use the event questions**.
+- [ ] Play each team pair's game from its own group, in order: similar questions are in different games on purpose.
 - [ ] Confirm there is **no DEMO label** on the console or the projector.
 - [ ] Open a few questions. Check the seven answers in Question 2, the six in Question 4 and the long label in Question 7 (it asks before it starts). Open **Counted as** on an answer to see what people wrote.
 - [ ] Export a private backup (**Setup → Backup and recovery**) and keep it off the public repository.
@@ -65,6 +62,6 @@ A list to work through, not a record of checks already done.
 - **Wrong click:** **Undo** (`U`). Use **Adjust score** for corrections; never restart a game to fix a score.
 - **Wrong colour chosen:** **Setup → Game → Correct a team's colour**. Scores, the round and the buzzers are left alone.
 - **Console refreshed:** choose **Resume the game**. The pack and the colours come back with it.
-- **No questions after a refresh, or a different browser:** the pack was loaded somewhere else. Load it again (the steps above) or **Restore previous pack**.
+- **Practice questions showing (DEMO label):** **Setup → Survey results → Use the event questions**.
 - **Storage warning:** export a backup at once.
 - **Phone buzzer drops or misbehaves:** the presenters judge, and you tap the team. **Setup → Buzzers → Unpair** gives a new code.

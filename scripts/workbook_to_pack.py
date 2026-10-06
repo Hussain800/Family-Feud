@@ -18,9 +18,15 @@ import openpyxl
 sys.stdout.reconfigure(encoding="utf-8")
 
 SRC = Path(sys.argv[1]) if len(sys.argv) > 1 else None
-OUT = Path(__file__).resolve().parent.parent / "private" / "event-pack.json"
+OUT = Path(__file__).resolve().parent.parent / "data" / "event" / "event_pack.json"
 HEADER = ["Q#", "Question", "Rank", "Answer", "Votes", "Points", "Counts as (what people wrote)"]
 FIRST, LAST = 6, 78
+
+# The order the questions are played in, as workbook question numbers (position 1 is the first in the list).
+# Games of four: positions 1-4, 5-8 and 9-12 are one team pair each, 13-14 are spares. Questions with similar answers
+# (eating: 8, 9, 4; doomscrolling: 1, 11, 13; Dubai: 6, 7, 14; bag and forgotten items: 2 and 12) sit in different games,
+# at least four places apart.
+ORDER = [1, 8, 6, 2, 11, 9, 7, 3, 13, 4, 14, 5, 10, 12]
 
 # Reference totals from the release brief: question -> (answers, votes retained, points total).
 REFERENCE = {
@@ -68,15 +74,17 @@ def convert(path: Path) -> dict:
             problems.append(f"B{r}: prompt differs from earlier rows of question {q}")
         entry["rows"].append((r, rank, text, votes, points, notes if notes is not None else ""))
 
+    if sorted(ORDER) != sorted(questions):
+        problems.append(f"ORDER {ORDER} does not list exactly the workbook's questions {sorted(questions)}")
     pack_questions = []
-    for q in sorted(questions):
+    for pos, q in enumerate(ORDER, start=1):
         rows = questions[q]["rows"]
         if [r[1] for r in rows] != list(range(1, len(rows) + 1)):
             problems.append(f"question {q}: ranks are not 1..{len(rows)}")
         if any(rows[i][4] < rows[i + 1][4] for i in range(len(rows) - 1)):
             problems.append(f"question {q}: points are not in descending order")
         pack_questions.append({
-            "id": f"w{q:02d}",
+            "id": f"w{pos:02d}",
             "category": "Event pack",
             "prompt": questions[q]["prompt"],
             "status": "ready",
@@ -85,10 +93,10 @@ def convert(path: Path) -> dict:
                 "respondents": respondents,
                 "responseMode": "single",
                 "collectedAt": None,
-                "note": f"Workbook question {q}. Points = round(votes / {respondents} x {scale}); retained answers need not total {scale}.",
+                "note": f"Workbook question {q}, played as question {pos}. Points = round(votes / {respondents} x {scale}); retained answers need not total {scale}.",
             },
             "answers": [
-                {"id": f"w{q:02d}a{rank}", "rank": rank, "text": text, "count": points, "votes": votes, "aliases": [], "notes": notes}
+                {"id": f"w{pos:02d}a{rank}", "rank": rank, "text": text, "count": points, "votes": votes, "aliases": [], "notes": notes}
                 for (_, rank, text, votes, points, notes) in rows
             ],
             "approval": None,
@@ -113,7 +121,7 @@ def verify(pack_path: Path, xlsx: Path) -> list[str]:
     by_row = {}
     for q in pack["questions"]:
         for a in q["answers"]:
-            by_row[(int(q["id"][1:]), a["rank"])] = (q, a)
+            by_row[(ORDER[int(q["id"][1:]) - 1], a["rank"])] = (q, a)
     seen = 0
     for r in range(FIRST, LAST + 1):
         qn, prompt, rank, text, votes, _, notes = (f.cell(r, c).value for c in range(1, 8))
@@ -136,14 +144,14 @@ def verify(pack_path: Path, xlsx: Path) -> list[str]:
     if seen != 73 or answers != 73:
         bad.append(f"expected 73 answers, matched {seen}, pack holds {answers}")
     for q in pack["questions"]:
-        n = int(q["id"][1:])
+        n = ORDER[int(q["id"][1:]) - 1]
         got = (len(q["answers"]), sum(a["votes"] for a in q["answers"]), sum(a["count"] for a in q["answers"]))
         if got != REFERENCE[n]:
             bad.append(f"question {n}: answers/votes/points {got} but the brief says {REFERENCE[n]}")
     if len(pack["questions"]) != 14:
         bad.append(f"expected 14 questions, pack holds {len(pack['questions'])}")
     # a tie must stay a tie, in source order
-    q8 = next(q for q in pack["questions"] if q["id"] == "w08")["answers"]
+    q8 = next(q for q in pack["questions"] if q["id"] == f"w{ORDER.index(8) + 1:02d}")["answers"]
     if not (q8[0]["count"] == q8[1]["count"] == 25 and q8[0]["rank"] < q8[1]["rank"]):
         bad.append("question 8: the two 25-point answers are not tied in source order")
     return bad

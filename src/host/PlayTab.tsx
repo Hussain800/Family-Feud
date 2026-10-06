@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from "react";
-import { longLabels } from "../content/schema";
+import { Fragment, useState, type ReactNode } from "react";
+import { isCustomPack, longLabels } from "../content/schema";
 import { questionLabel, type Question } from "../content/types";
 import { answering, faceOffCall, otherTeam } from "../engine/reducer";
 import type { GameState, RoundState, TeamId } from "../engine/types";
@@ -159,8 +159,10 @@ function QuestionRow({ g, q }: { g: HostGame; q: Question }) {
   );
 }
 
+const GAME = 4; // an event game is four questions; the list is grouped the same way
 function Lobby({ g, onSetup }: { g: HostGame; onSetup: () => void }) {
   const s = g.state;
+  const custom = isCustomPack(g.pack);
   const { A, B } = s.teams;
   if (!g.pack.questions.some((q) => q.status === "ready")) return <NoQuestions onSetup={onSetup} />;
   return (
@@ -172,7 +174,12 @@ function Lobby({ g, onSetup }: { g: HostGame; onSetup: () => void }) {
           {s.roundsPlayed > 0 && <span className="muted">{A.name} {A.score} · {B.name} {B.score}</span>}
         </div>
         <ul className="qlist">
-          {g.pack.questions.map((q) => <QuestionRow key={q.id} g={g} q={q} />)}
+          {g.pack.questions.map((q, i) => (
+            <Fragment key={q.id}>
+              {custom && i % GAME === 0 && <li className="qgroup" aria-hidden="true">{i < GAME * 3 ? `Game ${i / GAME + 1}: questions ${i + 1} to ${i + GAME}` : "Spare questions"}</li>}
+              <QuestionRow g={g} q={q} />
+            </Fragment>
+          ))}
         </ul>
         {s.roundsPlayed > 0 && (
           <div className="row">

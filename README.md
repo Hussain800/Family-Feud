@@ -94,7 +94,7 @@ Also available:
 - **Play a tie-break round** when a game ends level.
 
 House rules (proposed, not set by the organisers):
-- Three rounds per game by default (Setup).
+- Four rounds (questions) per game by default (Setup).
 - Three strikes and one steal.
 - Face-off answers count once, in the round's points, for whichever team ends up playing.
 - A repeated answer shows ALREADY ON THE BOARD and costs nothing.
@@ -155,35 +155,32 @@ Honest limits:
 
 ## Survey data
 
-The events team's answers came as a workbook, `family_feud_board.xlsx`: one sheet, **14 questions, 73 answers, 32 respondents**. They are the event data. They are never committed, bundled or served: they live in a private pack file and in the moderator's browser storage.
+**The event questions and answers are built into the game.** Anyone who opens the Render link, on any laptop, gets the 14 event questions with their real answers and points, with nothing to load (Hussain's decision, 6 Oct). They live in `data/event/event_pack.json`, which is committed and bundled with the site. That means the answers are readable by anyone who opens `/host` or the page source: the host console is not secret, and a player who finds `/host` can spoil the game.
 
-**Points are not votes.** Each answer has **Votes** (how many of the 32 said it) and **Points** (`ROUND(votes / 32 * 100)`, rounded half up, so 4 votes is 13). The game reveals, pots and awards **Points** only. Votes are shown to the moderator beside each answer and checked against the respondent count, never scored. Retained answers need not add up to 100, and nothing is normalised. Equal points keep their source order (question 8 has two 25-point answers). Column G ("what people wrote") is kept as moderator-only guidance under **Counted as** on each answer; it is not an accepted alias, and the hosts judge spoken answers.
+The data is the events team's workbook, `family_feud_board.xlsx`: one sheet, **14 questions, 73 answers, 32 respondents**.
 
-**The event pack has its own numbering.** The workbook's questions are `w01` to `w14` and read as Question 1 to 14. They are never matched to the old 16-question template by number (workbook Question 6 is the Dubai summer, not the old Question 6). The two template questions the workbook does not have are simply not in the picker. A pack is either the q01 to q16 template or its own set, never a mix.
+**Points are not votes.** Each answer has **Votes** (how many of the 32 said it) and **Points** (`ROUND(votes / 32 * 100)`, rounded half up, so 4 votes is 13). The game reveals, pots and awards **Points** only. Votes are shown to the moderator beside each answer and checked against the respondent count, never scored. Retained answers need not add up to 100, and nothing is normalised. Equal points keep their source order. Column G ("what people wrote") is kept as moderator-only guidance under **Counted as** on each answer; it is not an accepted alias, and the hosts judge spoken answers. The projector is only ever sent revealed answers and their points.
 
-### Loading the answers: choose the Excel file
+**Play order.** Games are four questions each: three team pairs use twelve of the fourteen questions (games are four rounds by default; Setup changes it). The list is grouped *Game 1* (questions 1 to 4), *Game 2*, *Game 3* and *Spare*, and questions with similar answers sit in different games, at least four places apart:
 
-The site is public, so the answers cannot be built into it: anyone could read them in the page source and spoil the game. Instead the moderator chooses the Excel workbook in the browser, once. It is read there (an `.xlsx` is a zip of XML, opened with the browser's own decompression; no spreadsheet library and nothing uploaded) and the pack is kept in that browser only.
+| Similar | Questions |
+|---|---|
+| Food and eating | 2 (2 am order), 6 (supermarket), 10 (between classes) |
+| Doomscrolling among the answers | 1 (instead of studying), 5 (bored), 9 (back home) |
+| Dubai | 3 (summer), 7 (place to take a friend), 11 (photos) |
+| Bag and forgotten items | 4 (in a bag), 14 (forgot leaving the house) |
 
-**On the event laptop, once, in the browser and at the address that will run the event** (storage is per address: loading it in another browser, profile or address does not load it here):
-1. Open `/host`. It says *No event questions on this laptop yet*. Click **Load the answers in Setup**.
-2. Under **Survey results**, **Load the event answers (Excel workbook)**: choose `family_feud_board.xlsx`.
-3. The console reports *Event pack checked: 14 questions, 73 answers*. Nothing has changed yet. Click **Load this pack**, then **Confirm**.
-4. The pack line reads *Event pack · 14 questions, 73 answers*, and **Live** lists Question 1 to 14 with no DEMO label.
+The numbers are play order, not the workbook's. `ORDER` in `scripts/workbook_to_pack.py` holds the mapping (the workbook's question 8 is played as question 2, and so on); change it and re-run the script to reorder.
 
-If the workbook is not the expected board (no *Total survey responses*, no `Q#` header, ranks out of order), or a Points cell disagrees with its votes, the import is refused with the cell named and nothing changes.
-
-The reader (`src/content/workbook.ts`) follows the same rules as the converter script below, and a test checks that on the real workbook the two give identical packs (that test runs only where `private/family_feud_board.xlsx` and `private/event-pack.json` exist).
-
-**The converter script** (needs Python with `openpyxl`) is now only for checking the workbook cell by cell and for producing a JSON copy:
+**Changing or rebuilding the data.** Edit the workbook, then:
 
 ```bash
 python scripts/workbook_to_pack.py "C:/path/to/family_feud_board.xlsx"
 ```
 
-It writes `private/event-pack.json` (the `private/` folder is git-ignored) and checks all 73 rows against their source cells, plus the 14 answer counts and points totals. The same Setup control also accepts that `.json` file.
+It writes `data/event/event_pack.json` and checks all 73 rows against their source cells, plus the 14 answer counts and points totals (needs Python with `openpyxl`). Commit and push the file; Render redeploys. Setup can also read the `.xlsx` or a `.json` pack directly (**Load the event answers**), which replaces the built-in questions in that one browser only.
 
-Loading replaces the question set in that browser. The one before it is kept as a recoverable copy (**Restore previous pack**); a round in progress keeps its own answers; practice data never pushes the event pack out of that slot. **Load practice pack** shows **DEMO: INVENTED RESULTS** (console, projector, buzzer phones). The genuine event pack carries no demo label. Nothing loads by itself, and a browser without the pack never shows invented questions.
+A browser keeps its own question set only if someone chose **Load practice pack** (shown with **DEMO: INVENTED RESULTS**) or loaded some other pack with results. An empty one, or an older copy of the event pack, gives way to the built-in questions, and **Use the event questions** in Setup switches back at any time. The previous set is kept as a recoverable copy (**Restore previous pack**), and a round in progress keeps its own answers.
 
 ### Other ways in
 

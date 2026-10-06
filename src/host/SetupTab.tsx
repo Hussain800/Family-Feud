@@ -12,7 +12,7 @@ function GameSetup({ g }: { g: HostGame }) {
       <h2 className="card__h" id="game-h">Game</h2>
       <label className="field field--inline">
         <span className="field__label">Rounds per game</span>
-        <input className="input input--num" type="number" min={1} max={16} value={s.totalRounds} disabled={s.roundsPlayed > 0 || s.round !== null} onChange={(e) => g.act({ type: "NEW_MATCH", totalRounds: Math.max(1, Math.min(16, Number(e.target.value) || 3)) })} />
+        <input className="input input--num" type="number" min={1} max={16} value={s.totalRounds} disabled={s.roundsPlayed > 0 || s.round !== null} onChange={(e) => g.act({ type: "NEW_MATCH", totalRounds: Math.max(1, Math.min(16, Number(e.target.value) || 4)) })} />
         {s.roundsPlayed > 0 && <span className="muted small">Fixed once a game has started.</span>}
       </label>
       <details className="more">

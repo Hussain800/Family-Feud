@@ -1,0 +1,889 @@
+{
+  "schemaVersion": 1,
+  "packId": "hello-world-2026-event",
+  "title": "hello, world! Family Feud: event pack",
+  "purpose": "event",
+  "questions": [
+    {
+      "id": "w01",
+      "category": "Event pack",
+      "prompt": "Name something students do instead of studying.",
+      "status": "ready",
+      "survey": {
+        "source": "events_team_workbook",
+        "respondents": 32,
+        "responseMode": "single",
+        "collectedAt": null,
+        "note": "Workbook question 1, played as question 1. Points = round(votes / 32 x 100); retained answers need not total 100."
+      },
+      "answers": [
+        {
+          "id": "w01a1",
+          "rank": 1,
+          "text": "Doomscrolling / on their phone",
+          "count": 41,
+          "votes": 13,
+          "aliases": [],
+          "notes": "Doomscrolling; Doomscroll/be in the phone; Doom scroll; Doomscroll; Scrolling; watching reels (wait do i give the niche…; Instagram; be on their phones; Scroll on social media"
+        },
+        {
+          "id": "w01a2",
+          "rank": 2,
+          "text": "Sleep",
+          "count": 13,
+          "votes": 4,
+          "aliases": [],
+          "notes": "Sleep; Sleeping"
+        },
+        {
+          "id": "w01a3",
+          "rank": 3,
+          "text": "Eat",
+          "count": 13,
+          "votes": 4,
+          "aliases": [],
+          "notes": "Eat; Eat food; Order Food, Sleep, Walks, or Doom scroll"
+        },
+        {
+          "id": "w01a4",
+          "rank": 4,
+          "text": "Play games / gaming",
+          "count": 9,
+          "votes": 3,
+          "aliases": [],
+          "notes": "Play pool; Play games; Gaming?"
+        },
+        {
+          "id": "w01a5",
+          "rank": 5,
+          "text": "Watch a show or movie",
+          "count": 6,
+          "votes": 2,
+          "aliases": [],
+          "notes": "Watch a movie; Watch Netflix"
+        }
+      ],
+      "approval": null
+    },
+    {
+      "id": "w02",
+      "category": "Event pack",
+      "prompt": "Name something you'd order at 2 am",
+      "status": "ready",
+      "survey": {
+        "source": "events_team_workbook",
+        "respondents": 32,
+        "responseMode": "single",
+        "collectedAt": null,
+        "note": "Workbook question 8, played as question 2. Points = round(votes / 32 x 100); retained answers need not total 100."
+      },
+      "answers": [
+        {
+          "id": "w02a1",
+          "rank": 1,
+          "text": "Fried chicken / KFC / nuggets",
+          "count": 25,
+          "votes": 8,
+          "aliases": [],
+          "notes": "Spicy food so maybe fried chicken?; KFC; Fried chicken; Chicken; Chicken wings; Chicken nuggets; Chicken tenders?"
+        },
+        {
+          "id": "w02a2",
+          "rank": 2,
+          "text": "Dessert / sweets",
+          "count": 25,
+          "votes": 8,
+          "aliases": [],
+          "notes": "Kunafa; Froyo; waffle; Dessert or a shawarma; sweet treat; Chocolate cake; Ice cream; Gateux"
+        },
+        {
+          "id": "w02a3",
+          "rank": 3,
+          "text": "Pizza",
+          "count": 16,
+          "votes": 5,
+          "aliases": [],
+          "notes": "pizza"
+        },
+        {
+          "id": "w02a4",
+          "rank": 4,
+          "text": "Burgers",
+          "count": 9,
+          "votes": 3,
+          "aliases": [],
+          "notes": "Burgers; A zinger burger"
+        },
+        {
+          "id": "w02a5",
+          "rank": 5,
+          "text": "Shawarma",
+          "count": 6,
+          "votes": 2,
+          "aliases": [],
+          "notes": "shawarma"
+        }
+      ],
+      "approval": null
+    },
+    {
+      "id": "w03",
+      "category": "Event pack",
+      "prompt": "Name something people might complain about during a Dubai summer",
+      "status": "ready",
+      "survey": {
+        "source": "events_team_workbook",
+        "respondents": 32,
+        "responseMode": "single",
+        "collectedAt": null,
+        "note": "Workbook question 6, played as question 3. Points = round(votes / 32 x 100); retained answers need not total 100."
+      },
+      "answers": [
+        {
+          "id": "w03a1",
+          "rank": 1,
+          "text": "Heat / too hot",
+          "count": 59,
+          "votes": 19,
+          "aliases": [],
+          "notes": "Da heat 😢; the heat ?; AC not working/heat; Heat; Its hot; the heat; the heat or the traffic or not being abl…; The sun; Heat! Getting tanned; Too hot; Extreme heat"
+        },
+        {
+          "id": "w03a2",
+          "rank": 2,
+          "text": "Humidity",
+          "count": 13,
+          "votes": 4,
+          "aliases": [],
+          "notes": "Humidity"
+        },
+        {
+          "id": "w03a3",
+          "rank": 3,
+          "text": "Traffic",
+          "count": 6,
+          "votes": 2,
+          "aliases": [],
+          "notes": "Traffic"
+        },
+        {
+          "id": "w03a4",
+          "rank": 4,
+          "text": "Sweating",
+          "count": 6,
+          "votes": 2,
+          "aliases": [],
+          "notes": "Sweat; Sweating"
+        },
+        {
+          "id": "w03a5",
+          "rank": 5,
+          "text": "No outdoor activities",
+          "count": 3,
+          "votes": 1,
+          "aliases": [],
+          "notes": "No outdoor activities"
+        }
+      ],
+      "approval": null
+    },
+    {
+      "id": "w04",
+      "category": "Event pack",
+      "prompt": "Name something you'd find in almost every student's bag",
+      "status": "ready",
+      "survey": {
+        "source": "events_team_workbook",
+        "respondents": 32,
+        "responseMode": "single",
+        "collectedAt": null,
+        "note": "Workbook question 2, played as question 4. Points = round(votes / 32 x 100); retained answers need not total 100."
+      },
+      "answers": [
+        {
+          "id": "w04a1",
+          "rank": 1,
+          "text": "Laptop",
+          "count": 38,
+          "votes": 12,
+          "aliases": [],
+          "notes": "Laptop; a laptop; A device- iPad or laptop; Water bottles, sunscreen,sun glasses, la…"
+        },
+        {
+          "id": "w04a2",
+          "rank": 2,
+          "text": "Phone",
+          "count": 13,
+          "votes": 4,
+          "aliases": [],
+          "notes": "phone"
+        },
+        {
+          "id": "w04a3",
+          "rank": 3,
+          "text": "Pen / pencil",
+          "count": 9,
+          "votes": 3,
+          "aliases": [],
+          "notes": "Penci; Pen; Pencils"
+        },
+        {
+          "id": "w04a4",
+          "rank": 4,
+          "text": "Gum",
+          "count": 9,
+          "votes": 3,
+          "aliases": [],
+          "notes": "Chewing gum; Gum"
+        },
+        {
+          "id": "w04a5",
+          "rank": 5,
+          "text": "Charger / charging cable",
+          "count": 6,
+          "votes": 2,
+          "aliases": [],
+          "notes": "Charging cable; charger"
+        },
+        {
+          "id": "w04a6",
+          "rank": 6,
+          "text": "Earphones / AirPods",
+          "count": 6,
+          "votes": 2,
+          "aliases": [],
+          "notes": "Airpods; tangled earphones"
+        },
+        {
+          "id": "w04a7",
+          "rank": 7,
+          "text": "Notebook",
+          "count": 6,
+          "votes": 2,
+          "aliases": [],
+          "notes": "notebook"
+        }
+      ],
+      "approval": null
+    },
+    {
+      "id": "w05",
+      "category": "Event pack",
+      "prompt": "Name something people do when they're bored",
+      "status": "ready",
+      "survey": {
+        "source": "events_team_workbook",
+        "respondents": 32,
+        "responseMode": "single",
+        "collectedAt": null,
+        "note": "Workbook question 11, played as question 5. Points = round(votes / 32 x 100); retained answers need not total 100."
+      },
+      "answers": [
+        {
+          "id": "w05a1",
+          "rank": 1,
+          "text": "Doomscroll / scroll socials",
+          "count": 44,
+          "votes": 14,
+          "aliases": [],
+          "notes": "Doomscroll (I personally read feminist l…; Doom scroll; doomscroll; scroll social media; Scroll on tiktok"
+        },
+        {
+          "id": "w05a2",
+          "rank": 2,
+          "text": "Sleep",
+          "count": 13,
+          "votes": 4,
+          "aliases": [],
+          "notes": "Sleep"
+        },
+        {
+          "id": "w05a3",
+          "rank": 3,
+          "text": "Watch TV / shows",
+          "count": 13,
+          "votes": 4,
+          "aliases": [],
+          "notes": "Watch tv; Binge-watch the entirety of One Tree Hill; Catch up with their ott shows/ go for a…"
+        },
+        {
+          "id": "w05a4",
+          "rank": 4,
+          "text": "Eat",
+          "count": 9,
+          "votes": 3,
+          "aliases": [],
+          "notes": "Eat"
+        },
+        {
+          "id": "w05a5",
+          "rank": 5,
+          "text": "Play games",
+          "count": 6,
+          "votes": 2,
+          "aliases": [],
+          "notes": "play games; Play games on their phones"
+        }
+      ],
+      "approval": null
+    },
+    {
+      "id": "w06",
+      "category": "Event pack",
+      "prompt": "Name something people buy when they're hungry at a supermarket",
+      "status": "ready",
+      "survey": {
+        "source": "events_team_workbook",
+        "respondents": 32,
+        "responseMode": "single",
+        "collectedAt": null,
+        "note": "Workbook question 9, played as question 6. Points = round(votes / 32 x 100); retained answers need not total 100."
+      },
+      "answers": [
+        {
+          "id": "w06a1",
+          "rank": 1,
+          "text": "Chips",
+          "count": 44,
+          "votes": 14,
+          "aliases": [],
+          "notes": "Potato chips or js crunch on some celery…; Chips; Crisps; Lays?"
+        },
+        {
+          "id": "w06a2",
+          "rank": 2,
+          "text": "Cookies / biscuits",
+          "count": 16,
+          "votes": 5,
+          "aliases": [],
+          "notes": "cookies; Biscuits; oreos"
+        },
+        {
+          "id": "w06a3",
+          "rank": 3,
+          "text": "Bakery / croissant",
+          "count": 13,
+          "votes": 4,
+          "aliases": [],
+          "notes": "bakery items; Baked goods; a croissant; crossiant, chocolate milk"
+        },
+        {
+          "id": "w06a4",
+          "rank": 4,
+          "text": "Fruit",
+          "count": 6,
+          "votes": 2,
+          "aliases": [],
+          "notes": "Banana; Fruit"
+        },
+        {
+          "id": "w06a5",
+          "rank": 5,
+          "text": "Chocolate",
+          "count": 3,
+          "votes": 1,
+          "aliases": [],
+          "notes": "Chocolate"
+        }
+      ],
+      "approval": null
+    },
+    {
+      "id": "w07",
+      "category": "Event pack",
+      "prompt": "Name a place you'd take a friend who is visiting Dubai",
+      "status": "ready",
+      "survey": {
+        "source": "events_team_workbook",
+        "respondents": 32,
+        "responseMode": "single",
+        "collectedAt": null,
+        "note": "Workbook question 7, played as question 7. Points = round(votes / 32 x 100); retained answers need not total 100."
+      },
+      "answers": [
+        {
+          "id": "w07a1",
+          "rank": 1,
+          "text": "Burj Khalifa",
+          "count": 22,
+          "votes": 7,
+          "aliases": [],
+          "notes": "burj khalifa; The Burj Khalifa"
+        },
+        {
+          "id": "w07a2",
+          "rank": 2,
+          "text": "A mall (Dubai Mall etc.)",
+          "count": 16,
+          "votes": 5,
+          "aliases": [],
+          "notes": "Dubai Mall; Mirdif Avenue Mall; al serkal avenue, deira, dubai mall; Mall; City walk mall"
+        },
+        {
+          "id": "w07a3",
+          "rank": 3,
+          "text": "Theme park (IMG, Ferrari World)",
+          "count": 13,
+          "votes": 4,
+          "aliases": [],
+          "notes": "IMG; Ferrari world; Theme parks"
+        },
+        {
+          "id": "w07a4",
+          "rank": 4,
+          "text": "Beach / JBR",
+          "count": 9,
+          "votes": 3,
+          "aliases": [],
+          "notes": "The beach; Beach; jbr"
+        },
+        {
+          "id": "w07a5",
+          "rank": 5,
+          "text": "Ski Dubai",
+          "count": 3,
+          "votes": 1,
+          "aliases": [],
+          "notes": "Ski Dubai"
+        }
+      ],
+      "approval": null
+    },
+    {
+      "id": "w08",
+      "category": "Event pack",
+      "prompt": "Name a reason someone might be late to class",
+      "status": "ready",
+      "survey": {
+        "source": "events_team_workbook",
+        "respondents": 32,
+        "responseMode": "single",
+        "collectedAt": null,
+        "note": "Workbook question 3, played as question 8. Points = round(votes / 32 x 100); retained answers need not total 100."
+      },
+      "answers": [
+        {
+          "id": "w08a1",
+          "rank": 1,
+          "text": "Overslept / woke up late",
+          "count": 38,
+          "votes": 12,
+          "aliases": [],
+          "notes": "Good dream+ missed alarm; Overslept; sleep; over slept; They didn’t wake up on time; Snoozed their alarms; Sleeping; woke up late"
+        },
+        {
+          "id": "w08a2",
+          "rank": 2,
+          "text": "Traffic",
+          "count": 28,
+          "votes": 9,
+          "aliases": [],
+          "notes": "Traffic; Traffic jam; Sharjah traffic"
+        },
+        {
+          "id": "w08a3",
+          "rank": 3,
+          "text": "Talking to a friend",
+          "count": 9,
+          "votes": 3,
+          "aliases": [],
+          "notes": "Talking to a friend; friends or traffic"
+        },
+        {
+          "id": "w08a4",
+          "rank": 4,
+          "text": "Parking",
+          "count": 3,
+          "votes": 1,
+          "aliases": [],
+          "notes": "Parking"
+        },
+        {
+          "id": "w08a5",
+          "rank": 5,
+          "text": "Transport was late",
+          "count": 3,
+          "votes": 1,
+          "aliases": [],
+          "notes": "transport was late"
+        }
+      ],
+      "approval": null
+    },
+    {
+      "id": "w09",
+      "category": "Event pack",
+      "prompt": "Name something people do as soon as they get home",
+      "status": "ready",
+      "survey": {
+        "source": "events_team_workbook",
+        "respondents": 32,
+        "responseMode": "single",
+        "collectedAt": null,
+        "note": "Workbook question 13, played as question 9. Points = round(votes / 32 x 100); retained answers need not total 100."
+      },
+      "answers": [
+        {
+          "id": "w09a1",
+          "rank": 1,
+          "text": "Sleep / nap / lie on the bed",
+          "count": 34,
+          "votes": 11,
+          "aliases": [],
+          "notes": "Sleep; Fall on the bed; Take a nap; Jump on the bed /sleep"
+        },
+        {
+          "id": "w09a2",
+          "rank": 2,
+          "text": "Take off shoes",
+          "count": 22,
+          "votes": 7,
+          "aliases": [],
+          "notes": "Take off shoes; take off shoes or hijab; take their socks off and glance at their…; Take off their shoes; Take off shoes and hijab; take their shoes off"
+        },
+        {
+          "id": "w09a3",
+          "rank": 3,
+          "text": "Change clothes",
+          "count": 16,
+          "votes": 5,
+          "aliases": [],
+          "notes": "Change clothes; change"
+        },
+        {
+          "id": "w09a4",
+          "rank": 4,
+          "text": "Scroll on their phone",
+          "count": 9,
+          "votes": 3,
+          "aliases": [],
+          "notes": "doomscroll; Start scrolling on social media; doom scroll / sleep / study / shower / eat"
+        },
+        {
+          "id": "w09a5",
+          "rank": 5,
+          "text": "Shower",
+          "count": 6,
+          "votes": 2,
+          "aliases": [],
+          "notes": "Shower"
+        }
+      ],
+      "approval": null
+    },
+    {
+      "id": "w10",
+      "category": "Event pack",
+      "prompt": "Name something students commonly eat between classes",
+      "status": "ready",
+      "survey": {
+        "source": "events_team_workbook",
+        "respondents": 32,
+        "responseMode": "single",
+        "collectedAt": null,
+        "note": "Workbook question 4, played as question 10. Points = round(votes / 32 x 100); retained answers need not total 100."
+      },
+      "answers": [
+        {
+          "id": "w10a1",
+          "rank": 1,
+          "text": "Chips",
+          "count": 25,
+          "votes": 8,
+          "aliases": [],
+          "notes": "Chips"
+        },
+        {
+          "id": "w10a2",
+          "rank": 2,
+          "text": "Burgers / fast food",
+          "count": 16,
+          "votes": 5,
+          "aliases": [],
+          "notes": "fast food; burgers; KFC; Burgers?"
+        },
+        {
+          "id": "w10a3",
+          "rank": 3,
+          "text": "Sandwich",
+          "count": 13,
+          "votes": 4,
+          "aliases": [],
+          "notes": "Sandwich; Sammich"
+        },
+        {
+          "id": "w10a4",
+          "rank": 4,
+          "text": "Chocolate / candy",
+          "count": 13,
+          "votes": 4,
+          "aliases": [],
+          "notes": "Chocolate/sweets; Sour candy; Candy or gum; Nothing or chocolates"
+        },
+        {
+          "id": "w10a5",
+          "rank": 5,
+          "text": "Coffee",
+          "count": 9,
+          "votes": 3,
+          "aliases": [],
+          "notes": "Coffee and cookies; Coffe; Coffee"
+        },
+        {
+          "id": "w10a6",
+          "rank": 6,
+          "text": "Cookies",
+          "count": 6,
+          "votes": 2,
+          "aliases": [],
+          "notes": "cookie"
+        }
+      ],
+      "approval": null
+    },
+    {
+      "id": "w11",
+      "category": "Event pack",
+      "prompt": "Name something people take photos of",
+      "status": "ready",
+      "survey": {
+        "source": "events_team_workbook",
+        "respondents": 32,
+        "responseMode": "single",
+        "collectedAt": null,
+        "note": "Workbook question 14, played as question 11. Points = round(votes / 32 x 100); retained answers need not total 100."
+      },
+      "answers": [
+        {
+          "id": "w11a1",
+          "rank": 1,
+          "text": "Sky / sunsets / clouds",
+          "count": 34,
+          "votes": 11,
+          "aliases": [],
+          "notes": "sunset n doggies; the sky; Sky; Sunsets; The clouds; Sunset"
+        },
+        {
+          "id": "w11a2",
+          "rank": 2,
+          "text": "Food",
+          "count": 22,
+          "votes": 7,
+          "aliases": [],
+          "notes": "Food"
+        },
+        {
+          "id": "w11a3",
+          "rank": 3,
+          "text": "Pets / cats",
+          "count": 13,
+          "votes": 4,
+          "aliases": [],
+          "notes": "their pet; notes or their pets; Cats"
+        },
+        {
+          "id": "w11a4",
+          "rank": 4,
+          "text": "Themselves / each other",
+          "count": 9,
+          "votes": 3,
+          "aliases": [],
+          "notes": "Themselves; eachother"
+        },
+        {
+          "id": "w11a5",
+          "rank": 5,
+          "text": "Burj Khalifa",
+          "count": 6,
+          "votes": 2,
+          "aliases": [],
+          "notes": "Burj khalifa"
+        }
+      ],
+      "approval": null
+    },
+    {
+      "id": "w12",
+      "category": "Event pack",
+      "prompt": "Name something students do the night before an exam",
+      "status": "ready",
+      "survey": {
+        "source": "events_team_workbook",
+        "respondents": 32,
+        "responseMode": "single",
+        "collectedAt": null,
+        "note": "Workbook question 5, played as question 12. Points = round(votes / 32 x 100); retained answers need not total 100."
+      },
+      "answers": [
+        {
+          "id": "w12a1",
+          "rank": 1,
+          "text": "Cram / study / revise",
+          "count": 56,
+          "votes": 18,
+          "aliases": [],
+          "notes": "cram; Cram study; Revise and revise; Study; cram studying; Study the entire module; Revise; Cram session; Study staying up late; Study, pull an all nighter ,chugg coffee; Cram study for the exam"
+        },
+        {
+          "id": "w12a2",
+          "rank": 2,
+          "text": "Panic / stress / cry",
+          "count": 16,
+          "votes": 5,
+          "aliases": [],
+          "notes": "Crashout; Panic; Cry; stress/cry"
+        },
+        {
+          "id": "w12a3",
+          "rank": 3,
+          "text": "Sleep early",
+          "count": 9,
+          "votes": 3,
+          "aliases": [],
+          "notes": "Should sleep but pull an all nighter; sleep (they should 🫡); Sleep early"
+        },
+        {
+          "id": "w12a4",
+          "rank": 4,
+          "text": "Pray",
+          "count": 6,
+          "votes": 2,
+          "aliases": [],
+          "notes": "Pray"
+        },
+        {
+          "id": "w12a5",
+          "rank": 5,
+          "text": "Pull an all-nighter",
+          "count": 3,
+          "votes": 1,
+          "aliases": [],
+          "notes": "pull an all nighter (or study ig)"
+        }
+      ],
+      "approval": null
+    },
+    {
+      "id": "w13",
+      "category": "Event pack",
+      "prompt": "Name an app that almost every student has on their phone",
+      "status": "ready",
+      "survey": {
+        "source": "events_team_workbook",
+        "respondents": 32,
+        "responseMode": "single",
+        "collectedAt": null,
+        "note": "Workbook question 10, played as question 13. Points = round(votes / 32 x 100); retained answers need not total 100."
+      },
+      "answers": [
+        {
+          "id": "w13a1",
+          "rank": 1,
+          "text": "Instagram",
+          "count": 31,
+          "votes": 10,
+          "aliases": [],
+          "notes": "Instagram; Insta"
+        },
+        {
+          "id": "w13a2",
+          "rank": 2,
+          "text": "Canvas / MyUoB",
+          "count": 22,
+          "votes": 7,
+          "aliases": [],
+          "notes": "Canvas; MyUob/Canvas/ OMG NO MICROSOFT TEAMS"
+        },
+        {
+          "id": "w13a3",
+          "rank": 3,
+          "text": "Microsoft Authenticator",
+          "count": 9,
+          "votes": 3,
+          "aliases": [],
+          "notes": "microsoft authenticator"
+        },
+        {
+          "id": "w13a4",
+          "rank": 4,
+          "text": "Gmail",
+          "count": 9,
+          "votes": 3,
+          "aliases": [],
+          "notes": "Gmail"
+        },
+        {
+          "id": "w13a5",
+          "rank": 5,
+          "text": "Calendar / timetable / clock",
+          "count": 9,
+          "votes": 3,
+          "aliases": [],
+          "notes": "Calendar; Clock; Timetable app"
+        }
+      ],
+      "approval": null
+    },
+    {
+      "id": "w14",
+      "category": "Event pack",
+      "prompt": "Name something people often forget when leaving the house",
+      "status": "ready",
+      "survey": {
+        "source": "events_team_workbook",
+        "respondents": 32,
+        "responseMode": "single",
+        "collectedAt": null,
+        "note": "Workbook question 12, played as question 14. Points = round(votes / 32 x 100); retained answers need not total 100."
+      },
+      "answers": [
+        {
+          "id": "w14a1",
+          "rank": 1,
+          "text": "Keys",
+          "count": 44,
+          "votes": 14,
+          "aliases": [],
+          "notes": "Keys; House or dorm keys; card/keys; Keycard; Car Keys; Their room key card / id card"
+        },
+        {
+          "id": "w14a2",
+          "rank": 2,
+          "text": "Water bottle",
+          "count": 13,
+          "votes": 4,
+          "aliases": [],
+          "notes": "Water; Their water bottle; water bottle"
+        },
+        {
+          "id": "w14a3",
+          "rank": 3,
+          "text": "Charger",
+          "count": 9,
+          "votes": 3,
+          "aliases": [],
+          "notes": "Chargrs; charger/id card; Charger"
+        },
+        {
+          "id": "w14a4",
+          "rank": 4,
+          "text": "Wallet",
+          "count": 6,
+          "votes": 2,
+          "aliases": [],
+          "notes": "Wallet"
+        },
+        {
+          "id": "w14a5",
+          "rank": 5,
+          "text": "Headphones / AirPods",
+          "count": 6,
+          "votes": 2,
+          "aliases": [],
+          "notes": "Their brains? Jk prolly headphones; AirPods"
+        }
+      ],
+      "approval": null
+    }
+  ]
+}

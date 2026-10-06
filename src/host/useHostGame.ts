@@ -1,9 +1,9 @@
 import { useAirJamHost } from "@air-jam/sdk";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { PENDING_PACK } from "../content/canonical";
+import { EVENT_PACK_RAW, PENDING_PACK } from "../content/canonical";
 import { validatePack } from "../content/schema";
 import type { Pack, Question } from "../content/types";
-import { apply, initialSession } from "../engine/reducer";
+import { apply } from "../engine/reducer";
 import type { Action, Session, TeamId } from "../engine/types";
 import type { TeamColor } from "../teams";
 import { clearArm, closeBuzzers, initialBuzzers, openBuzzers, pair, press, publicBuzzers, resetPairing, type Buzzers } from "../buzzers/buzzers";
@@ -21,6 +21,19 @@ const newToken = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), (b
 type UndoAction = { id: string; type: "UNDO" };
 type HostAction = Action | UndoAction | { id: string; type: "LOAD"; session: Session };
 
+// The event questions are built in. A browser keeps its own pack only if that was a deliberate practice pack or some other
+// pack with results; an empty one, or an older copy of the event pack, gives way to the built-in questions.
+const builtIn = (): Pack => {
+  const r = validatePack(EVENT_PACK_RAW);
+  if (!r.ok) throw new Error(`The built-in event questions are invalid: ${r.errors.join(" ")}`);
+  return r.pack;
+};
+const startingPack = (): Pack => {
+  const saved = loadPack();
+  const event = builtIn();
+  return saved && (saved.purpose === "demo" || (saved.packId !== event.packId && saved.questions.some((q) => q.status === "ready"))) ? saved : event;
+};
+
 const reduce = (s: Session, a: HostAction): Session => (a.type === "LOAD" ? a.session : apply(s, a));
 
 export type DistributiveOmit<T, K extends keyof never> = T extends unknown ? Omit<T, K> : never;
@@ -32,8 +45,8 @@ export function useHostGame() {
   const host = useAirJamHost();
   // Calling the store hook mounts the SDK's host binding: state sync out to phones, buzzer presses in.
   useFeudStore.useActions();
-  const [pack, setPack] = useState<Pack>(() => loadPack() ?? structuredClone(PENDING_PACK));
-  const [session, setSession] = useState<Session>(() => initialSession());
+  const [pack, setPack] = useState<Pack>(startingPack);
+  const [session, setSession] = useState<Session>(() => freshSession());
   const [resumeOffer, setResumeOffer] = useState<SavedSession | null>(() => {
     const s = loadSession();
     return s && hasProgress(s.session) ? s : null;
@@ -212,7 +225,7 @@ export function useHostGame() {
     host,
     pack,
     replacePack,
-    resetPack: () => updatePack(structuredClone(PENDING_PACK)),
+    resetPack: () => updatePack(builtIn()),
     backupPack,
     session,
     state: session.state,

@@ -170,7 +170,7 @@ function PackPanel({ g }: { g: HostGame }) {
         {demo ? (
           <><b>Practice pack</b> · DEMO: INVENTED RESULTS (practice only) · {ready.length} questions, {answers} answers</>
         ) : ready.length === 0 ? (
-          <><b>No questions loaded.</b> Choose the Excel workbook with the answers below.</>
+          <><b>No questions loaded.</b> Press <b>Use the event questions</b>.</>
         ) : custom ? (
           <><b>Event pack</b> · {g.pack.title} · {ready.length} questions, {answers} answers</>
         ) : (
@@ -179,7 +179,7 @@ function PackPanel({ g }: { g: HostGame }) {
       </p>
       <div className="row">
         <ConfirmButton label="Load practice pack" confirmLabel="replace the question set with invented results" onConfirm={() => g.replacePack(DEMO_PACK_RAW)} />
-        <ConfirmButton label="Reset to empty event template" confirmLabel="clear all results" onConfirm={g.resetPack} />
+        <ConfirmButton label="Use the event questions" confirmLabel="replace the question set with the event questions" onConfirm={g.resetPack} />
         <button type="button" className="bi-button bi-button--outline host__btn" onClick={() => download(`feud-pack-${g.pack.packId}.json`, g.pack)}>Export pack</button>
         {g.backupPack && (
           <ConfirmButton label="Restore previous pack" confirmLabel={`swap back to “${g.backupPack.title}”`} onConfirm={() => g.replacePack(g.backupPack)} />
