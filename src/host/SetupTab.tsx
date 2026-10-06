@@ -11,9 +11,9 @@ function GameSetup({ g }: { g: HostGame }) {
     <section className="card" aria-labelledby="game-h">
       <h2 className="card__h" id="game-h">Game</h2>
       <label className="field field--inline">
-        <span className="field__label">Rounds per game</span>
-        <input className="input input--num" type="number" min={1} max={16} value={s.totalRounds} disabled={s.roundsPlayed > 0 || s.round !== null} onChange={(e) => g.act({ type: "NEW_MATCH", totalRounds: Math.max(1, Math.min(16, Number(e.target.value) || 4)) })} />
-        {s.roundsPlayed > 0 && <span className="muted small">Fixed once a game has started.</span>}
+        <span className="field__label">Questions per game</span>
+        <input className="input input--num" type="number" min={1} max={99} placeholder="no limit" value={s.totalRounds || ""} onChange={(e) => g.act({ type: "SET_ROUNDS", totalRounds: Math.max(0, Math.min(99, Math.floor(Number(e.target.value)) || 0)) })} />
+        <span className="muted small">Leave empty for no limit: you end each game yourself with <b>Finish this game here</b>, then choose the next teams. Changing it never touches scores.</span>
       </label>
       <details className="more">
         <summary>Correct a team&apos;s colour</summary>

@@ -53,6 +53,7 @@ export interface GameState {
   /** `color` is the team's chosen identity ("Team Red"). Unset on saves made before colours, and until one is picked. */
   teams: Record<TeamId, { name: string; score: number; color?: TeamColor }>;
   roundsPlayed: number;
+  /** Rounds (questions) in this game, or 0 for no limit: the moderator ends the game whenever they choose. */
   totalRounds: number;
   playedQuestionIds: string[];
   /** Rounds played when the first tie-break was added: every round from there on is a tie-break. Unset on saves made before it existed. */
@@ -77,6 +78,8 @@ export interface ReadyQuestionSnapshot {
 export type Action =
   | { id: string; type: "NEW_MATCH"; totalRounds?: number; /** Fresh identities, for the next pair of teams. `colors` names them in the same step. */ nextTeams?: boolean; colors?: Record<TeamId, TeamColor> }
   /** Name a team by colour. A correction of who is displayed: it never touches scores or the round. */
+  /** Change how many questions this game has (0 = no limit). Never touches scores or the round. */
+  | { id: string; type: "SET_ROUNDS"; totalRounds: number }
   | { id: string; type: "SET_TEAM"; team: TeamId; color: TeamColor }
   | { id: string; type: "START_ROUND"; question: ReadyQuestionSnapshot; team: TeamId }
   | { id: string; type: "SET_CONTROL"; team: TeamId }

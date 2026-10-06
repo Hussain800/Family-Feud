@@ -4,8 +4,8 @@ A list to work through, not a record of checks already done.
 
 ## The night before (Monday 5 Oct)
 
-- [ ] **Nothing to load.** The event questions and answers are built in: open the Render link's `/host` on any laptop and Live lists Question 1 to 14, grouped into Game 1, Game 2, Game 3 and Spare. If a browser shows practice questions (a DEMO label), use **Setup → Survey results → Use the event questions**.
-- [ ] Play each team pair's game from its own group, in order: similar questions are in different games on purpose.
+- [ ] **Nothing to load.** The event questions and answers are built in: open the Render link's `/host` on any laptop and Live lists Question 1 to 14, in an order that keeps similar questions apart. If a browser shows practice questions (a DEMO label), use **Setup → Survey results → Use the event questions**.
+- [ ] Play down the list for each new pair of teams. A game has no fixed length: when time or turnout says so, press **Finish this game here** after a round is scored, then choose the next two colours.
 - [ ] Confirm there is **no DEMO label** on the console or the projector.
 - [ ] Open a few questions. Check the seven answers in Question 2, the six in Question 4 and the long label in Question 7 (it asks before it starts). Open **Counted as** on an answer to see what people wrote.
 - [ ] Export a private backup (**Setup → Backup and recovery**) and keep it off the public repository.

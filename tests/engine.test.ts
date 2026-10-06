@@ -502,3 +502,38 @@ describe("points, not votes", () => {
     expect(faceOffCall(s.state.round)).toBe("A");
   });
 });
+
+describe("a game with no question limit", () => {
+  const play = (s: Session, id: string) => run(s, act("START_ROUND", { question: { ...Q, id }, team: "A" }), act("SHOW_BOARD"), act("BEGIN_PLAY"), act("REVEAL", { answerId: "a1" }), act("END_ROUND"), act("AWARD"), act("NEXT_ROUND"));
+
+  it("keeps offering questions however many are played, until the moderator ends it", () => {
+    let s = run(initialSession(0));
+    for (const id of ["q01", "q02", "q03", "q04", "q05", "q06"]) s = play(s, id);
+    expect(s.state).toMatchObject({ phase: "lobby", roundsPlayed: 6, totalRounds: 0 });
+    expect(s.state.teams.A.score).toBe(180);
+    s = apply(s, act("END_MATCH"));
+    expect(s.state.phase).toBe("match_over");
+  });
+
+  it("can be ended right after a round is scored, without another question", () => {
+    let s = run(initialSession(0), act("START_ROUND", { question: Q, team: "A" }), act("SHOW_BOARD"), act("BEGIN_PLAY"), act("REVEAL", { answerId: "a1" }), act("END_ROUND"), act("AWARD"));
+    s = apply(s, act("END_MATCH"));
+    expect(s.state).toMatchObject({ phase: "match_over", roundsPlayed: 1 });
+    expect(s.state.teams.A.score).toBe(30);
+  });
+
+  it("the limit can be set or cleared at any time without touching scores or the round", () => {
+    const before = run(initialSession(3), act("START_ROUND", { question: Q, team: "A" }), act("SHOW_BOARD"), act("BEGIN_PLAY"), act("REVEAL", { answerId: "a2" }), act("ADJUST_SCORE", { team: "B", delta: 5 }));
+    const after = apply(before, act("SET_ROUNDS", { totalRounds: 0 }));
+    expect(after.state.totalRounds).toBe(0);
+    expect(after.state.round).toEqual(before.state.round);
+    expect(after.state.teams).toEqual(before.state.teams);
+    expect(apply(after, act("SET_ROUNDS", { totalRounds: -2 })).state.totalRounds).toBe(0); // nonsense is ignored
+    expect(apply(after, act("SET_ROUNDS", { totalRounds: 4 })).state.totalRounds).toBe(4);
+  });
+
+  it("a game with a limit still ends itself at the limit", () => {
+    const s = play(play(run(initialSession(2)), "q01"), "q02");
+    expect(s.state.phase).toBe("match_over");
+  });
+});

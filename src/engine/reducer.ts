@@ -101,6 +101,9 @@ export function step(prev: GameState, a: Action): GameState {
       return { ...fresh, teams: { A: { ...s.teams.A, score: 0 }, B: { ...s.teams.B, score: 0 } }, usedEarlier: s.usedEarlier ?? [], seen: s.seen };
     }
 
+    case "SET_ROUNDS":
+      return Number.isInteger(a.totalRounds) && a.totalRounds >= 0 && a.totalRounds <= 99 ? { ...s, totalRounds: a.totalRounds } : s;
+
     case "SET_TEAM": {
       if (!isTeamColor(a.color) || s.teams[a.team].color === a.color) return s;
       if (s.teams[otherTeam(a.team)].color === a.color) return refuse(s, `${teamLabel(a.color)} is already the other team. Each team needs its own colour.`);
@@ -109,7 +112,7 @@ export function step(prev: GameState, a: Action): GameState {
 
     case "START_ROUND": {
       if (s.phase !== "lobby") return refuse(s, "Finish the current round first.");
-      if (s.roundsPlayed >= s.totalRounds) return refuse(s, "Match is complete.");
+      if (s.totalRounds > 0 && s.roundsPlayed >= s.totalRounds) return refuse(s, "Match is complete.");
       if (s.playedQuestionIds.includes(a.question.id)) return refuse(s, "That question was already played this match.");
       if (a.question.answers.length < 1) return refuse(s, "Question has no answers.");
       return {
@@ -227,7 +230,7 @@ export function step(prev: GameState, a: Action): GameState {
     case "NEXT_ROUND": {
       if (s.phase !== "round_over" || !r?.settlement) return refuse(s, "Award the round first.");
       const roundsPlayed = s.roundsPlayed + 1;
-      return { ...s, roundsPlayed, round: null, phase: roundsPlayed >= s.totalRounds ? "match_over" : "lobby" };
+      return { ...s, roundsPlayed, round: null, phase: s.totalRounds > 0 && roundsPlayed >= s.totalRounds ? "match_over" : "lobby" };
     }
 
     case "END_MATCH":

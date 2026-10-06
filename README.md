@@ -94,7 +94,7 @@ Also available:
 - **Play a tie-break round** when a game ends level.
 
 House rules (proposed, not set by the organisers):
-- Four rounds (questions) per game by default (Setup).
+- No question limit per game by default: turnout decides, so the moderator ends each game with **Finish this game here** (or **Finish the game now** between questions) and starts the next teams. **Setup → Questions per game** can set a limit at any time; it never touches scores, and the game then ends itself at that number.
 - Three strikes and one steal.
 - Face-off answers count once, in the round's points, for whichever team ends up playing.
 - A repeated answer shows ALREADY ON THE BOARD and costs nothing.
@@ -161,7 +161,7 @@ The data is the events team's workbook, `family_feud_board.xlsx`: one sheet, **1
 
 **Points are not votes.** Each answer has **Votes** (how many of the 32 said it) and **Points** (`ROUND(votes / 32 * 100)`, rounded half up, so 4 votes is 13). The game reveals, pots and awards **Points** only. Votes are shown to the moderator beside each answer and checked against the respondent count, never scored. Retained answers need not add up to 100, and nothing is normalised. Equal points keep their source order. Column G ("what people wrote") is kept as moderator-only guidance under **Counted as** on each answer; it is not an accepted alias, and the hosts judge spoken answers. The projector is only ever sent revealed answers and their points.
 
-**Play order.** Games are four questions each: three team pairs use twelve of the fourteen questions (games are four rounds by default; Setup changes it). The list is grouped *Game 1* (questions 1 to 4), *Game 2*, *Game 3* and *Spare*, and questions with similar answers sit in different games, at least four places apart:
+**Play order.** How many questions each team pair plays is not fixed; it depends on turnout, and the moderator ends each game whenever they choose. The list is ordered so that questions with similar answers are at least four places apart, which keeps a game of up to four questions varied (play down the list for each new pair of teams):
 
 | Similar | Questions |
 |---|---|
@@ -170,7 +170,7 @@ The data is the events team's workbook, `family_feud_board.xlsx`: one sheet, **1
 | Dubai | 3 (summer), 7 (place to take a friend), 11 (photos) |
 | Bag and forgotten items | 4 (in a bag), 14 (forgot leaving the house) |
 
-The numbers are play order, not the workbook's. `ORDER` in `scripts/workbook_to_pack.py` holds the mapping (the workbook's question 8 is played as question 2, and so on); change it and re-run the script to reorder.
+The numbers are the list order, not the workbook's. `ORDER` in `scripts/workbook_to_pack.py` holds the mapping (the workbook's question 8 is played as question 2, and so on); change it and re-run the script to reorder.
 
 **Changing or rebuilding the data.** Edit the workbook, then:
 

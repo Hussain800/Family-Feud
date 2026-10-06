@@ -150,8 +150,8 @@ export function parseBackup(text: string): { ok: true; pack: Pack; session: Sess
   return { ok: true, pack: p.pack, session };
 }
 
-/** Games are four questions each: three team pairs use twelve of the fourteen event questions. */
-export const GAME_ROUNDS = 4;
+/** A game has no question limit unless the moderator sets one: turnout decides how many questions each team pair plays. */
+export const GAME_ROUNDS = 0;
 export const freshSession = () => initialSession(GAME_ROUNDS);
 
 export function download(filename: string, data: unknown): void {

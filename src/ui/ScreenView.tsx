@@ -20,6 +20,8 @@ export type Flash = FlashSpec & { id: number };
 const teamOf = (s: PublicSnapshot, id: TeamId) => s.teams.find((t) => t.id === id)!;
 const teamName = (s: PublicSnapshot, id: TeamId) => teamOf(s, id).name.toUpperCase();
 /** Long names and answers step down a size instead of being cut off. */
+/** "ROUND 2 OF 4", or just "ROUND 2" when the game has no question limit. */
+const roundOf = (n: number, total: number) => (total > 0 ? `ROUND ${n} OF ${total}` : `ROUND ${n}`);
 const fit = (text: string, steps: [number, string][]) => steps.find(([n]) => text.length > n)?.[1] ?? "";
 
 /** The game title in frost on the ice, its brackets drawn as the club mark's coloured chevrons. */
@@ -68,7 +70,7 @@ function Header({ s }: { s: PublicSnapshot }) {
     <header className="s-head">
       <div className="s-head__left"><TitlePlate size="sm" /></div>
       <div className="s-head__mid">
-        {round && (s.timer ? <Timer t={s.timer} /> : <p className="s-head__round">{s.progress.tieBreak ? "TIE-BREAK" : `ROUND ${s.round!.number} OF ${s.round!.total}`}</p>)}
+        {round && (s.timer ? <Timer t={s.timer} /> : <p className="s-head__round">{s.progress.tieBreak ? "TIE-BREAK" : roundOf(s.round!.number, s.round!.total)}</p>)}
       </div>
       <div className="s-head__right">
         <span className="s-head__event">hello, world!</span>
@@ -111,13 +113,13 @@ function Interlude({ s }: { s: PublicSnapshot }) {
   const lead = a.score === b.score ? null : a.score > b.score ? a : b;
   return (
     <div className="final">
-      <p className="s-pill">AFTER ROUND {s.progress.played} OF {s.progress.total}</p>
+      <p className="s-pill">AFTER {roundOf(s.progress.played, s.progress.total)}</p>
       <h1 className="final__head">{lead ? `${lead.name} leads` : "All square"}</h1>
       <div className="final__scores">
         <TeamPlate s={s} id="A" lead={lead?.id === "A"} />
         <TeamPlate s={s} id="B" lead={lead?.id === "B"} />
       </div>
-      <p className="final__next">{s.progress.tieBreak ? "TIE-BREAK" : `ROUND ${Math.min(s.progress.played + 1, s.progress.total)}`} IS NEXT</p>
+      <p className="final__next">{s.progress.tieBreak ? "TIE-BREAK" : `ROUND ${s.progress.total > 0 ? Math.min(s.progress.played + 1, s.progress.total) : s.progress.played + 1}`} IS NEXT</p>
     </div>
   );
 }
@@ -126,7 +128,7 @@ function Intro({ s }: { s: PublicSnapshot }) {
   const q = s.round!;
   return (
     <div className="intro">
-      <p className="s-pill">{s.progress.tieBreak ? "TIE-BREAK" : `ROUND ${q.number} OF ${q.total}`}</p>
+      <p className="s-pill">{s.progress.tieBreak ? "TIE-BREAK" : roundOf(q.number, q.total)}</p>
       <h1 className={`intro__q ${fit(q.prompt, [[70, "intro__q--long"]])}`}>{q.prompt}</h1>
       <p className="intro__sub">FACE-OFF NEXT: WHO BUZZES FIRST?</p>
     </div>

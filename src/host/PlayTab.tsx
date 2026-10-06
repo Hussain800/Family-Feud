@@ -1,5 +1,5 @@
-import { Fragment, useState, type ReactNode } from "react";
-import { isCustomPack, longLabels } from "../content/schema";
+import { useState, type ReactNode } from "react";
+import { longLabels } from "../content/schema";
 import { questionLabel, type Question } from "../content/types";
 import { answering, faceOffCall, otherTeam } from "../engine/reducer";
 import type { GameState, RoundState, TeamId } from "../engine/types";
@@ -13,7 +13,7 @@ import type { HostGame } from "./useHostGame";
 const TEAMS: TeamId[] = ["A", "B"];
 const name = (s: GameState, t: TeamId) => s.teams[t].name;
 const isTieBreak = (s: GameState) => s.tieBreakFrom != null && s.roundsPlayed >= s.tieBreakFrom;
-const roundLabel = (s: GameState) => (isTieBreak(s) ? "Tie-break round" : `Round ${Math.min(s.roundsPlayed + 1, s.totalRounds)} of ${s.totalRounds}`);
+const roundLabel = (s: GameState) => (isTieBreak(s) ? "Tie-break round" : s.totalRounds > 0 ? `Round ${Math.min(s.roundsPlayed + 1, s.totalRounds)} of ${s.totalRounds}` : `Round ${s.roundsPlayed + 1}`);
 
 /** Which team is answering on the board right now, if any. */
 function playing(s: GameState): { team: TeamId; label: string } | null {
@@ -131,7 +131,7 @@ function QuestionRow({ g, q }: { g: HostGame; q: Question }) {
   const ready = q.status === "ready";
   const played = s.playedQuestionIds.includes(q.id);
   const earlier = (s.usedEarlier ?? []).includes(q.id);
-  const full = s.roundsPlayed >= s.totalRounds;
+  const full = s.totalRounds > 0 && s.roundsPlayed >= s.totalRounds;
   const long = longLabels(q);
   const start = () => g.startRound(q, "A"); // who plays first is decided by the face-off
   return (
@@ -159,10 +159,8 @@ function QuestionRow({ g, q }: { g: HostGame; q: Question }) {
   );
 }
 
-const GAME = 4; // an event game is four questions; the list is grouped the same way
 function Lobby({ g, onSetup }: { g: HostGame; onSetup: () => void }) {
   const s = g.state;
-  const custom = isCustomPack(g.pack);
   const { A, B } = s.teams;
   if (!g.pack.questions.some((q) => q.status === "ready")) return <NoQuestions onSetup={onSetup} />;
   return (
@@ -174,12 +172,7 @@ function Lobby({ g, onSetup }: { g: HostGame; onSetup: () => void }) {
           {s.roundsPlayed > 0 && <span className="muted">{A.name} {A.score} · {B.name} {B.score}</span>}
         </div>
         <ul className="qlist">
-          {g.pack.questions.map((q, i) => (
-            <Fragment key={q.id}>
-              {custom && i % GAME === 0 && <li className="qgroup" aria-hidden="true">{i < GAME * 3 ? `Game ${i / GAME + 1}: questions ${i + 1} to ${i + GAME}` : "Spare questions"}</li>}
-              <QuestionRow g={g} q={q} />
-            </Fragment>
-          ))}
+          {g.pack.questions.map((q) => <QuestionRow key={q.id} g={g} q={q} />)}
         </ul>
         {s.roundsPlayed > 0 && (
           <div className="row">
@@ -352,7 +345,13 @@ function NextStep({ g }: { g: HostGame }) {
         actions = <button type="button" className="bi-button host__btn host__btn--lg" onClick={() => g.act({ type: "AWARD" })}>Give {r.pot} points to {name(s, award)}</button>;
       } else {
         text = <>{r.settlement.amount} points to <b>{name(s, r.settlement.winner)}</b>. Showing the rest of the answers is for fun; it never changes scores.</>;
-        actions = <button type="button" className="bi-button host__btn host__btn--lg" onClick={() => g.act({ type: "NEXT_ROUND" })}>{s.roundsPlayed + 1 >= s.totalRounds ? "Finish the game" : "Next question"}</button>;
+        const last = s.totalRounds > 0 && s.roundsPlayed + 1 >= s.totalRounds;
+        actions = (
+          <>
+            <button type="button" className="bi-button host__btn host__btn--lg" onClick={() => g.act({ type: "NEXT_ROUND" })}>{last ? "Finish the game" : "Next question"}</button>
+            {!last && <ConfirmButton label="Finish this game here" confirmLabel="end the game, then pick new teams" onConfirm={() => g.act({ type: "END_MATCH" })} className="bi-button bi-button--outline host__btn" />}
+          </>
+        );
       }
       break;
   }
