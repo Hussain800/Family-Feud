@@ -41,8 +41,8 @@ The console's header shows whether the projector is open and whether its sound i
 | `pnpm run typecheck` / `pnpm run lint` | Types and lint |
 | `pnpm run e2e` | A complete physical-buzzer game with the relay unreachable (needs `pnpm run dev` and Chrome) |
 | `pnpm run e2e:guide` | The quick guide: offer, Skip, replay, keyboard, no effect on the game |
-| `pnpm run e2e:event` | The rehearsal: a three-round match with the private event pack, then Yellow/Green, Black/White and White/Black (skips itself if `private/event-pack.json` is missing; `VIEW=1366x768` for the small size) |
-| `python scripts/workbook_to_pack.py <workbook.xlsx>` | Converts the events team's workbook into `private/event-pack.json` and checks all 73 rows against their source cells |
+| `pnpm run e2e:event` | The rehearsal: a three-round match with the private event pack, then Yellow/Green, Black/White and White/Black (needs `private/family_feud_board.xlsx` and `private/event-pack.json`, otherwise it skips itself; it imports the Excel file through Setup; `VIEW=1366x768` for the small size) |
+| `python scripts/workbook_to_pack.py <workbook.xlsx>` | Checks the events team's workbook against its source cells and writes `private/event-pack.json` (the app itself reads the `.xlsx` directly in Setup) |
 | `pnpm run e2e:phones` | Phone buzzers: two phones, pairing, a full face-off, an impostor, stale and duplicate presses, a drop |
 | `pnpm run e2e:faceoff` | Face-off rules: taps, corrections, misses, the hosts' call, play or pass, skipping |
 | `pnpm run e2e:failures` | Relay down, storage failing, rejected import, answer editor, preview, projector sound, odd URLs |
@@ -161,22 +161,27 @@ The events team's answers came as a workbook, `family_feud_board.xlsx`: one shee
 
 **The event pack has its own numbering.** The workbook's questions are `w01` to `w14` and read as Question 1 to 14. They are never matched to the old 16-question template by number (workbook Question 6 is the Dubai summer, not the old Question 6). The two template questions the workbook does not have are simply not in the picker. A pack is either the q01 to q16 template or its own set, never a mix.
 
-### Making and loading the private pack
+### Loading the answers: choose the Excel file
 
-On the machine that has the workbook (needs Python with `openpyxl`):
+The site is public, so the answers cannot be built into it: anyone could read them in the page source and spoil the game. Instead the moderator chooses the Excel workbook in the browser, once. It is read there (an `.xlsx` is a zip of XML, opened with the browser's own decompression; no spreadsheet library and nothing uploaded) and the pack is kept in that browser only.
+
+**On the event laptop, once, in the browser and at the address that will run the event** (storage is per address: loading it in another browser, profile or address does not load it here):
+1. Open `/host`. It says *No event questions on this laptop yet*. Click **Load the answers in Setup**.
+2. Under **Survey results**, **Load the event answers (Excel workbook)**: choose `family_feud_board.xlsx`.
+3. The console reports *Event pack checked: 14 questions, 73 answers*. Nothing has changed yet. Click **Load this pack**, then **Confirm**.
+4. The pack line reads *Event pack · 14 questions, 73 answers*, and **Live** lists Question 1 to 14 with no DEMO label.
+
+If the workbook is not the expected board (no *Total survey responses*, no `Q#` header, ranks out of order), or a Points cell disagrees with its votes, the import is refused with the cell named and nothing changes.
+
+The reader (`src/content/workbook.ts`) follows the same rules as the converter script below, and a test checks that on the real workbook the two give identical packs (that test runs only where `private/family_feud_board.xlsx` and `private/event-pack.json` exist).
+
+**The converter script** (needs Python with `openpyxl`) is now only for checking the workbook cell by cell and for producing a JSON copy:
 
 ```bash
 python scripts/workbook_to_pack.py "C:/path/to/family_feud_board.xlsx"
 ```
 
-This writes `private/event-pack.json` (the `private/` folder is git-ignored) and checks all 73 rows against their source cells, plus the 14 answer counts and points totals. The workbook is only read.
-
-**On the event laptop, once, in the browser and at the address that will run the event** (the Render address or `localhost:5173`; storage is per address, so loading it in another browser, profile or address does not load it here):
-1. Open `/host`. It says *No event questions on this laptop yet*. Click **Load the event pack in Setup**.
-2. Under **Survey results**, **Import the event pack**: choose `event-pack.json`.
-3. The console reports *Event pack checked: 14 questions, 73 answers*. Nothing has changed yet. Click **Load this pack**, then **Confirm**.
-4. The pack line reads *Event pack · 14 questions, 73 answers*, and **Live** lists Question 1 to 14 with no DEMO label.
-5. Click **Export pack** if you want a second private copy. Keep every copy off the public repository.
+It writes `private/event-pack.json` (the `private/` folder is git-ignored) and checks all 73 rows against their source cells, plus the 14 answer counts and points totals. The same Setup control also accepts that `.json` file.
 
 Loading replaces the question set in that browser. The one before it is kept as a recoverable copy (**Restore previous pack**); a round in progress keeps its own answers; practice data never pushes the event pack out of that slot. **Load practice pack** shows **DEMO: INVENTED RESULTS** (console, projector, buzzer phones). The genuine event pack carries no demo label. Nothing loads by itself, and a browser without the pack never shows invented questions.
 

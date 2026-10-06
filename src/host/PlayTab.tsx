@@ -120,8 +120,8 @@ function NoQuestions({ onSetup }: { onSetup: () => void }) {
   return (
     <section className="card empty" aria-label="No questions loaded">
       <h2 className="card__h">No event questions on this laptop yet</h2>
-      <p>The questions and answers are loaded from a file into this browser. Nothing is loaded automatically, and nothing has been invented.</p>
-      <div className="row"><button type="button" className="bi-button host__btn host__btn--lg" onClick={onSetup}>Load the event pack in Setup</button></div>
+      <p>Choose the Excel workbook with the answers (<code>family_feud_board.xlsx</code>) once, in Setup. It is read in this browser and never uploaded. Nothing is loaded automatically, and nothing has been invented.</p>
+      <div className="row"><button type="button" className="bi-button host__btn host__btn--lg" onClick={onSetup}>Load the answers in Setup</button></div>
     </section>
   );
 }

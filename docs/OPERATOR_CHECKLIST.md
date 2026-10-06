@@ -4,9 +4,9 @@ A list to work through, not a record of checks already done.
 
 ## The night before (Monday 5 Oct)
 
-- [ ] **Load the real pack on the laptop that will run the event**, in the browser and at the address you will use on the day (storage is per browser and per address; loading it anywhere else does not load it here):
-  1. Open `/host`. It says *No event questions on this laptop yet*. Click **Load the event pack in Setup**.
-  2. Under **Survey results**, **Import the event pack**: choose `event-pack.json`.
+- [ ] **Load the answers on the laptop that will run the event**, in the browser and at the address you will use on the day (storage is per browser and per address; loading it anywhere else does not load it here):
+  1. Open `/host`. It says *No event questions on this laptop yet*. Click **Load the answers in Setup**.
+  2. Under **Survey results**, **Load the event answers (Excel workbook)**: choose `family_feud_board.xlsx`, the Excel file itself.
   3. It must say *Event pack checked: 14 questions, 73 answers*. Click **Load this pack**, then **Confirm**.
   4. Setup reads *Event pack · 14 questions, 73 answers*; Live lists Question 1 to 14.
 - [ ] Confirm there is **no DEMO label** on the console or the projector.

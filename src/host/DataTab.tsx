@@ -2,6 +2,7 @@ import { useState } from "react";
 import { DEMO_PACK_RAW } from "../content/canonical";
 import { isCustomPack, validatePack } from "../content/schema";
 import { parseSheet, type SheetResult } from "../content/sheet";
+import { workbookToPack } from "../content/workbook";
 import { questionLabel, type Answer, type Pack, type Question, type ResponseMode } from "../content/types";
 import { ConfirmButton } from "./ConfirmButton";
 import { download } from "./persist";
@@ -82,19 +83,26 @@ function ImportPanel({ g }: { g: HostGame }) {
   const [staged, setStaged] = useState<Staged | null>(null);
   const [done, setDone] = useState("");
   const hasEvent = g.pack.purpose === "event" && g.pack.questions.some((q) => q.status === "ready");
-  const check = (raw: string, file: string | null) => {
-    setDone("");
-    setStaged(null);
-    let json: unknown;
-    try {
-      json = JSON.parse(raw);
-    } catch (e) {
-      return setErrors([`Not valid JSON: ${e instanceof Error ? e.message : "parse error"}`]);
-    }
+  const stage = (json: unknown, file: string | null) => {
     const r = validatePack(json);
     if (!r.ok) return setErrors(r.errors);
     setErrors([]);
     setStaged({ raw: json, pack: r.pack, warnings: r.warnings, file });
+  };
+  const check = async (file: File | null, raw: string) => {
+    setDone("");
+    setStaged(null);
+    if (file && /\.xlsx$/i.test(file.name)) {
+      const w = await workbookToPack(await file.arrayBuffer());
+      return w.ok ? stage(w.raw, file.name) : setErrors(w.errors);
+    }
+    let json: unknown;
+    try {
+      json = JSON.parse(file ? await file.text() : raw);
+    } catch (e) {
+      return setErrors([`Not valid JSON: ${e instanceof Error ? e.message : "parse error"}`]);
+    }
+    stage(json, file?.name ?? null);
   };
   const ready = staged ? staged.pack.questions.filter((q) => q.status === "ready") : [];
   const answers = ready.reduce((n, q) => n + q.answers.length, 0);
@@ -109,22 +117,25 @@ function ImportPanel({ g }: { g: HostGame }) {
   };
   return (
     <details className="more" open={!hasEvent}>
-      <summary>Import the event pack (JSON file)</summary>
-      <p className="muted small">Choose the event pack file you were given (<code>event-pack.json</code>). It is checked first and nothing changes until you confirm. The answers stay in this browser and are never published. Do this once on the laptop and browser that will run the event.</p>
+      <summary>Load the event answers (Excel workbook)</summary>
+      <p className="muted small">Choose the Excel workbook with the answers (<code>family_feud_board.xlsx</code>). It is read in this browser: nothing is uploaded, and nothing changes until you confirm. Do this once on the laptop and browser that will run the event.</p>
       <input
         type="file"
-        accept="application/json,.json"
-        aria-label="Choose pack JSON file"
+        accept=".xlsx,.json,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        aria-label="Choose the answers workbook or a pack file"
         onChange={async (e) => {
           const f = e.target.files?.[0];
-          if (f) check(await f.text(), f.name);
+          if (f) await check(f, "");
           e.target.value = "";
         }}
       />
-      <textarea className="input input--area" rows={3} placeholder='Or paste the file contents here: {"schemaVersion":1,"packId":"…","purpose":"event","questions":[…]}' value={text} onChange={(e) => setText(e.target.value)} aria-label="Pack JSON" />
-      <div className="row">
-        <button type="button" className="bi-button bi-button--outline host__btn" disabled={!text.trim()} onClick={() => check(text, null)}>Check pasted text</button>
-      </div>
+      <details className="more">
+        <summary>Advanced: paste a pack file (JSON)</summary>
+        <textarea className="input input--area" rows={3} placeholder='{"schemaVersion":1,"packId":"…","purpose":"event","questions":[…]}' value={text} onChange={(e) => setText(e.target.value)} aria-label="Pack JSON" />
+        <div className="row">
+          <button type="button" className="bi-button bi-button--outline host__btn" disabled={!text.trim()} onClick={() => void check(null, text)}>Check pasted text</button>
+        </div>
+      </details>
       {errors.length > 0 && (
         <div className="alert" role="alert">
           <b>Import rejected. Nothing was changed.</b>
@@ -159,7 +170,7 @@ function PackPanel({ g }: { g: HostGame }) {
         {demo ? (
           <><b>Practice pack</b> · DEMO: INVENTED RESULTS (practice only) · {ready.length} questions, {answers} answers</>
         ) : ready.length === 0 ? (
-          <><b>No questions loaded.</b> Import the event pack below.</>
+          <><b>No questions loaded.</b> Choose the Excel workbook with the answers below.</>
         ) : custom ? (
           <><b>Event pack</b> · {g.pack.title} · {ready.length} questions, {answers} answers</>
         ) : (

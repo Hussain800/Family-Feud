@@ -11,9 +11,10 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
-const PACK_FILE = `${ROOT}private/event-pack.json`;
-if (!existsSync(PACK_FILE)) {
-  console.log("SKIPPED: private/event-pack.json is not here. Convert the workbook first: python scripts/workbook_to_pack.py <workbook.xlsx>");
+const PACK_FILE = `${ROOT}private/event-pack.json`; // the converter's output: the reference the browser import is checked against
+const WORKBOOK = `${ROOT}private/family_feud_board.xlsx`; // what the moderator actually chooses in Setup
+if (!existsSync(PACK_FILE) || !existsSync(WORKBOOK)) {
+  console.log("SKIPPED: private/event-pack.json and private/family_feud_board.xlsx are not both here. Copy the workbook into private/ and run: python scripts/workbook_to_pack.py private/family_feud_board.xlsx");
   process.exit(2);
 }
 const BASE = process.env.FEUD_URL ?? "http://localhost:5173";
@@ -116,8 +117,8 @@ const reloadScreen = async () => { await screen.reload(); await screen.click("bu
 // --- the load-data state, then the import ---
 check("a browser with no event pack says so plainly and lists no questions", /No event questions on this laptop yet/.test(await text(host, ".live__main")) && (await host.locator(".qlist").count()) === 0);
 check("nothing is loaded automatically: no demo label, no invented data", (await host.locator(".alert--demo").count()) === 0 && (await screen.locator(".demo-banner").count()) === 0);
-await host.click("button:has-text('Load the event pack in Setup')");
-await host.setInputFiles('input[aria-label="Choose pack JSON file"]', PACK_FILE);
+await host.click("button:has-text('Load the answers in Setup')");
+await host.setInputFiles('input[aria-label="Choose the answers workbook or a pack file"]', WORKBOOK); // the Excel file itself, as the moderator will
 const staged = await text(host, ".alert--notice");
 check("the file is checked and summarised before anything changes: 14 questions, 73 answers", /Event pack checked: 14 questions, 73 answers/.test(staged), staged.slice(0, 160));
 check("nothing is loaded until the import is confirmed", /No questions loaded/.test(await text(host, ".packline")));
@@ -125,6 +126,12 @@ await host.click("button:has-text('Load this pack')");
 await host.click("button:has-text('Confirm')");
 await sleep(300);
 check("the event pack is active: 14 questions, 73 answers, labelled as the event pack", /Event pack/.test(await text(host, ".packline")) && /14 questions, 73 answers/.test(await text(host, ".packline")), await text(host, ".packline"));
+const stored = await host.evaluate(() => JSON.parse(localStorage.getItem("ff.pack.v1")));
+const sameAsConverter = stored.questions.length === pack.questions.length && stored.questions.every((sq, i) => {
+  const pq = pack.questions[i];
+  return sq.id === pq.id && sq.prompt === pq.prompt && sq.answers.length === pq.answers.length && sq.answers.every((sa, k) => ["id", "rank", "text", "count", "votes", "notes"].every((f) => sa[f] === pq.answers[k][f]));
+});
+check("the pack read from the Excel file in the browser equals the one the converter verified against every source cell", sameAsConverter);
 await host.click("role=tab[name='Live']");
 const rows = await host.locator(".q__num").allInnerTexts();
 check("the question picker holds exactly the workbook's 14 questions, numbered as the workbook numbers them", rows.length === 14 && rows.every((r, i) => r === `Question ${i + 1}`), JSON.stringify(rows));
